@@ -16,7 +16,7 @@
 import * as ts from "typescript"
 import * as webidl2 from "webidl2"
 import { PunctuationToken, SyntaxKind } from "typescript"
-import { toString } from "./common"
+import { toString } from "./toString"
 import {
     IDLCallback, IDLConstructor, IDLEntry, IDLEnum, IDLInterface, IDLMethod, IDLParameter, IDLProperty, IDLType,
     IDLTypedef, hasExtAttribute, isCallback, isClass, isContainerType, isEnum, isInterface, isPrimitiveType, isReferenceType, isTypedef,

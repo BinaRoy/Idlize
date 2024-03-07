@@ -72,10 +72,6 @@ function zip<A, B>(to: A[], from: B[]): [A, B][] {
     return to.map((toValue, i) => [toValue, from[i]])
 }
 
-export function toString(node: Object): string {
-    return JSON.stringify(node, undefined, 4)
-}
-
 export const licence =
 `/*
  * Copyright (c) 2024 Huawei Device Co., Ltd.

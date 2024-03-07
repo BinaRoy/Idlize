@@ -1,34 +1,37 @@
 {
     "name": "@koalaui-public/idlize",
-    "version": "1.0.0",
+    "version": "1.0.2",
     "description": "",
-    "main": "build/lib/src/main.js",
-    "types": "build/lib/src/main.d.ts",
+    "main": "lib/index.js",
     "files": [
-        "build/lib/**/*.js",
-        "build/lib/**/*.d.ts"
+        "lib/*.js"
     ],
+    "license": "Apache-2.0",
     "keywords": [],
     "dependencies": {
-        "webidl2": "^24.4.1",
         "@types/webidl2": "^24.4.1",
-        "commander": "^10.0.0"
+        "commander": "^10.0.0",
+        "webidl2": "^24.4.1"
     },
     "devDependencies": {
-	"@types/node": "^18.0.0",
+        "@rollup/plugin-node-resolve": "^15.2.3",
+        "@rollup/plugin-terser": "^0.4.4",
+        "@rollup/plugin-typescript": "^11.1.6",
         "@types/chai": "^4.3.1",
         "@types/mocha": "^9.1.0",
+        "@types/node": "^18.0.0",
         "@typescript-eslint/eslint-plugin": "^5.20.0",
         "@typescript-eslint/parser": "^5.20.0",
         "chai": "^4.3.6",
         "eslint": "^8.13.0",
         "eslint-plugin-unused-imports": "^2.0.0",
         "mocha": "^9.2.2",
+        "rollup": "^4.12.1",
         "source-map-support": "^0.5.21"
     },
     "scripts": {
-        "compile": "tsc --m commonjs",
-        "clean": "rimraf build dist",
+        "compile": "rollup -c",
+        "clean": "rimraf build dist lib",
         "run": "npm run compile && node . --dts2idl --input-dir ./ohos-sdk/component --input-file common.d.ts --verify-idl --common-to-attributes --skip-comments",
         "run2h": "npm run compile && node . --dts2h --input-dir ./ohos-sdk/component --input-file common.d.ts --verbose",
         "run2test": "npm run compile && node . --dts2test --input-dir ./ohos-sdk/component --verbose --test-interface ButtonAttribute",
