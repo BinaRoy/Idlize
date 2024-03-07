@@ -1,8 +1,9 @@
 {
-    "name": "@koalaui-public/idlize",
-    "version": "1.0.2",
+    "name": "@azanat/idlize",
+    "version": "1.0.5",
     "description": "",
     "main": "lib/index.js",
+    "bin": "lib/index.js",
     "files": [
         "lib/*.js"
     ],
@@ -11,6 +12,7 @@
     "dependencies": {
         "@types/webidl2": "^24.4.1",
         "commander": "^10.0.0",
+        "typescript": "^4.9.5",
         "webidl2": "^24.4.1"
     },
     "devDependencies": {
