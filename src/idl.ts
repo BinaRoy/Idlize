@@ -1,0 +1,480 @@
+/*
+ * Copyright (c) 2024 Huawei Device Co., Ltd.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+import * as webidl2 from "webidl2"
+import { asString, isDefined, stringOrNone } from "./util";
+
+export enum IDLKind {
+    Interface,
+    Class,
+    AnonymousInterface,
+    Callback,
+    Property,
+    Parameter,
+    Method,
+    Callable,
+    Constructor,
+    Enum,
+    EnumMember,
+    Typedef,
+    PrimitiveType,
+    ContainerType,
+    ReferenceType,
+    EnumType,
+    UnionType,
+    TypeParameterType
+}
+
+export interface IDLEntry {
+    name?: string
+    kind?: IDLKind
+    fileName?: string
+    documentation?: string
+    extendedAttributes?: string[]
+    scope?: IDLEntry[]
+}
+
+export interface IDLType {
+    name: string
+    kind: IDLKind
+    fileName?: string
+    documentation?: string
+}
+
+export interface IDLTypedef extends IDLEntry {
+    kind: IDLKind.Typedef
+    name: string
+    type: IDLType
+}
+
+export interface IDLPrimitiveType extends IDLType {
+    kind: IDLKind.PrimitiveType
+}
+
+export interface IDLContainerType extends IDLType {
+    kind: IDLKind.ContainerType
+    elementType: IDLType
+}
+
+export interface IDLReferenceType extends IDLType {
+    kind: IDLKind.ReferenceType
+}
+
+export interface IDLEnumType extends IDLType {
+    kind: IDLKind.EnumType
+}
+
+export interface IDLUnionType extends IDLType {
+    kind: IDLKind.UnionType
+    types: IDLType[]
+}
+
+export interface IDLTypeParameterType extends IDLType {
+    kind: IDLKind.TypeParameterType
+}
+
+export interface IDLVariable extends IDLEntry {
+    type?: IDLType;
+}
+
+export interface IDLTypedEntry extends IDLEntry {
+    type?: IDLType;
+}
+
+export interface IDLEnum extends IDLEntry {
+    kind: IDLKind.Enum
+    name: string
+    elements: IDLEnumMember[]
+}
+
+export interface IDLEnumMember extends IDLEntry {
+    kind: IDLKind.EnumMember
+    name: string
+    type: IDLPrimitiveType
+    initializer: number|string|undefined
+}
+
+export interface IDLProperty extends IDLTypedEntry {
+    name: string
+    kind: IDLKind.Property
+    type: IDLType
+    isReadonly: boolean
+    isStatic: boolean
+    isOptional: boolean
+}
+
+export interface IDLParameter extends IDLTypedEntry {
+    kind: IDLKind.Parameter
+    name: string
+    isVariadic: boolean
+    isOptional: boolean
+}
+
+export interface IDLSignature extends IDLEntry {
+    parameters: IDLParameter[]
+    returnType?: IDLType
+}
+
+export interface IDLFunction extends IDLSignature {
+}
+
+export interface IDLMethod extends IDLFunction {
+    kind: IDLKind.Method
+    name: string
+    returnType: IDLType
+    isStatic: boolean
+}
+
+export interface IDLCallable extends IDLFunction {
+    kind: IDLKind.Callable
+    isStatic: boolean
+}
+
+export interface IDLConstructor extends IDLSignature {
+    kind: IDLKind.Constructor
+}
+
+export interface IDLInterface extends IDLEntry {
+    name: string
+    kind: IDLKind.Interface|IDLKind.Class|IDLKind.AnonymousInterface
+    inheritance: IDLType[]
+    constructors: IDLConstructor[]
+    properties: IDLProperty[]
+    methods: IDLMethod[]
+    callables: IDLFunction[]
+}
+
+export interface IDLCallback extends IDLEntry, IDLSignature {
+    kind: IDLKind.Callback
+    name: string
+    returnType: IDLType
+}
+
+export function forEachChild(node: IDLEntry, cb: (entry: IDLEntry) => void): void {
+    cb(node)
+    switch (node.kind) {
+        case IDLKind.Interface:
+        case IDLKind.Class:
+        case IDLKind.AnonymousInterface: {
+            let iface = node as IDLInterface
+            iface.inheritance.forEach((value) => forEachChild(value, cb))
+            iface.constructors?.forEach((value) => forEachChild(value, cb))
+            iface.properties?.forEach((value) => forEachChild(value, cb))
+            iface.methods?.forEach((value) => forEachChild(value, cb))
+            iface.callables?.forEach((value) => forEachChild(value, cb))
+            iface.scope?.forEach((value) => forEachChild(value, cb))
+            break
+        }
+        case IDLKind.Method:
+        case IDLKind.Callable:
+        case IDLKind.Callback:
+        case IDLKind.Constructor: {
+            let param = node as IDLSignature
+            param.parameters?.forEach((value) => forEachChild(value, cb))
+            if (param.returnType) forEachChild(param.returnType, cb)
+            break
+        }
+        case IDLKind.UnionType: {
+            let param = node as IDLUnionType
+            param.types?.forEach((value) => forEachChild(value, cb))
+            break
+        }
+        case IDLKind.Enum: {
+            break
+        }
+        case IDLKind.Property:
+        case IDLKind.Parameter:
+        case IDLKind.Typedef:
+        case IDLKind.EnumType:
+        case IDLKind.PrimitiveType:
+        case IDLKind.ContainerType:
+        case IDLKind.TypeParameterType:
+        case IDLKind.ReferenceType: {
+            break
+        }
+        default: {
+            throw new Error(`Unhandled ${node.kind}`)
+        }
+    }
+}
+
+export function isPrimitiveType(type: IDLType): type is IDLPrimitiveType {
+    return type.kind == IDLKind.PrimitiveType
+}
+export function isContainerType(type: IDLType): type is IDLContainerType {
+    return type.kind == IDLKind.ContainerType
+}
+export function isReferenceType(type: IDLType): type is IDLReferenceType {
+    return type.kind == IDLKind.ReferenceType
+}
+export function isEnumType(type: IDLType): type is IDLEnumType {
+    return type.kind == IDLKind.EnumType
+}
+export function isEnum(type: IDLEntry): type is IDLEnum {
+    return type.kind == IDLKind.Enum
+}
+export function isUnionType(type: IDLType): type is IDLUnionType {
+    return type.kind == IDLKind.UnionType
+}
+export function isTypeParameterType(type: IDLType): type is IDLTypeParameterType {
+    return type.kind == IDLKind.TypeParameterType
+}
+export function isInterface(node: IDLEntry): node is IDLInterface {
+    return node.kind === IDLKind.Interface
+}
+export function isClass(node: IDLEntry): node is IDLInterface {
+    return node.kind === IDLKind.Class
+}
+export function isCallback(node: IDLEntry): node is IDLCallback {
+    return node.kind === IDLKind.Callback
+}
+export function isTypedef(node: IDLEntry): node is IDLTypedef {
+    return node.kind === IDLKind.Typedef
+}
+
+export function createStringType(): IDLPrimitiveType {
+    return {
+        kind: IDLKind.PrimitiveType,
+        name: "string"
+    }
+}
+
+export function createNumberType(): IDLPrimitiveType {
+    return {
+        kind: IDLKind.PrimitiveType,
+        name: "number"
+    }
+}
+
+export function createUndefinedType(): IDLPrimitiveType {
+    return {
+        kind: IDLKind.PrimitiveType,
+        name: "undefined"
+    }
+}
+
+export function createAnyType(documentation?: string): IDLPrimitiveType {
+    return {
+        kind: IDLKind.PrimitiveType,
+        name: "any",
+        documentation: documentation
+    }
+}
+
+export function createReferenceType(name: string): IDLReferenceType {
+    return {
+        kind: IDLKind.ReferenceType,
+        name: name
+    }
+}
+
+export function createContainerType(container: string, element: IDLType): IDLContainerType {
+    return {
+        kind: IDLKind.ContainerType,
+        name: container,
+        elementType: element
+    }
+}
+
+export function createUnionType(types: IDLType[]): IDLUnionType {
+    return {
+        kind: IDLKind.UnionType,
+        name: "or",
+        types: types
+    }
+}
+
+export function createTypeParameterReference(name: string): IDLTypeParameterType {
+    return {
+        kind: IDLKind.TypeParameterType,
+        name: name
+    }
+}
+
+export function createTypedef(name: string, type: IDLType): IDLTypedef {
+    return {
+        kind: IDLKind.Typedef,
+        name: name,
+        type: type
+    }
+}
+
+export function printType(type: IDLType | undefined): string {
+    if (!type) return "UNKNOWN_TYPE"
+    if (isPrimitiveType(type)) return type.name
+    if (isContainerType(type)) return `${type.name}<${printType(type.elementType)}>`
+    if (isReferenceType(type)) return `${type.name}`
+    if (isUnionType(type)) return `(${type.types.map(printType).join(" or ")})`
+    if (isEnumType(type)) return type.name
+    if (isTypeParameterType(type)) return type.name
+
+    return "??? A " + type.kind + type.name
+}
+
+export function printParameters(parameters: IDLParameter[] | undefined): string {
+    return parameters
+        ?.map(it =>
+            nameWithType(it, it.isVariadic, it.isOptional)
+        )
+        ?.join(", ") ?? ""
+}
+
+export function printConstructor(idl: IDLFunction): string {
+    return `\tconstructor(${printParameters(idl.parameters)});`
+}
+
+export function nameWithType(
+    idl: IDLVariable,
+    isVariadic: boolean = false,
+    isOptional: boolean = false
+): string {
+    const type= printType(idl.type)
+    const variadic = isVariadic ? "..." : ""
+    const optional = isOptional ? "optional " : ""
+    return `${optional}${type}${variadic} ${idl.name}`
+}
+
+function printProperty(idl: IDLProperty): string {
+    const staticMod = idl.isStatic ? "static " : ""
+    const readonlyMod = idl.isReadonly ? "readonly " : ""
+
+    return [
+        idl.documentation,
+        idl.extendedAttributes ? `\t` + printExternalAttributes(idl.extendedAttributes) : undefined,
+        `\t${staticMod}${readonlyMod}attribute ${nameWithType(idl)};`
+    ].filter(element => (element?.length ?? 0) > 0).join("\n")
+}
+
+function printExternalAttributes(attributes: string[]|undefined): stringOrNone {
+    return attributes ? `[${attributes.join(", ")}]` : undefined
+}
+
+function maybeLine(string: string|undefined): string {
+    return string ? string + "\n" : ""
+}
+
+export function printFunction(idl: IDLFunction): string {
+    if (idl.name?.startsWith("__")) {
+        console.log(`Ignore ${idl.name}`)
+        return "";
+    }
+    return maybeLine(idl.documentation) + `\t${printType(idl.returnType)} ${idl.name}(${printParameters(idl.parameters)});`
+}
+
+export function printMethod(idl: IDLMethod): string {
+    if (idl.name?.startsWith("__")) {
+        console.log(`Ignore ${idl.name}`)
+        return "";
+    }
+    return maybeLine(idl.documentation) + `\t${idl.isStatic ? "static " : ""}${printType(idl.returnType)} ${idl.name}(${printParameters(idl.parameters)});`
+}
+
+export function printCallback(idl: IDLCallback): string {
+    return `callback ${idl.name} = ${printType(idl.returnType)} (${printParameters(idl.parameters)});`
+}
+
+export function printScoped(idl: IDLEntry): string {
+    if (idl.kind == IDLKind.Callback) return printCallback(idl as IDLCallback)
+    if (idl.kind == IDLKind.AnonymousInterface) return printInterface(idl as IDLInterface)
+    return `/* Unexpected scoped: ${idl.kind} ${idl.name} */`
+}
+
+export function printInterface(idl: IDLInterface): string {
+    return [
+        idl.documentation,
+        printExternalAttributes(idl.extendedAttributes),
+        // This way we can support multiple inheritance.
+        //`interface ${idl.name} ${idl.inheritance.length > 0 ? ": " + idl.inheritance.join(", ") : ""} {`,
+        `interface ${idl.name} ${idl.inheritance.length > 0 ? ": " + printType(idl.inheritance[0]) : ""} {`,
+        idl.constructors?.map(printConstructor)?.join("\n"),
+        idl.properties?.map(printProperty)?.join("\n"),
+        idl.methods?.map(printMethod)?.join("\n"),
+        idl.callables?.map(printFunction)?.join("\n"),
+        "};"
+    ].filter(element => (element?.length ?? 0) > 0).join("\n")
+}
+
+export function printEnumMember(idl: IDLEnumMember): string {
+    const type = printType(idl.type)
+    const initializer = type == "string" ? `"${idl.initializer}"` : idl.initializer
+    return `\t${type} ${idl.name}${initializer ? ` = ${initializer}` : ``};`
+}
+
+export function printEnum(idl: IDLEnum, skipInitializers: boolean): string {
+    if (skipInitializers) {
+        return [
+            idl.documentation,
+            `enum ${idl.name!} {`,
+            idl.elements.map(it => `\t"${it.name}"${it.initializer ? " /* " + it.initializer + " */" : ""}`).join(",\n"),
+            "};"
+        ].join("\n")
+    } else {
+        return [
+            idl.documentation,
+
+            `dictionary ${idl.name!} {`,
+            idl.elements.map(
+                it => printEnumMember(it)
+            ).join("\n"),
+            "};"
+        ].join("\n")
+    }
+}
+
+export function printTypedef(idl: IDLTypedef): string {
+    return [
+        idl.documentation,
+        `typedef ${printType(idl.type)} ${idl.name!};`
+    ].join("\n")
+}
+
+
+export function printIDL(idl: IDLEntry, options?: Partial<IDLPrintOptions>): string {
+    if (idl.kind == IDLKind.Class
+        || idl.kind == IDLKind.Interface
+        || idl.kind == IDLKind.AnonymousInterface
+    ) return printInterface(idl as IDLInterface)
+    if (idl.kind == IDLKind.Enum) return printEnum(idl as IDLEnum, options?.disableEnumInitializers ?? false)
+    if (idl.kind == IDLKind.Typedef) return printTypedef(idl as IDLTypedef)
+    if (idl.kind == IDLKind.Callback) return printCallback(idl as IDLCallback)
+    return `unexpected kind: ${idl.kind}`
+}
+
+export interface IDLPrintOptions {
+    verifyIdl: boolean
+    disableEnumInitializers: boolean
+}
+
+// https://github.com/giniedp/webidl2ts/blob/master/src/convert-idl.ts
+export function toIDLString(entries: IDLEntry[], options: Partial<IDLPrintOptions>): string {
+    const generatedScopes = printScopes(entries)
+    const generatedIdl = entries
+        .map(it => printIDL(it, options))
+        .concat(generatedScopes)
+        .join("\n")
+    if (options.verifyIdl) webidl2.validate(webidl2.parse(generatedIdl))
+    return generatedIdl
+}
+
+function printScopes(entries: IDLEntry[]) {
+    return entries
+        .map((it: IDLEntry) => it.scope)
+        .filter(isDefined)
+        .flatMap((it: IDLEntry[]) => it.map(printScoped))
+}
+
+export function hasExtAttribute(node: IDLEntry, attribute: string): boolean {
+    return node.extendedAttributes?.find((it) => it == attribute) != undefined
+}
