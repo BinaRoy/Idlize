@@ -135,12 +135,12 @@ export class IDLVisitor implements GenericVisitor<IDLEntry[]> {
         return members.filter(ts.isConstructSignatureDeclaration)
             .map(it => this.serializeConstructor(it as ts.ConstructSignatureDeclaration))
     }
-    pickProperties(members: ReadonlyArray<ts.TypeElement> | ReadonlyArray<ts.ClassElement>): IDLProperty[] {
+    pickProperties(members: ReadonlyArray<ts.TypeElement | ts.ClassElement>): IDLProperty[] {
         return members
             .filter(it => ts.isPropertySignature(it) || ts.isPropertyDeclaration(it) || this.isCommonMethodUsedAsProperty(it))
             .map(it => this.serializeProperty(it))
     }
-    pickMethods(members: ReadonlyArray<ts.TypeElement> | ReadonlyArray<ts.ClassElement>): IDLMethod[] {
+    pickMethods(members: ReadonlyArray<ts.TypeElement | ts.ClassElement>): IDLMethod[] {
         return members
             .filter(it => (ts.isMethodSignature(it) || ts.isMethodDeclaration(it)) && !this.isCommonMethodUsedAsProperty(it))
             .map(it => this.serializeMethod(it as ts.MethodDeclaration|ts.MethodSignature))
