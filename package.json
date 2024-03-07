@@ -1,5 +1,5 @@
 {
-    "name": "@koalaui/idlize",
+    "name": "@koalaui-public/idlize",
     "version": "1.0.0",
     "description": "",
     "main": "build/lib/src/main.js",
@@ -29,11 +29,11 @@
     "scripts": {
         "compile": "tsc --m commonjs",
         "clean": "rimraf build dist",
-        "run": "npm run compile && node . --dts2idl --input-dir ../koala-ui/arkui-common/ohos-sdk-ets/HarmonyOS-NEXT-DP1/base/ets/component --input-file common.d.ts --verify-idl --common-to-attributes --skip-comments",
-        "run2h": "npm run compile && node . --dts2h --input-dir ../koala-ui/arkui-common/ohos-sdk-ets/HarmonyOS-NEXT-DP1/base/ets/component --input-file common.d.ts --verbose",
-        "run2test": "npm run compile && node . --dts2test --input-dir ../koala-ui/arkui-common/ohos-sdk-ets/HarmonyOS-NEXT-DP1/base/ets/component --verbose --test-interface ButtonAttribute",
-        "run2peer": "npm run compile && node . --dts2peer --input-dir ../koala-ui/arkui-common/ohos-sdk-ets/HarmonyOS-NEXT-DP1/base/ets/component --generate-interface ButtonAttribute --verbose",
-        "lint": "npm run compile && node . --linter --input-dir ../koala-ui/arkui-common/ohos-sdk-ets/HarmonyOS-NEXT-DP1/base/ets/component --input-file common.d.ts --verbose",
-        "lint:all": "npm run compile && node . --linter --input-dir ../koala-ui/arkui-common/ohos-sdk-ets/HarmonyOS-NEXT-DP1/base/ets/component --verbose"
+        "run": "npm run compile && node . --dts2idl --input-dir ./ohos-sdk/component --input-file common.d.ts --verify-idl --common-to-attributes --skip-comments",
+        "run2h": "npm run compile && node . --dts2h --input-dir ./ohos-sdk/component --input-file common.d.ts --verbose",
+        "run2test": "npm run compile && node . --dts2test --input-dir ./ohos-sdk/component --verbose --test-interface ButtonAttribute",
+        "run2peer": "npm run compile && node . --dts2peer --input-dir ./ohos-sdk/component --generate-interface ButtonAttribute --verbose",
+        "lint": "npm run compile && node . --linter --input-dir ./ohos-sdk/component --input-file common.d.ts --verbose",
+        "lint:all": "npm run compile && node . --linter --input-dir ./ohos-sdk/component --verbose"
     }
 }
