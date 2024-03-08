@@ -14,6 +14,7 @@
  */
 
 import * as ts from "typescript"
+import { EnumType } from "webidl2"
 
 // Several things stolen from our memo plugin
 // for easier life
@@ -128,3 +129,7 @@ export function toSet(option: string|undefined): Set<string> {
     }
     return set
 }
+
+/*export function enumElementName<T: EnumType>(element: T): string {
+    return Object.keys(T)[Object.values(T).indexOf(element)]
+}*/
