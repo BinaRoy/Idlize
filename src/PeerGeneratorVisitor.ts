@@ -387,7 +387,7 @@ export class PeerGeneratorVisitor implements GenericVisitor<stringOrNone[]> {
             if (ts.isTypeParameterDeclaration(declaration)) {
                 return this.anyConvertor(param, value)
             }
-            if (ts.isEnumDeclaration(declaration)) {
+            if (ts.isEnumMember(declaration)) {
                 return this.enumMemberConvertor(param, value)
             }
             throw new Error(`Unknown kind: ${declaration.kind}`)
