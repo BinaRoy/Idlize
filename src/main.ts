@@ -53,6 +53,12 @@ const options = program
     .parse()
     .opts()
 
+let defaultCompilerOptions: ts.CompilerOptions = {
+    target: ts.ScriptTarget.ES5,
+    module: ts.ModuleKind.CommonJS,
+    noLib: true
+}
+
 if (options.dts2idl) {
     generate(
         options.inputDir,
@@ -60,10 +66,7 @@ if (options.dts2idl) {
         options.outputDir ?? "./idl",
         (sourceFile, typeChecker) => new IDLVisitor(sourceFile, typeChecker, options.commonToAttributes ?? false),
         {
-            compilerOptions: {
-                target: ts.ScriptTarget.ES5,
-                module: ts.ModuleKind.CommonJS
-            },
+            compilerOptions: defaultCompilerOptions,
             onSingleFile: (entries: IDLEntry[], outputDir, sourceFile) => {
                 const outFile = path.join(outputDir,
                     path.basename(sourceFile.fileName).replace(".d.ts", ".idl"))
@@ -91,10 +94,7 @@ if (options.dts2h) {
         options.outputDir ?? "./headers",
         (sourceFile, typeChecker) => new IDLVisitor(sourceFile, typeChecker, options.commonToAttributes ?? false),
         {
-            compilerOptions: {
-                target: ts.ScriptTarget.ES5,
-                module: ts.ModuleKind.CommonJS
-            },
+            compilerOptions: defaultCompilerOptions,
             onSingleFile: (entries: IDLEntry[]) => allEntries.push(entries),
         }
     )
@@ -114,10 +114,7 @@ if (options.linter) {
         options.outputDir ?? "./linter",
         (sourceFile, typeChecker) => new LinterVisitor(sourceFile, typeChecker),
         {
-            compilerOptions: {
-                target: ts.ScriptTarget.ES5,
-                module: ts.ModuleKind.CommonJS
-            },
+            compilerOptions: defaultCompilerOptions,
             onSingleFile: (entries: LinterMessage[]) => allEntries.push(entries),
             onBegin: () => {},
             onEnd: (outputDir) => {
@@ -138,10 +135,7 @@ if (options.dts2test) {
         options.outputDir ?? "./tests",
         (sourceFile, typeChecker) => new TestGeneratorVisitor(sourceFile, typeChecker, options.testInterface, options.testMethod, options.testProperties),
         {
-            compilerOptions: {
-                target: ts.ScriptTarget.ES5,
-                module: ts.ModuleKind.CommonJS
-            },
+            compilerOptions: defaultCompilerOptions,
             onSingleFile: (entries: string[], outputDir, sourceFile) => {
                 const outFile = path.join(outputDir,
                     path.basename(sourceFile.fileName).replace(".d.ts", "_test.ets"))
@@ -220,10 +214,7 @@ if (options.dts2peer) {
         options.outputDir ?? "./peers",
         (sourceFile, typeChecker) => new PeerGeneratorVisitor(sourceFile, typeChecker, toSet(options.generateInterface)),
         {
-            compilerOptions: {
-                target: ts.ScriptTarget.ES5,
-                module: ts.ModuleKind.CommonJS
-            },
+            compilerOptions: defaultCompilerOptions,
             onSingleFile: (entries: stringOrNone[], outputDir, sourceFile) => {
                 const outFile = path.join(outputDir,
                     path.basename(sourceFile.fileName).replace(".d.ts", ".ts"))

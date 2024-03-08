@@ -156,6 +156,7 @@ export class PeerGeneratorVisitor implements GenericVisitor<stringOrNone[]> {
     }
 
     generateNativeCall(method: ts.MethodDeclaration | ts.MethodSignature) {
+        this.pushIndent()
         let argConvertors = method.parameters
             .map((param) => this.argConvertor(param))
         let name = `_${asString(method.name)}Impl`
@@ -165,30 +166,32 @@ export class PeerGeneratorVisitor implements GenericVisitor<stringOrNone[]> {
             .map(it => scopes.push(it))
         scopes.forEach(it => {
             this.pushIndent()
-            this.print(it.scopeStart!(asString(it.param.name)))
+            this.print(it.scopeStart?.(it.param))
         })
-        this.pushIndent()
         argConvertors.forEach(it => {
             if (it.useArray) {
-                this.print(`let ${asString(it.param.name)}Array = new Uint8Array(128)`)
-                this.print(`let ${asString(it.param.name)}Type = 0`)
-                this.print(`let ${asString(it.param.name)}Index = 0`)
-                it.convertorToArray(asString(it.param.name))
+                this.print(`let ${it.param}Array = new Uint8Array(128)`)
+                this.print(`let ${it.param}Type = 0`)
+                this.print(`let ${it.param}Index = 0`)
+                it.convertorToArray(it.param)
             }
         })
         this.print(`nativeModule().${name}(`)
         this.pushIndent()
-        argConvertors.forEach(it => {
+        argConvertors.forEach((it, index) => {
+            let maybeComma = index == argConvertors.length - 1 ? "" : ","
             if (it.useArray)
-                this.print(`${asString(it.param.name)}Array, ${asString(it.param.name)}Index`)
+                this.print(`${it.param}Array, ${it.param}Index`)
             else
-                it.convertor(asString(it.param.name))
+                it.convertor(it.param)
+            this.print(maybeComma)
+
         })
         this.popIndent()
         this.output.push(this.indented(`)`))
         scopes.reverse().forEach(it => {
             this.popIndent()
-            this.print(it.scopeEnd!(asString(it.param)))
+            this.print(it.scopeEnd!(it.param))
         })
         this.popIndent()
     }
@@ -206,19 +209,18 @@ export class PeerGeneratorVisitor implements GenericVisitor<stringOrNone[]> {
         this.indent--
     }
 
-    emptyConvertor(param: ts.NamedDeclaration): ArgConvertor {
+    emptyConvertor(param: string): ArgConvertor {
         return {
-            param: param,
+            param: "<unused>",
             runtimeTypes: [],
             isScoped: false,
             useArray: false,
-            nativeType: "void",
             convertor: () => { },
             convertorToArray: (param: string) => { }
         }
     }
 
-    stringConvertor(param: ts.NamedDeclaration): ArgConvertor {
+    stringConvertor(param: string): ArgConvertor {
         return {
             param: param,
             runtimeTypes: [RuntimeType.STRING],
@@ -226,7 +228,6 @@ export class PeerGeneratorVisitor implements GenericVisitor<stringOrNone[]> {
             useArray: false,
             scopeStart: (param) => `withString(${param}, (${param}Ptr: KStringPtr) => {`,
             scopeEnd: () => '})',
-            nativeType: "KStringPtr",
             convertor: (param) => {
                 this.print(`${param}Ptr`)
             },
@@ -236,22 +237,33 @@ export class PeerGeneratorVisitor implements GenericVisitor<stringOrNone[]> {
         }
     }
 
-    arrayConvertor(param: ts.NamedDeclaration, elementType: ts.TypeNode): ArgConvertor {
+    anyConvertor(param: string): ArgConvertor {
+        return {
+            param: param,
+            runtimeTypes: [],
+            isScoped: false,
+            useArray: true,
+            convertor: (param) => { throw new Error("Not for any")},
+            convertorToArray: (param: string) => {
+                this.print(`${param}Index += serializeAny(${param}Array, ${param}Index, ${param})`)
+            }
+        }
+    }
+
+    arrayConvertor(param: string, elementType: ts.TypeNode): ArgConvertor {
         return {
             param: param,
             runtimeTypes: [RuntimeType.OBJECT],
             isScoped: false,
             useArray: true,
-            nativeType: "KUInt8ArrayPtr",
             convertor: (param: string) => { throw new Error("Do not use") },
             convertorToArray: (param: string) => {
                 // Array length.
                 this.print(`${param}Index += this.serializeInt32(${param}Array, ${param}Index, ${param}.length)`)
                 this.print(`for (let i = 0; i < ${param}.length; i++) {`)
                 this.pushIndent()
-                let element = ts.factory.createVariableDeclaration("element")
                 this.print(`let element = ${param}[i]`)
-                let convertor = this.typeConvertor(element, elementType)
+                let convertor = this.typeConvertor("element", elementType)
                 convertor.convertorToArray("element")
                 this.popIndent()
                 this.print(`}`)
@@ -259,14 +271,13 @@ export class PeerGeneratorVisitor implements GenericVisitor<stringOrNone[]> {
         }
     }
 
-    typeConvertor(param: ts.ParameterDeclaration | ts.VariableDeclaration, type: ts.TypeNode): ArgConvertor {
+    typeConvertor(param: string, type: ts.TypeNode): ArgConvertor {
         if (type.kind == ts.SyntaxKind.UndefinedKeyword || type.kind == ts.SyntaxKind.VoidKeyword || type.kind == ts.SyntaxKind.ObjectKeyword) {
             return {
                 param: param,
                 runtimeTypes: [RuntimeType.OBJECT, RuntimeType.UNDEFINED],
                 isScoped: false,
                 useArray: false,
-                nativeType: "KPointer",
                 convertor: (param: string) => {
                     this.print("undefined")
                 },
@@ -284,7 +295,6 @@ export class PeerGeneratorVisitor implements GenericVisitor<stringOrNone[]> {
                 runtimeTypes: [RuntimeType.NUMBER],
                 isScoped: false,
                 useArray: false,
-                nativeType: "KInt", // or KFloat, need to use IDL as input
                 convertor: (param: string) => {
                     this.print(param)
                 },
@@ -302,10 +312,9 @@ export class PeerGeneratorVisitor implements GenericVisitor<stringOrNone[]> {
                 runtimeTypes: [RuntimeType.BOOLEAN],
                 useArray: false,
                 isScoped: false,
-                nativeType: "KInt",
                 convertor: (param) => this.print(`+${param}`),
                 convertorToArray: (param) => {
-                    this.print(`${param}Index += serializeInt32(${param}Array, ${param}Index, +${param})`)
+                    this.print(`${param}Index += serializeBoolean(${param}Array, ${param}Index, ${param})`)
                 }
             }
         }
@@ -320,7 +329,6 @@ export class PeerGeneratorVisitor implements GenericVisitor<stringOrNone[]> {
                     runtimeTypes: [RuntimeType.NUMBER], // Enums are integers in runtime.
                     useArray: false,
                     isScoped: false,
-                    nativeType: "KInt",
                     convertor: (param) => this.print(`enumToInt32(${param})`),
                     convertorToArray: (param) => {
                         this.print(`${param}Index += serializeInt32(${param}Array, ${param}Index, ${param} as KInt)`)
@@ -333,9 +341,8 @@ export class PeerGeneratorVisitor implements GenericVisitor<stringOrNone[]> {
             if (ts.isInterfaceDeclaration(declaration)) {
                 let ifaceName = ts.idText(declaration.name)
                 if (ifaceName == "Array") {
-                    let arrayType = (param as ts.ParameterDeclaration).type!
-                    if (arrayType && ts.isTypeReferenceNode(arrayType)) 
-                        return this.arrayConvertor(param, arrayType.typeArguments![0]) 
+                    if (ts.isTypeReferenceNode(type)) 
+                        return this.arrayConvertor(param, type.typeArguments![0]) 
                     else
                         return this.emptyConvertor(param)
                 }
@@ -344,7 +351,6 @@ export class PeerGeneratorVisitor implements GenericVisitor<stringOrNone[]> {
                     runtimeTypes: [RuntimeType.OBJECT],
                     useArray: true,
                     isScoped: false,
-                    nativeType: "KNativePointer",
                     convertor: (param) => this.print(`${param}.peer`),
                     convertorToArray: (param) => {
                         this.print(`${param}Index += serializeIface${ifaceName}(${param}Array, ${param}Index, ${param})`)
@@ -358,7 +364,6 @@ export class PeerGeneratorVisitor implements GenericVisitor<stringOrNone[]> {
                     runtimeTypes: [RuntimeType.OBJECT],
                     useArray: true,
                     isScoped: false,
-                    nativeType: "KNativePointer",
                     convertor: (param) => this.print(`${param}.peer`),
                     convertorToArray: (param) => {
                         this.print(`${param}Index += serializeClass${asString(declaration.name)}(${param}Array, ${param}Index, ${param})`)
@@ -369,17 +374,15 @@ export class PeerGeneratorVisitor implements GenericVisitor<stringOrNone[]> {
         if (ts.isUnionTypeNode(type)) {
             let memberConvertors = type.types.map(member => this.typeConvertor(param, member))
             // Unique by serialization form.
-            memberConvertors = [...new Map(memberConvertors.map(item =>
-                [item.runtimeTypes, item])).values()]
+            memberConvertors = [...new Map(memberConvertors.map(item => [item.runtimeTypes, item])).values()]
             return {
                 param: param,
                 runtimeTypes: [RuntimeType.UNEXPECTED],
                 isScoped: false,
                 useArray: true,
-                nativeType: "KUInt8ArrayPtr",
                 convertor: (param: string) => { throw new Error("Do not use") },
                 convertorToArray: (paramName: string) => {
-                    this.print(`${paramName}Type = runtimeType(value)`)
+                    this.print(`${paramName}Type = runtimeType(${paramName})`)
                     // Save actual type being passed.
                     this.print(`${paramName}Index += serializeInt32(${paramName}Array, ${paramName}Index, ${paramName}Type)`)
                     this.checkUniques(param, memberConvertors)
@@ -400,24 +403,19 @@ export class PeerGeneratorVisitor implements GenericVisitor<stringOrNone[]> {
                 .members
                 .filter(ts.isPropertySignature)
                 .map(member => {
-                    let paramName = ts.idText(param.name as ts.Identifier)
                     let memberName = ts.idText(member.name as ts.Identifier)
-                    let name = `${paramName}_${memberName}`
-                    let element = ts.factory.createVariableDeclaration(name)
-                    this.print(`let ${name} = ${paramName}.${memberName}`)
-                    return this.typeConvertor(element, member.type!)
+                    let name = `${param}_${memberName}`
+                    this.print(`let ${name} = ${param}.${memberName}`)
+                    return this.typeConvertor(name, member.type!)
                 })
             return {
                 param: param,
                 runtimeTypes: [RuntimeType.OBJECT, RuntimeType.UNDEFINED],
                 isScoped: false,
                 useArray: true,
-                nativeType: "KUInt8ArrayPtr",
                 convertor: (param: string) => { throw new Error("Do not use") },
                 convertorToArray: (param: string) => {
-                    memberConvertors.forEach(it => {
-                        it.convertorToArray(param)
-                    })
+                    memberConvertors.forEach(it => { it.convertorToArray(it.param) })
                 }
             }
         }
@@ -443,7 +441,6 @@ export class PeerGeneratorVisitor implements GenericVisitor<stringOrNone[]> {
                 runtimeTypes: [RuntimeType.OBJECT, RuntimeType.UNDEFINED],
                 isScoped: false,
                 useArray: true,
-                nativeType: "KUInt8ArrayPtr",
                 convertor: (param: string) => { throw new Error("Do not use") },
                 convertorToArray: (param: string) => {
                     memberConvertors.forEach(it => {
@@ -462,7 +459,6 @@ export class PeerGeneratorVisitor implements GenericVisitor<stringOrNone[]> {
                 runtimeTypes: [RuntimeType.OBJECT, RuntimeType.UNDEFINED],
                 isScoped: false,
                 useArray: false,
-                nativeType: "None",
                 convertor: (param: string) => {
                     this.print(param)
                 },
@@ -478,7 +474,6 @@ export class PeerGeneratorVisitor implements GenericVisitor<stringOrNone[]> {
                 runtimeTypes: [RuntimeType.OBJECT], // Assume imported are objects, not really always the case..
                 isScoped: false,
                 useArray: false,
-                nativeType: "None",
                 convertor: (param: string) => {
                     this.print(param)
                 },
@@ -487,19 +482,22 @@ export class PeerGeneratorVisitor implements GenericVisitor<stringOrNone[]> {
                 }
             }
         }
-        // console.log(type)
+        if (type.kind == ts.SyntaxKind.AnyKeyword) {
+            console.log("WARNING: any type convertor")
+            return this.anyConvertor(param)
+        }
+        console.log(type)
         throw new Error(`Cannot convert: ${asString(type)} ${type.getText(this.sourceFile)}`)
     }
 
-    checkUniques(param: ts.NamedDeclaration, convertors: ArgConvertor[]) {
+    checkUniques(param: string, convertors: ArgConvertor[]) {
         for (let i = 0; i < convertors.length; i++) {
             for (let j = i + 1; j < convertors.length; j++) {
                 let first = convertors[i].runtimeTypes
                 let second = convertors[j].runtimeTypes
                 first.forEach(value => {
-                    if (second.includes(value) && param.pos >= 0) {
-                        console.log(`WARNING: Runtime type conflict in ${param.getText(this.sourceFile)}: ` +
-                            `${RuntimeType[value]}`)
+                    if (second.includes(value)) {
+                        console.log(`WARNING: Runtime type conflict in ${param}: ${RuntimeType[value]}`)
                     }
                 })
             }
@@ -508,7 +506,7 @@ export class PeerGeneratorVisitor implements GenericVisitor<stringOrNone[]> {
 
     argConvertor(param: ts.ParameterDeclaration): ArgConvertor {
         if (!param.type) throw new Error("Type is needed")
-        return this.typeConvertor(param, param.type)
+        return this.typeConvertor(asString(param.name), param.type)
     }
 
     processProperty(property: ts.PropertyDeclaration | ts.PropertySignature) {
@@ -575,12 +573,10 @@ export class PeerGeneratorVisitor implements GenericVisitor<stringOrNone[]> {
     processOptionAttribute(method: ts.MethodDeclaration | ts.MethodSignature) {
         let methodName = method.name.getText(this.sourceFile)
         let parameters = this.generateParams(method.parameters)
-        let isUnionObject = false
         if (parameters) {
             if (parameters.includes('=>')) {
                 parameters = parameters.substring(parameters.indexOf(':') + 1, parameters.length)
             } else if (parameters.includes('{')) {
-                isUnionObject = true
                 const name = methodName.charAt(0).toUpperCase() + methodName.slice(1) + "ValuesType"
                 this.typesToGenerate.push(`export interface ${name} { ${parameters.substring(parameters.indexOf(':') + 1, parameters.length).replace(/{|}/g, '')} }`)
                 parameters = name
@@ -615,8 +611,7 @@ interface ArgConvertor {
     runtimeTypes: RuntimeType[]
     scopeStart?: (param: string) => string
     scopeEnd?: (param: string) => string
-    nativeType: string
     convertor: (param: string) => void
     convertorToArray: (param: string) => void
-    param: ts.NamedDeclaration
+    param: string
 }
