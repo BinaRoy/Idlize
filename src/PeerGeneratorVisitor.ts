@@ -253,6 +253,20 @@ export class PeerGeneratorVisitor implements GenericVisitor<stringOrNone[]> {
         }
     }
 
+    enumMemberConvertor(param: string, value: string): ArgConvertor {
+        return {
+            param: param,
+            value: value,
+            runtimeTypes: [RuntimeType.NUMBER], // Enums are integers in runtime.
+            useArray: false,
+            isScoped: false,
+            convertor: (param, value) => this.print(`enumToInt32(${value})`),
+            convertorToArray: (param) => {
+                this.print(`${param}Index += serializeInt32(${param}Array, ${param}Index, enumToInt32(${value}))`)
+            }
+        }
+    }
+
     arrayConvertor(param: string, value: string, elementType: ts.TypeNode): ArgConvertor {
         return {
             param: param,
@@ -331,17 +345,7 @@ export class PeerGeneratorVisitor implements GenericVisitor<stringOrNone[]> {
                 throw new Error(`Declaration not found: ${asString(type.typeName)}`)
             }
             if (ts.isEnumDeclaration(declaration)) {
-                return {
-                    param: param,
-                    value: value,
-                    runtimeTypes: [RuntimeType.NUMBER], // Enums are integers in runtime.
-                    useArray: false,
-                    isScoped: false,
-                    convertor: (param, value) => this.print(`enumToInt32(${value})`),
-                    convertorToArray: (param) => {
-                        this.print(`${param}Index += serializeInt32(${param}Array, ${param}Index, enumToInt32(${value}))`)
-                    }
-                }
+                return this.enumMemberConvertor(param, value)
             }
             if (ts.isTypeAliasDeclaration(declaration)) {
                 return this.typeConvertor(param, value, declaration.type)
@@ -380,6 +384,13 @@ export class PeerGeneratorVisitor implements GenericVisitor<stringOrNone[]> {
                     }
                 }
             }
+            if (ts.isTypeParameterDeclaration(declaration)) {
+                return this.anyConvertor(param, value)
+            }
+            if (ts.isEnumDeclaration(declaration)) {
+                return this.enumMemberConvertor(param, value)
+            }
+            throw new Error(`Unknown kind: ${declaration.kind}`)
         }
         if (ts.isUnionTypeNode(type)) {
             let memberConvertors = type.types.map(member => this.typeConvertor(param, value, member))
