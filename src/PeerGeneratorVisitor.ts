@@ -239,6 +239,7 @@ export class PeerGeneratorVisitor implements GenericVisitor<stringOrNone[]> {
     }
 
     anyConvertor(param: string, value: string): ArgConvertor {
+        console.log("WARNING: any type convertor")
         return {
             param: param,
             value: value,
@@ -464,7 +465,7 @@ export class PeerGeneratorVisitor implements GenericVisitor<stringOrNone[]> {
             }
         }
         if (ts.isFunctionTypeNode(type)) {
-            console.log("Functions are ignored")
+            console.log("WARNING: functions are ignored")
             return this.emptyConvertor(param, value)
         }
         if (ts.isParenthesizedTypeNode(type)) {
@@ -498,8 +499,10 @@ export class PeerGeneratorVisitor implements GenericVisitor<stringOrNone[]> {
                 }
             }
         }
+        if (ts.isTemplateLiteralTypeNode(type)) {
+            return this.stringConvertor(param, value)
+        }
         if (type.kind == ts.SyntaxKind.AnyKeyword) {
-            console.log("WARNING: any type convertor")
             return this.anyConvertor(param, value)
         }
         console.log(type)
