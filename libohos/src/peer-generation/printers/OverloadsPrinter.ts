@@ -313,11 +313,6 @@ export class OverloadsPrinter {
                 this.printer.writeStatement(this.printer.makeReturn(collapsedMethod.signature.returnType == idl.IDLThisType ? this.printer.makeThis() : undefined))
             }
         })
-        if (this.isComponent) {
-            if (this.printer.language == Language.CJ) {
-                this.printer.print(')')
-            }
-        }
     }
 
     printHookedMethodBody(peer: string, method: Method, hookName: string, writer: LanguageWriter) {

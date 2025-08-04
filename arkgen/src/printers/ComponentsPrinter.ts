@@ -382,7 +382,6 @@ class CJComponentFileVisitor implements ComponentFileVisitor {
         const parentComponentClassName = peer.parentComponentName ? generateArkComponentName(peer.parentComponentName!) : `ComponentBase`
         const peerClassName = componentToPeerClass(peer.componentName)
 
-        printer.writeInterface(componentToAttributesInterface(peer.originalClassName!), () => {})
 
         printer.writeClass(componentClassName, (writer) => {
             writer.writeMethodImplementation(
@@ -418,7 +417,7 @@ class CJComponentFileVisitor implements ComponentFileVisitor {
                 writer.print('// we call this function outside of class, so need to make it public')
                 writer.writeMethodCall('super', applyAttributesFinish, [])
             })
-        }, parentComponentClassName, [componentToAttributesInterface(peer.originalClassName!)])
+        }, parentComponentClassName, [`${peer.originalClassName!}Interfaces`])
 
         return [{
             collector: imports,
@@ -438,7 +437,7 @@ class CJComponentFileVisitor implements ComponentFileVisitor {
         const componentClassImplName = generateArkComponentName(peer.componentName)
         const callableMethods = peer.methods.filter(it => it.isCallSignature).map(it => it.method)
         const callableMethod = callableMethods.length ? collapseSameNamedMethods(callableMethods) : undefined
-        const mappedCallableParams = callableMethod?.signature.args.map((it, index) => `${callableMethod.signature.argName(index)}: ${callableMethod.signature.isArgOptional(index) ? "?" : ""}${printer.getNodeName(it)}`)
+        const mappedCallableParams = callableMethod?.signature.args.map((it, index) => `${callableMethod.signature.argName(index)}: ${printer.getNodeName(it)}`) // ${callableMethod.signature.isArgOptional(index) ? "?" : ""}${printer.getNodeName(it)}`)
         const mappedCallableParamsValues = callableMethod?.signature.args.map((_, index) => callableMethod.signature.argName(index))
         const callableInvocation = callableMethod?.name ? `receiver.${callableMethod?.name}(${mappedCallableParamsValues})` : ""
         const peerClassName = componentToPeerClass(peer.componentName)

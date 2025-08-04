@@ -229,7 +229,7 @@ abstract class MaterializedFileVisitorBase implements MaterializedFileVisitor {
         )
 
         const ctorArgs = [...Array(this.maxCtorParams).fill(writer.makeString("false")), ctorCall]
-        this.printer.writeConstructorImplementation(implementationClassName, ctorSig, writer => {
+        writer.writeConstructorImplementation(writer.language == Language.CJ ? 'init' : implementationClassName, ctorSig, writer => {
             const key = nsPath.map(it => it.name).concat([implementationClassName, 'constructor']).join('.')
             injectPatch(writer, key, config.patchMaterialized)
             this.collectExtraCallbacks(clazz)
@@ -502,7 +502,7 @@ abstract class MaterializedFileVisitorBase implements MaterializedFileVisitor {
             this.printOverloads(clazz)
             this.printTaggedMethods(clazz)
             this.printMethods(clazz)
-            }, superClassName, interfaces.length === 0 ? undefined : interfaces, classTypeParameters)
+        }, superClassName, interfaces.length === 0 ? undefined : interfaces, classTypeParameters)
     }
 }
 

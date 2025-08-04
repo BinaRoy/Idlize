@@ -22,6 +22,7 @@ import {
     AssignStatement,
     BlockStatement,
     DelegationCall,
+    DelegationType,
     ExpressionStatement,
     FieldModifier,
     LambdaExpression,
@@ -66,7 +67,7 @@ class CJLambdaExpression extends LambdaExpression {
 export class CJCheckDefinedExpression implements LanguageExpression {
     constructor(private value: string) { }
     asString(): string {
-        return `${this.value}.isSome()`
+        return `let Some(${this.value}) <- ${this.value}`
     }
 }
 
@@ -369,8 +370,8 @@ export class CJLanguageWriter extends LanguageWriter {
         this.printer.print(`${modifiers ? modifiers.map((it) => MethodModifier[it].toLowerCase()).join(' ') + ' ' : ''}${className}(${signature.args.map((it, index) => `${this.escapeKeyword(signature.argName(index))}: ${this.getNodeName(idl.maybeOptional(it, signature.isArgOptional(index)))}`).join(", ")}) {`)
         this.pushIndent()
         if (delegationCall) {
-            // TBD: check delegationType to write "this" or "super"
-            this.print(`super(${delegationCall.delegationArgs.map(it =>it.asString()).join(", ")})`)
+            const delegationType = (delegationCall?.delegationType == DelegationType.THIS) ? "this" : "super"
+            this.print(`${delegationType}(${delegationCall.delegationArgs.map(it =>it.asString()).join(", ")})`)
         }
         op(this)
         this.popIndent()
@@ -554,7 +555,7 @@ export class CJLanguageWriter extends LanguageWriter {
         return this.makeStatement(this.makeMethodCall(keyAccessor, "add", [this.makeString(key), this.makeString(value)]))
     }
     makeNull(value?: string): LanguageExpression {
-        return new StringExpression(`Option.None`)
+        return this.makeUndefined()
     }
     getTagType(): idl.IDLType {
         return idl.createReferenceType("Tags")
