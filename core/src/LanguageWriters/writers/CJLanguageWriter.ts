@@ -362,7 +362,7 @@ export class CJLanguageWriter extends LanguageWriter {
             for (let idx = 0; idx < i; idx++) {
                 lessArgs = lessArgs.concat(`${i == signature.args.length && idx == 0 ? '' : ', '}Option.None`)
             }
-            this.print(`${className}(${lessArgs})`)
+            this.print(`this(${lessArgs})`)
             this.popIndent()
             this.printer.print(`}`)
             i += 1
