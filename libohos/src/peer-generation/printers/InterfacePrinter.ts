@@ -1238,6 +1238,10 @@ class CJDeclarationConvertor implements DeclarationConvertor<void> {
     convertTypedef(node: idl.IDLTypedef) {
         if (idl.hasExtAttribute(node, idl.IDLExtendedAttributes.Import))
             return
+        // reexport
+        if (idl.isReferenceType(node.type) && this.peerLibrary.resolveTypeReference(node.type)?.name == node.name) {
+            return
+        }
         const type = this.writer.getNodeName(node.type)
         if (node.name == type) {
             if (idl.isUnionType(node.type)) {
@@ -1436,7 +1440,7 @@ class CJDeclarationConvertor implements DeclarationConvertor<void> {
         if (['CommonMethod', 'CommonShapeMethod', 'BaseSpan',
             'ScrollableCommonMethod', 'LazyGridLayoutAttribute',
             'LazyVGridLayoutAttributeInterfaces', 'SecurityComponentMethod',
-            'GestureHandler', 'GestureInterface'].includes(type.name) || (superNames ? writer.getNodeName(superNames[0]) == "CommonMethod" : false)) {
+            'GestureHandler', 'GestureInterface'].includes(type.name) || (superNames && superNames.length > 0 ? writer.getNodeName(superNames[0]) == "CommonMethod" : false)) {
             typeParams = ''
         }
 
@@ -1447,7 +1451,7 @@ class CJDeclarationConvertor implements DeclarationConvertor<void> {
                 if (p.isStatic) modifiers.push(FieldModifier.STATIC)
                 writer.writeProperty(p.name, idl.maybeOptional(p.type, p.isOptional), modifiers)
             }
-        }, superNames ? superNames.map(it => `${removePoints(idl.getNamespaceName(it as unknown as idl.IDLEntry))}${it.name}Interfaces${typeParams}`) : undefined) // make proper inheritance
+        }, superNames && superNames.length > 0 ? superNames.map(it => `${removePoints(idl.getNamespaceName(it as unknown as idl.IDLEntry))}${it.name}Interfaces${typeParams}`) : undefined) // make proper inheritance
 
         writer.writeClass(`${FQInterfaceName}${typeParams}`, () => {
             ownProperties.concat(parentProperties).forEach(it => {

@@ -51,5 +51,5 @@ interface Node {
     i32 CheckCallbackEvent(SerializerBuffer buffer, i32 bufferLength);
     void HoldCallbackResource(i32 resourceId);
     void ReleaseCallbackResource(i32 resourceId);
-    Object LoadUserView(String userClass, String params);
+    // Object LoadUserView(String userClass, String params);
 };

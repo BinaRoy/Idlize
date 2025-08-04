@@ -157,8 +157,8 @@ declare class CommonMethod<T> {
 
     // onGestureRecognizerJudgeBegin(callback: GestureRecognizerJudgeBeginCallback): T;
 
-    onClick(event: (event: ClickEvent) => void): T;
-    onClick(event: Callback<ClickEvent>, distanceThreshold: number): T;
+    onClick(event: ((event: ClickEvent) => void) | undefined): T;
+    onClick(event: (Callback<ClickEvent>) | undefined, distanceThreshold: number | undefined): T;
 }
 
 declare interface Rectangle {

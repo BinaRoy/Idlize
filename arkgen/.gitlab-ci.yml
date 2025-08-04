@@ -1,3 +1,5 @@
+image: "nexus.bz-openlab.ru:10443/huawei/koala-ci:0.2.5"
+
 stages:
   - notify
   - build
@@ -60,6 +62,18 @@ pg java:run:
     - cd $CI_PROJECT_DIR/arkgen
   script:
     - JAVA_HOME=/usr/lib/jvm/java-11-openjdk-arm64 npm run run:java
+
+pg cj:run:
+  allow_failure: true
+  stage: test
+  tags:
+    - idlize-ci
+    - koala-ci
+  before_script:
+    - !reference [.setup, script]
+    - cd $CI_PROJECT_DIR/arkgen
+  script:
+    - npm run run:cj
 
 run arkts subset:
   stage: test
