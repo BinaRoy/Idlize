@@ -205,6 +205,7 @@ export class CJInteropArgConvertor extends InteropArgConvertor {
     convertPrimitiveType(type: idl.IDLPrimitiveType): string {
         switch (type) {
             case idl.IDLNumberType: return "Float64"
+            case idl.IDLF64Type: return "Float64"
         }
         return super.convertPrimitiveType(type)
     }

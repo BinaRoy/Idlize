@@ -1175,7 +1175,28 @@ export class FunctionConvertor extends BaseArgConvertor { //
         throw new Error('Shall not be used')
     }
     convertorDeserialize(bufferName: string, deserializerName: string, assigneer: ExpressionAssigner, writer: LanguageWriter): LanguageStatement {
-        throw new Error('Shall not be used')
+        // For function types, we need to handle them similar to callbacks
+        // This is a simplified implementation that reads a function pointer
+        const resourceName = bufferName + "BufResource"
+        const callName = bufferName + "BufCall"
+        
+        const statements: LanguageStatement[] = []
+        statements.push(writer.makeAssign(
+            resourceName,
+            idl.createReferenceType("CallbackResource"),
+            writer.makeMethodCall(deserializerName, 'readCallbackResource', []),
+            true,
+        ))
+        statements.push(writer.makeAssign(
+            callName,
+            idl.IDLPointerType,
+            writer.makeMethodCall(deserializerName, `readPointer`, []),
+            true,
+        ))
+        
+        // Create a function object from the resource and call pointer
+        const functionExpr = writer.makeString(`{${resourceName}, ${callName}, null}`)
+        return assigneer(functionExpr)
     }
     nativeType(): idl.IDLType {
         return idl.IDLFunctionType

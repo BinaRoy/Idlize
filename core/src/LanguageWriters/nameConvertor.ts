@@ -31,6 +31,9 @@ export interface TypeConvertor<T> {
 }
 
 export function convertType<T>(convertor: TypeConvertor<T>, type: idl.IDLType): T {
+    if (!type) {
+        throw new Error('Cannot convert undefined or null type')
+    }
     if (idl.isOptionalType(type)) return convertor.convertOptional(type)
     if (idl.isUnionType(type)) return convertor.convertUnion(type)
     if (idl.isContainerType(type)) return convertor.convertContainer(type)
@@ -58,6 +61,9 @@ export interface DeclarationConvertor<T> {
 }
 
 export function convertDeclaration<T>(convertor: DeclarationConvertor<T>, decl: idl.IDLEntry): T {
+    if (!decl) {
+        throw new Error('Cannot convert undefined or null declaration')
+    }
     if (idl.isImport(decl)) return convertor.convertImport(decl)
     if (idl.isNamespace(decl)) return convertor.convertNamespace(decl)
     if (idl.isInterface(decl))
@@ -74,6 +80,9 @@ export function convertDeclaration<T>(convertor: DeclarationConvertor<T>, decl: 
 export interface NodeConvertor<T> extends TypeConvertor<T>, DeclarationConvertor<T> {}
 
 export function convertNode<T>(convertor: NodeConvertor<T>, node: idl.IDLNode): T {
+    if (!node) {
+        throw new Error('Cannot convert undefined or null node')
+    }
     if (idl.isEntry(node))
         return convertDeclaration(convertor, node)
     if (idl.isType(node))
