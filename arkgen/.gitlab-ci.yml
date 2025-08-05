@@ -68,7 +68,8 @@ pg cj:run:
     - idlize-ci
     - koala-ci
   before_script:
-    - !reference [.setup, script]
+    - !reference [.npm, script]
+    - !reference [.panda, script]
     - cd $CI_PROJECT_DIR/arkgen
   script:
     - npm run run:cj
