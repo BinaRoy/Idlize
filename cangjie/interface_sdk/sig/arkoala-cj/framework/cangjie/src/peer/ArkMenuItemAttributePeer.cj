@@ -1,0 +1,170 @@
+/*
+ * Copyright (c) 2024-2025 Huawei Device Co., Ltd.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+
+// WARNING! THIS FILE IS AUTO-GENERATED, DO NOT MAKE CHANGES, THEY WILL BE LOST ON NEXT GENERATION!
+
+package idlize
+import std.collection.*
+import Interop.*
+import KoalaRuntime.*
+import KoalaRuntime.memoize.*
+import std.time.DateTime
+public open class ArkMenuItemPeer <: ArkCommonMethodPeer {
+    protected ArkMenuItemPeer(peerPtr: UInt64, id: Int32, name: String, flags: Int32) {
+        super(peerPtr, id, name, flags)
+    }
+    static public func create(component: Option<ComponentBase>, flags: Int32): ArkMenuItemPeer {
+        let peerId = PeerNode.nextId()
+        let _peerPtr = ArkUIGeneratedNativeModule._MenuItem_construct(peerId, flags)
+        let _peer = ArkMenuItemPeer(_peerPtr, peerId, "MenuItem", flags)
+        if (let Some(component) <- component) { component.setPeer(_peer) }
+        return _peer
+    }
+    public open func setMenuItemOptionsAttribute(value: Option<Union_MenuItemOptions_CustomBuilder>): Unit {
+        let thisSerializer: SerializerBase = SerializerBase.hold()
+        if (value.isSome()) {
+            thisSerializer.writeInt8(RuntimeType.OBJECT.ordinal);
+            let valueTmpValue = value
+            if (valueTmpValue.getSelector() == 0) {
+                thisSerializer.writeInt8(Int8(0));
+                let valueTmpValueForIdx0 = valueTmpValue.getValue0()
+                MenuItemOptions_serializer.write(thisSerializer, valueTmpValueForIdx0);
+            } else if (valueTmpValue.getSelector() == 1) {
+                thisSerializer.writeInt8(Int8(1));
+                let valueTmpValueForIdx1 = valueTmpValue.getValue1()
+                thisSerializer.holdAndWriteCallback(CallbackTransformer.transformFromCustomBuilder(valueTmpValueForIdx1));
+            }
+        } else {
+            thisSerializer.writeInt8(RuntimeType.UNDEFINED.ordinal);
+        }
+        ArkUIGeneratedNativeModule._MenuItemInterface_setMenuItemOptions(this.peer.ptr, thisSerializer.asBuffer(), thisSerializer.length());
+        thisSerializer.release();
+    }
+    public open func setSelectedAttribute(value: Option<Union_Boolean_Bindable>): Unit {
+        let thisSerializer: SerializerBase = SerializerBase.hold()
+        if (value.isSome()) {
+            thisSerializer.writeInt8(RuntimeType.OBJECT.ordinal);
+            let valueTmpValue = value
+            if (valueTmpValue.getSelector() == 0) {
+                thisSerializer.writeInt8(Int8(0));
+                let valueTmpValueForIdx0 = valueTmpValue.getValue0()
+                thisSerializer.writeBoolean(valueTmpValueForIdx0);
+            } else if (valueTmpValue.getSelector() == 1) {
+                thisSerializer.writeInt8(Int8(1));
+                let valueTmpValueForIdx1 = valueTmpValue.getValue1()
+                thisSerializer.writeCustomObject("Any", valueTmpValueForIdx1);
+            }
+        } else {
+            thisSerializer.writeInt8(RuntimeType.UNDEFINED.ordinal);
+        }
+        ArkUIGeneratedNativeModule._MenuItemAttribute_setSelected(this.peer.ptr, thisSerializer.asBuffer(), thisSerializer.length());
+        thisSerializer.release();
+    }
+    public open func setSelectIconAttribute(value: Union_Boolean_ResourceStr_SymbolGlyphModifier): Unit {
+        let thisSerializer: SerializerBase = SerializerBase.hold()
+        if (value.getSelector() == 0) {
+            thisSerializer.writeInt8(Int8(0));
+            let valueForIdx0 = value.getValue0()
+            thisSerializer.writeBoolean(valueForIdx0);
+        } else if (value.getSelector() == 1) {
+            thisSerializer.writeInt8(Int8(1));
+            let valueForIdx1 = value.getValue1()
+            if (valueForIdx1.getSelector() == 0) {
+                thisSerializer.writeInt8(Int8(0));
+                let valueForIdx1ForIdx0 = valueForIdx1.getValue0()
+                thisSerializer.writeString(valueForIdx1ForIdx0);
+            } else if (valueForIdx1.getSelector() == 1) {
+                thisSerializer.writeInt8(Int8(1));
+                let valueForIdx1ForIdx1 = valueForIdx1.getValue1()
+                thisSerializer.writeCustomObject("Any", valueForIdx1ForIdx1);
+            }
+        } else if (value.getSelector() == 2) {
+            thisSerializer.writeInt8(Int8(2));
+            let valueForIdx2 = value.getValue2()
+            thisSerializer.writeCustomObject("Any", valueForIdx2);
+        }
+        ArkUIGeneratedNativeModule._MenuItemAttribute_setSelectIcon(this.peer.ptr, thisSerializer.asBuffer(), thisSerializer.length());
+        thisSerializer.release();
+    }
+    public open func setOnChangeAttribute(callback_: ((parameter: Bool) -> Unit)): Unit {
+        let thisSerializer: SerializerBase = SerializerBase.hold()
+        thisSerializer.holdAndWriteCallback(callback_);
+        ArkUIGeneratedNativeModule._MenuItemAttribute_setOnChange(this.peer.ptr, thisSerializer.asBuffer(), thisSerializer.length());
+        thisSerializer.release();
+    }
+    public open func setContentFontAttribute(value: Font): Unit {
+        let thisSerializer: SerializerBase = SerializerBase.hold()
+        Font_serializer.write(thisSerializer, value);
+        ArkUIGeneratedNativeModule._MenuItemAttribute_setContentFont(this.peer.ptr, thisSerializer.asBuffer(), thisSerializer.length());
+        thisSerializer.release();
+    }
+    public open func setContentFontColorAttribute(value: ResourceColor): Unit {
+        let thisSerializer: SerializerBase = SerializerBase.hold()
+        if (value.getSelector() == 0) {
+            thisSerializer.writeInt8(Int8(0));
+            let valueForIdx0 = value.getValue0()
+            thisSerializer.writeInt32(valueForIdx0.value);
+        } else if (value.getSelector() == 1) {
+            thisSerializer.writeInt8(Int8(1));
+            let valueForIdx1 = value.getValue1()
+            thisSerializer.writeNumber(valueForIdx1);
+        } else if (value.getSelector() == 2) {
+            thisSerializer.writeInt8(Int8(2));
+            let valueForIdx2 = value.getValue2()
+            thisSerializer.writeString(valueForIdx2);
+        } else if (value.getSelector() == 3) {
+            thisSerializer.writeInt8(Int8(3));
+            let valueForIdx3 = value.getValue3()
+            thisSerializer.writeCustomObject("Any", valueForIdx3);
+        }
+        ArkUIGeneratedNativeModule._MenuItemAttribute_setContentFontColor(this.peer.ptr, thisSerializer.asBuffer(), thisSerializer.length());
+        thisSerializer.release();
+    }
+    public open func setLabelFontAttribute(value: Font): Unit {
+        let thisSerializer: SerializerBase = SerializerBase.hold()
+        Font_serializer.write(thisSerializer, value);
+        ArkUIGeneratedNativeModule._MenuItemAttribute_setLabelFont(this.peer.ptr, thisSerializer.asBuffer(), thisSerializer.length());
+        thisSerializer.release();
+    }
+    public open func setLabelFontColorAttribute(value: ResourceColor): Unit {
+        let thisSerializer: SerializerBase = SerializerBase.hold()
+        if (value.getSelector() == 0) {
+            thisSerializer.writeInt8(Int8(0));
+            let valueForIdx0 = value.getValue0()
+            thisSerializer.writeInt32(valueForIdx0.value);
+        } else if (value.getSelector() == 1) {
+            thisSerializer.writeInt8(Int8(1));
+            let valueForIdx1 = value.getValue1()
+            thisSerializer.writeNumber(valueForIdx1);
+        } else if (value.getSelector() == 2) {
+            thisSerializer.writeInt8(Int8(2));
+            let valueForIdx2 = value.getValue2()
+            thisSerializer.writeString(valueForIdx2);
+        } else if (value.getSelector() == 3) {
+            thisSerializer.writeInt8(Int8(3));
+            let valueForIdx3 = value.getValue3()
+            thisSerializer.writeCustomObject("Any", valueForIdx3);
+        }
+        ArkUIGeneratedNativeModule._MenuItemAttribute_setLabelFontColor(this.peer.ptr, thisSerializer.asBuffer(), thisSerializer.length());
+        thisSerializer.release();
+    }
+    public open func set_onChangeEvent_selectedAttribute(callback: ((parameter: Float64) -> Unit)): Unit {
+        let thisSerializer: SerializerBase = SerializerBase.hold()
+        thisSerializer.holdAndWriteCallback(callback);
+        ArkUIGeneratedNativeModule._MenuItemAttribute_set_onChangeEvent_selected(this.peer.ptr, thisSerializer.asBuffer(), thisSerializer.length());
+        thisSerializer.release();
+    }
+}
