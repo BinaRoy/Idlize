@@ -151,7 +151,7 @@ cflags += [
     '-Wall', '-Werror', '-Wno-unused-variable', '-Wno-unused-but-set-variable',
     '-Wno-extern-c-compat', '-Wno-error=deprecated-declarations',
     '-Wno-unknown-warning-option', '-Wno-unused-function', '-Wno-macro-redefined',
-    '-Wno-enum-compare', '-Wno-tautological-constant-out-of-range-compare', '-fno-exceptions'
+    '-Wno-enum-compare', '-Wno-tautological-constant-out-of-range-compare', '-fno-exceptions', '-Wno-error=#warnings'
 ]
 endif
 
