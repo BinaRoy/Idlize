@@ -186,11 +186,13 @@ export function generateArkoalaFromIdl(config: {
     // }
 
     const spreadIfLang = <T>(langs: Language[], ...data: T[]): T[] => {
+        // 只生成指定语言的文件，避免生成其他语言文件
         if (langs.includes(peerLibrary.language))
             return data
         return []
     }
     const spreadIfNotLang = <T>(langs: Language[], ...data: T[]): T[] => {
+        // 只生成指定语言的文件，避免生成其他语言文件
         if (!langs.includes(peerLibrary.language))
             return data
         return []
@@ -218,6 +220,7 @@ export function generateArkoalaFromIdl(config: {
         ]
     ))
 
+    // 只生成指定语言的文件，避免生成其他语言文件
     if (peerLibrary.language === Language.ARKTS) {
         install(
             arkoala.managedDir,
@@ -253,13 +256,14 @@ export function generateArkoalaFromIdl(config: {
         }
     }
 
-
+    // 只生成指定语言的文件，避免生成其他语言文件
     if (peerLibrary.language == Language.TS || peerLibrary.language == Language.ARKTS) {
         let enumImpls = peerLibrary.createLanguageWriter()
         printEnumsImpl(peerLibrary, enumImpls)
         enumImpls.printTo(path.join(arkoala.managedDir, 'framework', 'EnumsImpl' + peerLibrary.language.extension))
     }
 
+    // 只生成指定语言的文件，避免生成其他语言文件
     if (peerLibrary.language == Language.TS) {
         const declarations = printDeclarations(peerLibrary)
         const index = new IndentedPrinter()
@@ -272,6 +276,7 @@ export function generateArkoalaFromIdl(config: {
         }
         index.printTo(path.join(arkoala.tsTypesDir, "index-full.d.ts"))
     }
+    // 只生成指定语言的文件，避免生成其他语言文件
     if (peerLibrary.language == Language.TS) {
         const arkuiNativeModuleFile = printPredefinedNativeModule(peerLibrary, NativeModule.ArkUI)
         printArkUILibrariesLoader(arkuiNativeModuleFile)

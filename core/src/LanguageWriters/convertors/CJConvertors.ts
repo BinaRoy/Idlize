@@ -26,6 +26,9 @@ export class CJTypeNameConvertor implements NodeConvertor<string>, IdlNameConver
     ) { }
 
     convert(node: idl.IDLNode): string {
+        if (!node) {
+            return 'Any'
+        }
         if (idl.isType(node) && idl.isReferenceType(node)) {
             if (node.name.startsWith('%TEXT%:')) {
                 return node.name.substring(7)
