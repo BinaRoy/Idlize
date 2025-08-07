@@ -266,10 +266,10 @@ export class CJLayout extends CommonLayoutBase {
                 }
                 if (idl.isInterface(node)) {
                     if (isComponentDeclaration(this.library, node)) {
-                        return this.getPath(`${this.prefix}${toFileName(node.name)}`, 'component')
+                        return this.getPath(`${this.prefix}${toFileName(node.name)}`, 'components')
                     }
                     if (idl.isBuilderClass(node)) {
-                        return this.getPath(`${this.prefix}${toFileName(node.name)}Builder`, 'component')
+                        return this.getPath(`${this.prefix}${toFileName(node.name)}Builder`, 'components')
                     }
                     if (isMaterialized(node, this.library)) {
                         if (idl.isInterfaceSubkind(node)) {
@@ -279,25 +279,25 @@ export class CJLayout extends CommonLayoutBase {
                     }
                     return this.getPath(`${this.prefix}${toFileName(node.name)}Interfaces`, 'interfaces')
                 }
-                return this.getPath(`Common`, 'core')
+                return this.getPath(`Common`, 'cores')
             }
             case LayoutNodeRole.PEER: {
                 if (idl.isInterface(node)) {
                     if (isComponentDeclaration(this.library, node)) {
-                        return this.getPath(`${this.prefix}${toFileName(node.name)}Peer`, 'peer')
+                        return this.getPath(`${this.prefix}${toFileName(node.name)}Peer`, 'peers')
                     }
                 }
-                return this.getPath(`CommonPeer`, 'peer')
+                return this.getPath(`CommonPeer`, 'peers')
             }
             case LayoutNodeRole.GLOBAL: {
-                return this.getPath('GlobalScope', 'core')
+                return this.getPath('GlobalScope', 'cores')
             }
             case LayoutNodeRole.COMPONENT: {
                 let componentName = node.name
                 if (node.name.endsWith("Attribute")) {
                     componentName = node.name.replaceAll("Attribute", "")
                 }
-                return this.getPath('Ark' + componentName, 'component')
+                return this.getPath('Ark' + componentName, 'components')
             }
         }
     }
