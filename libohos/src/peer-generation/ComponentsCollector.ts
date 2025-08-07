@@ -67,7 +67,26 @@ export function collectComponents(library: LibraryInterface): IdlComponentDeclar
 }
 
 export function isComponentDeclaration(library: LibraryInterface, decl: idl.IDLEntry): boolean {
-    return collectComponents(library).some(it => it.interfaceDeclaration === decl || it.attributeDeclaration === decl)
+    // 首先检查是否有 @Component 扩展属性
+    if (idl.isInterface(decl) && idl.hasExtAttribute(decl, idl.IDLExtendedAttributes.Component)) {
+        return collectComponents(library).some(it => it.interfaceDeclaration === decl || it.attributeDeclaration === decl)
+    }
+    
+    // 检查是否是 interface_sdk_js 目录中的 XxxInterface 模式
+    if (idl.isInterface(decl) && decl.name.endsWith('Interface')) {
+        // 检查是否存在对应的 XxxAttribute 类
+        const attributeName = decl.name.replace('Interface', 'Attribute')
+        const hasCorrespondingAttribute = library.files.some(file => 
+            file.entries.some(entry => 
+                idl.isInterface(entry) && entry.name === attributeName
+            )
+        )
+        if (hasCorrespondingAttribute) {
+            return true
+        }
+    }
+    
+    return false
 }
 
 export function findComponentByDeclaration(library: LibraryInterface, iface: idl.IDLInterface): IdlComponentDeclaration | undefined {

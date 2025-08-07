@@ -19,7 +19,7 @@ import * as idl from '@idlizer/core'
 import { isComponentDeclaration, NativeModule, peerGeneratorConfiguration } from '@idlizer/libohos'
 
 const BASE_PATH = 'framework'
-const getGeneratedFilePath = (p:string) => path.join(BASE_PATH, p)
+const getGeneratedFilePath = (p: string) => path.join(BASE_PATH, p)
 
 export const SyntheticModule = "./SyntheticDeclarations"
 export function HandwrittenModule(language: Language, isSdk = false) {
@@ -32,7 +32,7 @@ export function HandwrittenModule(language: Language, isSdk = false) {
     }
 }
 
-function toFileName(name:string) {
+function toFileName(name: string) {
     return name.split(/[_-]/gi).map(it => idl.capitalize(it)).join('')
 }
 
@@ -55,7 +55,7 @@ abstract class CommonLayoutBase implements LayoutManagerStrategy {
     constructor(
         protected library: PeerLibrary,
         protected prefix: string = "",
-    ) {}
+    ) { }
     abstract resolve(target: idl.LayoutTargetDescription): string
     handwrittenPackage(): string {
         return HandwrittenModule(this.library.language)
@@ -197,7 +197,7 @@ export class JavaLayout extends CommonLayoutBase {
     constructor(library: PeerLibrary, prefix: string, private packagePath: string) {
         super(library, prefix)
     }
-    private getPath(file:string):string {
+    private getPath(file: string): string {
         return path.join(this.packagePath, file)
     }
     resolve({ node, role }: idl.LayoutTargetDescription): string {
@@ -247,13 +247,13 @@ export class JavaLayout extends CommonLayoutBase {
 }
 
 export class CJLayout extends CommonLayoutBase {
-    private getPath(file:string, subdir?: string):string {
+    private getPath(file: string, subdir?: string): string {
         if (subdir) {
             return path.join(subdir, file)
         }
         return path.join('.', file)
     }
-    
+
     resolve({ node, role }: idl.LayoutTargetDescription): string {
         switch (role) {
             case LayoutNodeRole.SERIALIZER:
@@ -277,7 +277,7 @@ export class CJLayout extends CommonLayoutBase {
                         }
                         return this.getPath(toFileName(node.name), 'interface')
                     }
-                    return this.getPath(`${this.prefix}${toFileName(node.name)}Interfaces`, 'interface')
+                    return this.getPath(`${this.prefix}${toFileName(node.name)}`, 'interface')
                 }
                 return this.getPath(`Common`, 'core')
             }
@@ -293,7 +293,11 @@ export class CJLayout extends CommonLayoutBase {
                 return this.getPath('GlobalScope', 'core')
             }
             case LayoutNodeRole.COMPONENT: {
-                return this.getPath('Ark' + node.name, 'component')
+                let componentName = node.name
+                if (node.name.endsWith("Attribute")) {
+                    componentName = node.name.replaceAll("Attribute", "")
+                }
+                return this.getPath('Ark' + componentName, 'component')
             }
         }
     }
@@ -341,7 +345,7 @@ export class KotlinLayout extends CommonLayoutBase {
 ////////////////////////////////////////////////////////
 
 export function arkoalaLayout(library: PeerLibrary, prefix: string = '', packagePath: string = ''): LayoutManagerStrategy {
-    switch(library.language) {
+    switch (library.language) {
         case idl.Language.TS: return new TsLayout(library, prefix)
         case idl.Language.ARKTS: return new ArkTsLayout(library, prefix)
         case idl.Language.JAVA: return new JavaLayout(library, prefix, packagePath)
