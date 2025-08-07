@@ -277,7 +277,7 @@ export class CJLayout extends CommonLayoutBase {
                         }
                         return this.getPath(toFileName(node.name), 'interfaces')
                     }
-                    return this.getPath(`${this.prefix}${toFileName(node.name)}Interfaces`, 'interfaces')
+                    return this.getPath(`${this.prefix}${toFileName(node.name)}`, 'interfaces')
                 }
                 return this.getPath(`Common`, 'cores')
             }
