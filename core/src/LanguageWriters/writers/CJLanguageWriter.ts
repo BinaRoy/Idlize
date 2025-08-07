@@ -200,25 +200,49 @@ export class CJEnumWithGetter implements LanguageStatement {
         }
 
         let enumName = idl.getNamespaceName(this.enumEntity).concat(this.enumEntity.name)
-        writer.writeClass(enumName, () => {
-            const enumType = idl.createReferenceType(this.enumEntity)
-            members.forEach(it => {
-                writer.writeFieldDeclaration(it.name, enumType, [FieldModifier.PUBLIC, FieldModifier.STATIC, FieldModifier.FINAL], false,
-                    writer.makeString(`${enumName}(${it.numberId})`)
-                )
-            })
-
-            const value = 'value'
-            const intType = idl.IDLI32Type
-            writer.writeFieldDeclaration(value, intType, [FieldModifier.PUBLIC, FieldModifier.FINAL], false)
-
-            const signature = new MethodSignature(idl.IDLVoidType, [intType])
-            writer.writeConstructorImplementation(enumName, signature, () => {
-                writer.writeStatement(
-                    writer.makeAssign(value, undefined, writer.makeString(signature.argName(0)), false)
-                )
-            })
+        
+        // 生成enum声明
+        writer.print(`public enum ${enumName} <: ToString & Equatable<${enumName}> {`)
+        writer.pushIndent()
+        
+        // 生成enum成员
+        members.forEach((member, index) => {
+            writer.print(`| ${member.name}`)
         })
+        
+        writer.print('')
+        
+        // 生成get()方法
+        writer.print('func get(): Int32 {')
+        writer.pushIndent()
+        writer.print('match(this) {')
+        writer.pushIndent()
+        members.forEach(member => {
+            writer.print(`case ${member.name} => ${member.numberId}`)
+        })
+        writer.popIndent()
+        writer.print('}')
+        writer.popIndent()
+        writer.print('}')
+        
+        writer.print('')
+        
+        // 生成parse()方法
+        writer.print(`static func parse(val: Int32): ${enumName} {`)
+        writer.pushIndent()
+        writer.print('match(val) {')
+        writer.pushIndent()
+        members.forEach(member => {
+            writer.print(`case ${member.numberId} => ${member.name}`)
+        })
+        writer.print(`case _ => throw IllegalArgumentException("unknown value \${val}")`)
+        writer.popIndent()
+        writer.print('}')
+        writer.popIndent()
+        writer.print('}')
+        
+        writer.popIndent()
+        writer.print('}')
     }
 }
 
