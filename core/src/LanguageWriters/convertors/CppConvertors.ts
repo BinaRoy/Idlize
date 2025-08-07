@@ -246,7 +246,6 @@ export class CppInteropArgConvertor extends InteropArgConvertor {
             case idl.IDLBooleanType: return PrimitiveTypesInstance.Boolean.getText()
             case idl.IDLI32Type: return PrimitiveTypesInstance.Int32.getText()
             case idl.IDLNumberType: return "KInteropNumber"
-            case idl.IDLF64Type: return "KInteropNumber"
             case idl.IDLSerializerBuffer: return "KSerializerBuffer"
             case idl.IDLBufferType: return "KInteropBuffer"
             case idl.IDLFunctionType: return PrimitiveTypesInstance.Int32.getText()

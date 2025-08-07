@@ -205,7 +205,7 @@ class SerializerPrinter {
                     const superNames = target.inheritance
                     if (superNames) {
                         const superDecls = superNames ? superNames.map(t => this.library.resolveTypeReference(t as idl.IDLReferenceType)) : undefined
-                        parentProperties = superDecls!.map(decl => collectAllProperties(decl as idl.IDLInterface, this.library)).flat()
+                        parentProperties = superDecls!.filter(decl => decl !== undefined).map(decl => collectAllProperties(decl as idl.IDLInterface, this.library)).flat()
                     }
                     let ownProperties: idl.IDLProperty[] = isComponentDeclaration(this.library, target) ? [] : target.properties.filter(it => !parentProperties.map(prop => prop.name).includes(it.name))
 

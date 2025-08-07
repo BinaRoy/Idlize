@@ -417,7 +417,7 @@ class CJComponentFileVisitor implements ComponentFileVisitor {
                 writer.print('// we call this function outside of class, so need to make it public')
                 writer.writeMethodCall('super', applyAttributesFinish, [])
             })
-        }, parentComponentClassName, [`${peer.originalClassName!}Interfaces`])
+        }, parentComponentClassName, undefined)
 
         return [{
             collector: imports,
