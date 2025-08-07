@@ -98,10 +98,6 @@ export function install(
             imports.clear()
             content = ['@file:OptIn(ExperimentalForeignApi::class)', 'package idlize', 'import kotlinx.cinterop.*', 'import koalaui.interop.*'].concat(content)
         }
-        // if (library.language === Language.CJ) {
-        //     imports.clear()
-        //     content = ['package idlize', 'import std.collection.*', 'import Interop.*', 'import KoalaRuntime.*', 'import KoalaRuntime.memoize.*', 'import std.time.DateTime'].concat(content)
-        // }
 
         if (library.language === Language.CJ) {
             imports.clear()
