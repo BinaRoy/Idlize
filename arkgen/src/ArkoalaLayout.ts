@@ -261,7 +261,7 @@ export class CJLayout extends CommonLayoutBase {
                 if (idl.isEntry(node)) {
                     const ns = idl.getNamespaceName(node)
                     if (ns !== '') {
-                        return this.getPath(`${this.prefix}${ns.split('.').map(it => idl.capitalize(it)).join('')}Namespace`, 'interface')
+                        return this.getPath(`${this.prefix}${ns.split('.').map(it => idl.capitalize(it)).join('')}Namespace`, 'interfaces')
                     }
                 }
                 if (idl.isInterface(node)) {
@@ -273,11 +273,11 @@ export class CJLayout extends CommonLayoutBase {
                     }
                     if (isMaterialized(node, this.library)) {
                         if (idl.isInterfaceSubkind(node)) {
-                            return this.getPath(toFileName(node.name) + 'Internal', 'interface')
+                            return this.getPath(toFileName(node.name) + 'Internal', 'interfaces')
                         }
-                        return this.getPath(toFileName(node.name), 'interface')
+                        return this.getPath(toFileName(node.name), 'interfaces')
                     }
-                    return this.getPath(`${this.prefix}${toFileName(node.name)}Interfaces`, 'interface')
+                    return this.getPath(`${this.prefix}${toFileName(node.name)}Interfaces`, 'interfaces')
                 }
                 return this.getPath(`Common`, 'core')
             }

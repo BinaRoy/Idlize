@@ -318,7 +318,7 @@ class CJPeerFileVisitor extends PeerFileVisitor {
 
     protected printApplyMethod(peer: PeerClass, printer: LanguageWriter) {
     }
-
+    
     printFile(): PrinterResult[] {
         return collectPeersForFile(this.library, this.file).map(peer => {
             const component = findComponentByName(this.library, peer.componentName)

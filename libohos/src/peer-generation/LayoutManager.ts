@@ -98,10 +98,36 @@ export function install(
             imports.clear()
             content = ['@file:OptIn(ExperimentalForeignApi::class)', 'package idlize', 'import kotlinx.cinterop.*', 'import koalaui.interop.*'].concat(content)
         }
+        // if (library.language === Language.CJ) {
+        //     imports.clear()
+        //     content = ['package idlize', 'import std.collection.*', 'import Interop.*', 'import KoalaRuntime.*', 'import KoalaRuntime.memoize.*', 'import std.time.DateTime'].concat(content)
+        // }
+
         if (library.language === Language.CJ) {
             imports.clear()
-            content = ['package idlize', 'import std.collection.*', 'import Interop.*', 'import KoalaRuntime.*', 'import KoalaRuntime.memoize.*', 'import std.time.DateTime'].concat(content)
+
+            const hasCustomPackage = content.some(line => line.trim().startsWith('package '))
+
+            let pkgLine: string[] = []
+            if (!hasCustomPackage) {
+                const layoutPath = layout.resolve(results[0].over)
+                const pkg = 'idlize.' + path.dirname(layoutPath).replace(/\//g, '.')
+                pkgLine = [`package ${pkg}`]
+            }
+
+            const cjImports = [
+                "",
+                'import std.collection.*',
+                'import Interop.*',
+                'import KoalaRuntime.*',
+                'import KoalaRuntime.memoize.*',
+                'import std.time.DateTime',
+                ""
+            ]
+
+            content = pkgLine.concat(cjImports).concat(content)
         }
+
         if (library.language === Language.JAVA) {
             content = [`package ${ARKOALA_PACKAGE};`].concat(content)
         }
