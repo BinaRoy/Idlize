@@ -241,6 +241,62 @@ export class CJEnumWithGetter implements LanguageStatement {
         writer.popIndent()
         writer.print('}')
         
+        writer.print('')
+        
+        // 生成tryParse()方法
+        writer.print(`static func tryParse(val: ?Int32): ?${enumName} {`)
+        writer.pushIndent()
+        writer.print('match(val) {')
+        writer.pushIndent()
+        writer.print('case Some(v) => parse(v)')
+        writer.print('case None => None')
+        writer.popIndent()
+        writer.print('}')
+        writer.popIndent()
+        writer.print('}')
+        
+        writer.print('')
+        
+        // 生成toString()方法
+        writer.print('public func toString(): String {')
+        writer.pushIndent()
+        writer.print('match(this) {')
+        writer.pushIndent()
+        members.forEach(member => {
+            // 将大写转换为首字母大写的格式
+            const displayName = member.name.charAt(0) + member.name.slice(1).toLowerCase()
+            writer.print(`case ${member.name} => "${displayName}"`)
+        })
+        writer.popIndent()
+        writer.print('}')
+        writer.popIndent()
+        writer.print('}')
+        
+        writer.print('')
+        
+        // 生成==操作符
+        writer.print(`public override operator func ==(that: ${enumName}): Bool {`)
+        writer.pushIndent()
+        writer.print('match((this, that)) {')
+        writer.pushIndent()
+        members.forEach(member => {
+            writer.print(`case(${member.name}, ${member.name}) => true`)
+        })
+        writer.print('case _ => false')
+        writer.popIndent()
+        writer.print('}')
+        writer.popIndent()
+        writer.print('}')
+        
+        writer.print('')
+        
+        // 生成!=操作符
+        writer.print(`public override operator func !=(that: ${enumName}): Bool {`)
+        writer.pushIndent()
+        writer.print('!(this == that)')
+        writer.popIndent()
+        writer.print('}')
+        
         writer.popIndent()
         writer.print('}')
     }
