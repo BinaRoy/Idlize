@@ -1,3 +1,9 @@
+This repository is based on [idlize](https://gitee.com/nikolay-igotti/idlize), 
+licensed under the Apache License 2.0.
+
+Modifications have been made by Gloria Guo in 2025. 
+These changes are not part of the official idlize project.
+
 # <p> <img align="bottom" src="artwork/logo.svg" alt="logo" width="100"/> IDLize <p/>
 
 ## Description
