@@ -351,6 +351,9 @@ export class CJLanguageWriter extends LanguageWriter {
         this.typeConvertor = typeConvertor
         this.typeForeignConvertor = typeForeignConvertor
     }
+    
+    maybeSemicolon() { return "" }
+    
     fork(options?: { resolver?: ReferenceResolver }): LanguageWriter {
         return new CJLanguageWriter(new IndentedPrinter(), options?.resolver ?? this.resolver, this.typeConvertor, this.typeForeignConvertor)
     }
@@ -372,7 +375,7 @@ export class CJLanguageWriter extends LanguageWriter {
             .filter(isDefined)
             .join(' & ')
         inheritancePart = inheritancePart.length != 0 ? ' <: '.concat(inheritancePart) : ''
-        this.printer.print(`public open class ${name}${inheritancePart} {`)
+        this.printer.print(`public class ${name}${inheritancePart} {`)
         this.pushIndent()
         op(this)
         this.popIndent()
@@ -436,7 +439,8 @@ export class CJLanguageWriter extends LanguageWriter {
         let i = 1
         while (signature.isArgOptional(signature.args.length - i)) {
             let smallerSignature = signature.args.slice(0, -i)
-            this.printer.print(`${modifiers ? modifiers.map((it) => MethodModifier[it].toLowerCase()).join(' ') + ' ' : ''}init (${smallerSignature.map((it, index) => `${this.escapeKeyword(signature.argName(index))}: ${this.getNodeName(it)}`).join(", ")}) {`)
+            // 移除public修饰符
+            this.printer.print(`init (${smallerSignature.map((it, index) => `${this.escapeKeyword(signature.argName(index))}: ${this.getNodeName(it)}`).join(", ")}) {`)
             this.pushIndent()
             let lessArgs = signature.args?.slice(0, -i).map((_, i) => this.escapeKeyword(signature.argName(i))).join(', ')
             for (let idx = 0; idx < i; idx++) {
@@ -447,7 +451,8 @@ export class CJLanguageWriter extends LanguageWriter {
             this.printer.print(`}`)
             i += 1
         }
-        this.printer.print(`${modifiers ? modifiers.map((it) => MethodModifier[it].toLowerCase()).join(' ') + ' ' : ''}${className}(${signature.args.map((it, index) => `${this.escapeKeyword(signature.argName(index))}: ${this.getNodeName(idl.maybeOptional(it, signature.isArgOptional(index)))}`).join(", ")}) {`)
+        // 移除public修饰符
+        this.printer.print(`init(${signature.args.map((it, index) => `${this.escapeKeyword(signature.argName(index))}: ${this.getNodeName(idl.maybeOptional(it, signature.isArgOptional(index)))}`).join(", ")}) {`)
         this.pushIndent()
         if (delegationCall) {
             const delegationType = (delegationCall?.delegationType == DelegationType.THIS) ? "this" : "super"
@@ -524,12 +529,40 @@ export class CJLanguageWriter extends LanguageWriter {
         this.print('}')
     }
     private writeDeclaration(name: string, signature: MethodSignature, modifiers?: MethodModifier[], postfix?: string, generics?: string[]): void {
-        let prefix = modifiers
-            ?.filter(it => this.supportedModifiers.includes(it))
-            .map(it => this.mapMethodModifier(it)).join(" ")
-        prefix = prefix ? prefix + " " : "public "
+        let prefix = ""
+        if (modifiers) {
+            const accessModifier = modifiers
+                .filter(it => [MethodModifier.PUBLIC, MethodModifier.PRIVATE, MethodModifier.PROTECTED].includes(it))
+                .map(it => this.mapMethodModifier(it))
+                .join(" ");
+            const staticModifier = modifiers.includes(MethodModifier.STATIC) ? "static" : "";
+            const otherModifiers = modifiers
+                .filter(it => ![MethodModifier.PUBLIC, MethodModifier.PRIVATE, MethodModifier.PROTECTED, MethodModifier.STATIC].includes(it))
+                .map(it => this.mapMethodModifier(it))
+                .join(" ");
+            prefix = [accessModifier, staticModifier, otherModifiers].filter(Boolean).join(" ") + " ";
+        } else {
+            prefix = "public ";
+        }
+        
+        // 确保总是有访问修饰符
+        if (!prefix.trim() || prefix.trim() === "") {
+            prefix = "public ";
+        }
+        
         const typeParams = generics?.length ? `<${generics.join(", ")}>` : ""
-        this.print(`${prefix}${(modifiers?.includes(MethodModifier.SETTER) || modifiers?.includes(MethodModifier.GETTER)) ? '' : `${(modifiers?.includes(MethodModifier.STATIC) || modifiers?.includes(MethodModifier.PRIVATE)) ? '' : 'open '}func `}${this.escapeKeyword(name)}${typeParams}(${signature.args.map((it, index) => `${this.escapeKeyword(signature.argName(index))}: ${this.getNodeName(idl.maybeOptional(it, signature.isArgOptional(index)))}`).join(", ")})${this.getNodeName(signature.returnType) =='this' ? '': `: ${this.getNodeName(signature.returnType)}`}${postfix ?? ""}`)
+        
+        // 处理参数类型，保持使用Option<T>形式
+        const args = signature.args.map((it, index) => {
+            const paramName = this.escapeKeyword(signature.argName(index));
+            const paramType = this.getNodeName(idl.maybeOptional(it, signature.isArgOptional(index)));
+            return `${paramName}: ${paramType}`;
+        }).join(", ");
+        
+        const isSetterOrGetter = modifiers?.includes(MethodModifier.SETTER) || modifiers?.includes(MethodModifier.GETTER);
+        const methodType = isSetterOrGetter ? '' : 'func ';
+        
+        this.print(`${prefix}${methodType}${this.escapeKeyword(name)}${typeParams}(${args})${this.getNodeName(signature.returnType) =='this' ? '': `: ${this.getNodeName(signature.returnType)}`}${postfix ?? ""}`)
     }
     writeNativeFunctionCall(printer: LanguageWriter, name: string, signature: MethodSignature) {
         printer.print(`return unsafe { ${name}(${signature.args.map((it, index) => `${this.escapeKeyword(signature.argName(index))}`).join(", ")}) }`)
