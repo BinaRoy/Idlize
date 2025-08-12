@@ -53,6 +53,8 @@ import {
 import { getReferenceTo } from '../knownReferences'
 import { componentToAttributesInterface } from './PeersPrinter'
 import { HandwrittenModule } from '../ArkoalaLayout'
+import { convertNumberProperty } from '../declaration/CJNumberConversion'
+import { CJTypeMapper, TypeConversionResult, DEFAULT_VALUES } from '../declaration/CJTypeMapper'
 
 export function generateArkComponentName(component: string) {
     return `Ark${component}Component`
@@ -343,6 +345,7 @@ class JavaComponentFileVisitor implements ComponentFileVisitor {
 }
 
 class CJComponentFileVisitor implements ComponentFileVisitor {
+    private readonly typeMapper: CJTypeMapper
 
     constructor(
         protected readonly library: PeerLibrary,
@@ -350,10 +353,64 @@ class CJComponentFileVisitor implements ComponentFileVisitor {
         protected readonly options: {
             isDeclared: boolean,
         }
-    ) { }
+    ) {
+        this.typeMapper = new CJTypeMapper()
+    }
 
     private overloadsPrinter(printer:LanguageWriter) {
         return new OverloadsPrinter(this.library, printer, this.library.language, true, this.library.useMemoM3)
+    }
+
+    /**
+     * CJ 专用的组件方法重载打印器
+     * 应用类型映射规则到方法参数
+     */
+    private printCjComponentOverloads(className: string, methods: any[], writer: LanguageWriter) {
+        methods.forEach(methodGroup => {
+            const method = methodGroup.method
+            if (!method) return
+
+            // 转换方法参数类型
+            const convertedParams: string[] = []
+            method.signature.args.forEach((paramType: idl.IDLType, index: number) => {
+                const paramName = method.signature.argName(index)
+                const isOptional = method.signature.isArgOptional(index)
+                
+                const converted = this.convertCjParameterType(paramType, paramName, isOptional)
+                // 直接使用转换后的类型名称，而不是通过 getNodeName
+                const cjTypeName = typeof converted.cjType === 'string' ? converted.cjType : writer.getNodeName(converted.cjType)
+                
+                if (converted.defaultValue) {
+                    convertedParams.push(`${paramName}: ${cjTypeName} = ${converted.defaultValue}`)
+                } else if (isOptional) {
+                    convertedParams.push(`${paramName}?: ${cjTypeName}`)
+                } else {
+                    convertedParams.push(`${paramName}: ${cjTypeName}`)
+                }
+            })
+
+            // 生成方法签名
+            const returnTypeName = writer.getNodeName(method.signature.returnType)
+            const paramsStr = convertedParams.join(', ')
+            
+            writer.print(`public func ${method.name}(${paramsStr}): ${returnTypeName} {`)
+            writer.pushIndent()
+            
+            // 生成正确的函数体 - 调用 peer 的对应方法
+            const peerClassName = this.getPeerClassName(className)
+            const argNames = method.signature.args.map((_: idl.IDLType, index: number) => method.signature.argName(index))
+            const argList = argNames.join(', ')
+            
+            writer.print(`if (this.checkPriority("${method.name}")) {`)
+            writer.pushIndent()
+            writer.print(`(this.getPeer() as ${peerClassName}).${method.name}Attribute(${argList})`)
+            writer.popIndent()
+            writer.print('}')
+            writer.print('return this')
+            
+            writer.popIndent()
+            writer.print('}')
+        })
     }
 
     visit(): PrinterResult[] {
@@ -369,6 +426,25 @@ class CJComponentFileVisitor implements ComponentFileVisitor {
     private printImports(peer: PeerClass, component:IdlComponentDeclaration): ImportsCollector {
         const imports = new ImportsCollector()
         return imports
+    }
+
+    private convertCjParameterType(paramType: idl.IDLType, paramName: string, isOptional: boolean): {
+        cjType: idl.IDLType | string;
+        defaultValue?: string;
+        error?: string;
+    } {
+        return this.typeMapper.convertParameterType(paramType, paramName, isOptional);
+    }
+
+    private getTypeDisplayName(type: idl.IDLType): string {
+        return this.typeMapper.getTypeDisplayName(type)
+    }
+
+    private getPeerClassName(componentClassName: string): string {
+        if (componentClassName.endsWith('Component')) {
+            return componentClassName.slice(0, -9) + 'Peer'
+        }
+        return componentClassName + 'Peer'
     }
 
     private printComponent(peer: PeerClass): PrinterResult[] {
@@ -404,9 +480,8 @@ class CJComponentFileVisitor implements ComponentFileVisitor {
                     writer.print('} else { throw Exception()}')
                 }
             )
-            // for (const grouped of groupOverloads(filteredMethods))
-            for (const grouped of peer.methods)
-                this.overloadsPrinter(printer).printGroupedComponentOverloads(peer.originalClassName!, [grouped])
+            // 使用 CJ 专用的类型映射处理方法参数
+            this.printCjComponentOverloads(peer.originalClassName!, peer.methods, writer)
             // todo stub until we can process AttributeModifier
             if (isCommonMethod(peer.originalClassName!) || peer.originalClassName == "ContainerSpanAttribute")
                 writer.print(`public func attributeModifier(modifier: AttributeModifier<Object>) { throw Exception("not implemented") }`)
@@ -437,7 +512,25 @@ class CJComponentFileVisitor implements ComponentFileVisitor {
         const componentClassImplName = generateArkComponentName(peer.componentName)
         const callableMethods = peer.methods.filter(it => it.isCallSignature).map(it => it.method)
         const callableMethod = callableMethods.length ? collapseSameNamedMethods(callableMethods) : undefined
-        const mappedCallableParams = callableMethod?.signature.args.map((it, index) => `${callableMethod.signature.argName(index)}: ${printer.getNodeName(it)}`) // ${callableMethod.signature.isArgOptional(index) ? "?" : ""}${printer.getNodeName(it)}`)
+        
+        // 应用 CJ 类型映射到构建函数参数
+        const mappedCallableParams = callableMethod?.signature.args.map((paramType, index) => {
+            const paramName = callableMethod.signature.argName(index)
+            const isOptional = callableMethod.signature.isArgOptional(index)
+            
+            const converted = this.convertCjParameterType(paramType, paramName, isOptional)
+            // 直接使用转换后的类型名称，而不是通过 getNodeName
+            const cjTypeName = typeof converted.cjType === 'string' ? converted.cjType : printer.getNodeName(converted.cjType)
+            
+            if (converted.defaultValue) {
+                return `${paramName}: ${cjTypeName} = ${converted.defaultValue}`
+            } else if (isOptional) {
+                return `${paramName}?: ${cjTypeName}`
+            } else {
+                return `${paramName}: ${cjTypeName}`
+            }
+        })
+        
         const mappedCallableParamsValues = callableMethod?.signature.args.map((_, index) => callableMethod.signature.argName(index))
         const callableInvocation = callableMethod?.name ? `receiver.${callableMethod?.name}(${mappedCallableParamsValues})` : ""
         const peerClassName = componentToPeerClass(peer.componentName)

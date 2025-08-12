@@ -161,7 +161,7 @@
     "configure:cj:native": "cd ./native && meson setup -Dsource_set=cangjie -Devents_test=false -Dcallbacks_test=true build-cangjie-native-dummy",
     "compile:cj:native": "npm run configure:cj:native && cd native && meson compile --verbose -C build-cangjie-native-dummy",
     "build:cj:callsitekey": "cd ../external/incremental-cj && npm run build:cj:callsitekey",
-    "run:cj:all": "npm run clean && npm run compile && node . --api-version 99 --dts2peer --base-dir ./,./tests/ --input-dir ./tests/interface_sdk_js/ --output-dir ./out/cangjie/generated --language cangjie --generator-target all",
+    "run:cj:all": "npm run clean && npm run compile && node . --api-version 99 --dts2peer --base-dir ./,./tests/ --input-dir ./tests/interface_sdk_js/ --output-dir ./out/cangjie/generated --language cangjie --generator-target arkoala",
     "run:cj:origin": "npm run clean && npm run compile && node . --api-version 99 --dts2peer --base-dir ./,./tests/ --input-dir ./tests/cangjie-subset/ --output-dir ./out/cangjie/generated --language cangjie --generator-target all",
     "run:cj:small":"npm run clean && npm run compile && node . --api-version 99 --dts2peer --base-dir ./,./tests/ --input-dir ./tests/small-cangjie --output-dir ./out/cangjie/generated_s --language cangjie --generator-target all",
     "run:cj": "npm run build:cj:callsitekey && npm run compile && node . --api-version 99 --dts2peer --base-dir ./,./tests/ --input-dir ./tests/cangjie-subset/ --output-dir ./out/cangjie/generated --language cangjie && npm run compile:cj:native && LD_LIBRARY_PATH=./native/build-cangjie-native-dummy:./../external/incremental-cj/runtime/callsitekey:$LD_LIBRARY_PATH ACE_LIBRARY_PATH=./native/build-cangjie-native-dummy cjpm run",
