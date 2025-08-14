@@ -39,7 +39,7 @@ export interface NumberConversionInput {
 }
 
 export interface NumberConversionResult {
-  cjType: 'Length' | 'Float64' | 'Int32' | 'Int64';
+  cjType: 'Length' | 'Float32' | 'Int32' | 'Int64';
   defaultValue: string;
   unit?: 'vp' | 'px' | 'fp' | 'percent' | 'lpx';
 }
@@ -50,14 +50,26 @@ export interface NumberConversionResult {
  * @param context 映射上下文信息
  * @returns 对应的 Cangjie 类型名称
  */
-export function mapNumberType(context: NumberMappingContext): 'Length' | 'Float64' | 'Int32' | 'Int64' {
+export function mapNumberType(context: NumberMappingContext): 'Length' | 'Float32' | 'Int32' | 'Int64' {
   // 场景1: 可选尺寸场景 - 使用 Length 默认值（基于仓颉语言实际使用）
   if (context.semanticHint === 'optionalSize' ||
       (context.propertyName === 'width' || context.propertyName === 'height')) {
     return 'Length';
   }
   
-  // 场景2: 尺寸相关场景 - 使用 Length 类型（仅限 number 类型）
+  // 场景2: 比例和角度场景 - 使用 Float32 类型（优先级高于尺寸场景）
+  if (context.semanticHint === 'ratio' ||
+      context.semanticHint === 'angle' ||
+      includesAny(context.propertyName, [
+        'opacity', 'scale', 'rotation', 'progress', 'ratio', 'factor', 'percent',
+        'alpha', 'beta', 'gamma', 'skew', 'transform', 'animation', 'transition',
+        'blur', 'brightness', 'contrast', 'saturate', 'sepia', 'hueRotate',
+        'invert', 'grayscale', 'dropShadow', 'perspective', 'zoom'
+      ])) {
+    return 'Float32';
+  }
+  
+  // 场景3: 尺寸相关场景 - 使用 Length 类型（仅限 number 类型）
   if (context.semanticHint === 'size' ||
       includesAny(context.propertyName, [
         'width', 'height', 'size', 'margin', 'padding', 'border', 'radius', 
@@ -67,20 +79,11 @@ export function mapNumberType(context: NumberMappingContext): 'Length' | 'Float6
     return 'Length';
   }
   
-  // 场景3: 比例和角度场景 - 使用 Float64 类型
-  if (context.semanticHint === 'ratio' ||
-      context.semanticHint === 'angle' ||
-      includesAny(context.propertyName, [
-        'opacity', 'scale', 'rotation', 'progress', 'ratio', 'factor', 'percent'
-      ])) {
-    return 'Float64';
-  }
-  
   // 场景4: 计数和索引场景 - 使用 Int32 类型
   if (context.semanticHint === 'count' ||
       includesAny(context.propertyName, [
         'count', 'total', 'num', 'quantity', 'maxLines', 'itemCount', 
-        'selectedIndex', 'duration'
+        'selectedIndex', 'duration', 'step', 'loop', 'iterations', 'repeat'
       ])) {
     return 'Int32';
   }
@@ -155,6 +158,9 @@ export function generateLengthDefault(propertyName: string, unit: string): strin
   if (name.includes('margin') || name.includes('padding')) {
     return `0.${unit}`;   // 默认边距
   }
+  if (name.includes('width') || name.includes('height')) {
+    return `0.${unit}`;   // 默认尺寸
+  }
   
   return `0.${unit}`;     // 默认值
 }
@@ -171,19 +177,28 @@ export function convertNumberProperty(input: NumberConversionInput): NumberConve
     semanticHint: semantic 
   });
   
+  // 调试日志：帮助排查类型映射问题
+  console.log(`[CJNumberConversion] Property: ${input.propertyName}, Semantic: ${semantic}, Type: ${cjType}`);
+  
   if (cjType === 'Length') {
     const unit = selectLengthUnit(input.propertyName);
     const defaultValue = generateLengthDefault(input.propertyName, unit);
     return { cjType, defaultValue, unit };
   }
   
-  if (cjType === 'Float64') {
-    // 特殊的 Float64 默认值处理
-    if (includesAny(input.propertyName, ['opacity', 'scale'])) {
+  if (cjType === 'Float32') {
+    // 特殊的 Float32 默认值处理
+    if (includesAny(input.propertyName, ['opacity', 'scale', 'ratio', 'factor', 'brightness', 'contrast', 'saturate'])) {
       return { cjType, defaultValue: '1.0' };
     }
-    if (includesAny(input.propertyName, ['progress'])) {
+    if (includesAny(input.propertyName, ['rotation', 'progress', 'alpha', 'beta', 'gamma', 'skew', 'blur', 'sepia', 'invert', 'grayscale'])) {
       return { cjType, defaultValue: '0.0' };
+    }
+    if (includesAny(input.propertyName, ['percent'])) {
+      return { cjType, defaultValue: '100.0' };
+    }
+    if (includesAny(input.propertyName, ['zoom', 'perspective'])) {
+      return { cjType, defaultValue: '1.0' };
     }
     return { cjType, defaultValue: '0.0' };
   }
@@ -215,7 +230,10 @@ function inferSemanticHint(propertyName: string): NumberSemanticHint {
   
   // 比例相关属性
   if (includesAny(name, [
-    'opacity', 'scale', 'rotation', 'progress', 'ratio', 'factor', 'percent'
+    'opacity', 'scale', 'rotation', 'progress', 'ratio', 'factor', 'percent',
+    'alpha', 'beta', 'gamma', 'skew', 'transform', 'animation', 'transition',
+    'blur', 'brightness', 'contrast', 'saturate', 'sepia', 'huerotate',
+    'invert', 'grayscale', 'dropshadow', 'perspective', 'zoom'
   ])) {
     return 'ratio';
   }
@@ -223,7 +241,7 @@ function inferSemanticHint(propertyName: string): NumberSemanticHint {
   // 计数相关属性
   if (includesAny(name, [
     'count', 'total', 'num', 'quantity', 'maxlines', 'itemcount', 
-    'selectedindex', 'duration'
+    'selectedindex', 'duration', 'step', 'loop', 'iterations', 'repeat'
   ])) {
     return 'count';
   }

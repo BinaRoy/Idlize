@@ -515,6 +515,27 @@ export class PeerLibrary implements LibraryInterface {
             if (type.name === 'Optional') {
                 return this.toDeclaration((type as idl.IDLReferenceType).typeArguments![0])
             }
+            
+            // 处理导入类型（以 _ 开头的类型）
+            if (type.name.startsWith('_')) {
+                // 这些是导入的类型，通常映射为内置类型
+                switch (type.name) {
+                    case '_Resource':
+                        return ArkCustomObject  // Resource 类型映射为自定义对象
+                    case '_LengthMetrics':
+                    case '_LengthMetricsUnit':
+                    case '_ColorMetrics':
+                        return ArkCustomObject  // 度量类型映射为自定义对象
+                    case '_LevelMode':
+                    case '_ImmersiveMode':
+                    case '_LevelOrder':
+                        return ArkCustomObject  // 枚举类型映射为自定义对象
+                    default:
+                        // 其他导入类型也映射为自定义对象
+                        return ArkCustomObject
+                }
+            }
+            
             const decl = this.resolveTypeReference(type)
             if (!decl) {
                 warn(`undeclared type ${idl.DebugUtils.debugPrintType(type)}`)

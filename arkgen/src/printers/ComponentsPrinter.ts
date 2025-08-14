@@ -370,46 +370,38 @@ class CJComponentFileVisitor implements ComponentFileVisitor {
             const method = methodGroup.method
             if (!method) return
 
-            // 转换方法参数类型
-            const convertedParams: string[] = []
-            method.signature.args.forEach((paramType: idl.IDLType, index: number) => {
+            // 先尝试收集每个参数的转换结果，若任一参数给出 overloads，则需要生成多个重载
+            const perParamConversions: Array<TypeConversionResult> = method.signature.args.map((paramType: idl.IDLType, index: number) => {
                 const paramName = method.signature.argName(index)
                 const isOptional = method.signature.isArgOptional(index)
-                
-                const converted = this.convertCjParameterType(paramType, paramName, isOptional)
-                // 直接使用转换后的类型名称，而不是通过 getNodeName
-                const cjTypeName = typeof converted.cjType === 'string' ? converted.cjType : writer.getNodeName(converted.cjType)
-                
-                if (converted.defaultValue) {
-                    convertedParams.push(`${paramName}: ${cjTypeName} = ${converted.defaultValue}`)
-                } else if (isOptional) {
-                    convertedParams.push(`${paramName}?: ${cjTypeName}`)
-                } else {
-                    convertedParams.push(`${paramName}: ${cjTypeName}`)
-                }
+                return this.convertCjParameterType(paramType, paramName, isOptional)
             })
 
-            // 生成方法签名
-            const returnTypeName = writer.getNodeName(method.signature.returnType)
-            const paramsStr = convertedParams.join(', ')
+            const hasOverloads = perParamConversions.some(c => c.overloads && c.overloads.length > 0)
             
-            writer.print(`public func ${method.name}(${paramsStr}): ${returnTypeName} {`)
-            writer.pushIndent()
-            
-            // 生成正确的函数体 - 调用 peer 的对应方法
+            // 移除过于冗长的调试日志，保留关键信息
+            if (hasOverloads) {
+                console.log(`[ComponentsPrinter] Method ${method.name} has overloads`);
+            }
+
             const peerClassName = this.getPeerClassName(className)
             const argNames = method.signature.args.map((_: idl.IDLType, index: number) => method.signature.argName(index))
-            const argList = argNames.join(', ')
-            
-            writer.print(`if (this.checkPriority("${method.name}")) {`)
-            writer.pushIndent()
-            writer.print(`(this.getPeer() as ${peerClassName}).${method.name}Attribute(${argList})`)
-            writer.popIndent()
-            writer.print('}')
-            writer.print('return this')
-            
-            writer.popIndent()
-            writer.print('}')
+            const returnTypeName = writer.getNodeName(method.signature.returnType)
+
+            if (hasOverloads) {
+                // 简化处理：当前只支持单参数重载，找出第一个有重载的参数
+                const overloadParam = perParamConversions.find(c => c.overloads && c.overloads.length > 0)
+                const overloadIndex = perParamConversions.findIndex(c => c.overloads && c.overloads.length > 0)
+                
+                if (overloadParam && overloadParam.overloads) {
+                    for (const alt of overloadParam.overloads) {
+                        this.printSingleMethod(method, perParamConversions, overloadIndex, alt, className, writer)
+                    }
+                }
+            } else {
+                const params = this.buildParameterList(perParamConversions, method, writer);
+                this.printSingleMethodImplementation(method, params, argNames, peerClassName, returnTypeName, writer);
+            }
         })
     }
 
@@ -428,23 +420,248 @@ class CJComponentFileVisitor implements ComponentFileVisitor {
         return imports
     }
 
-    private convertCjParameterType(paramType: idl.IDLType, paramName: string, isOptional: boolean): {
-        cjType: idl.IDLType | string;
-        defaultValue?: string;
-        error?: string;
-    } {
+    /**
+     * 打印单个方法重载版本
+     */
+    /**
+     * 打印单个方法重载版本
+     * 符合《基础类型映射与联合类型优化规则》的重载生成策略
+     */
+    private printSingleMethod(
+        method: any, 
+        allConversions: TypeConversionResult[], 
+        overloadIndex: number, 
+        overloadAlt: { cjType: idl.IDLType | string; defaultValue?: string; useOption?: boolean }, 
+        className: string, 
+        writer: LanguageWriter
+    ): void {
+        const peerClassName = this.getPeerClassName(className);
+        const argNames = method.signature.args.map((_: idl.IDLType, index: number) => method.signature.argName(index));
+        const returnTypeName = writer.getNodeName(method.signature.returnType);
+        
+        const params = this.buildOverloadParameterList(allConversions, method, overloadIndex, overloadAlt, writer);
+        this.printSingleMethodImplementation(method, params, argNames, peerClassName, returnTypeName, writer);
+    }
+    
+    /**
+     * 构建重载方法的参数列表
+     */
+    private buildOverloadParameterList(
+        allConversions: TypeConversionResult[], 
+        method: any,
+        overloadIndex: number,
+        overloadAlt: { cjType: idl.IDLType | string; defaultValue?: string; useOption?: boolean },
+        writer: LanguageWriter
+    ): string[] {
+        const params: string[] = [];
+        
+        allConversions.forEach((pc: TypeConversionResult, idx: number) => {
+            const name = method.signature.argName(idx);
+            const isOptional = method.signature.isArgOptional(idx);
+            
+            let tName: string;
+            let defaultValue: string | undefined;
+            
+            if (idx === overloadIndex) {
+                // 使用重载的替代类型
+                tName = typeof overloadAlt.cjType === 'string' ? overloadAlt.cjType : writer.getNodeName(overloadAlt.cjType);
+                defaultValue = overloadAlt.defaultValue;
+            } else {
+                // 使用原有转换结果
+                tName = typeof pc.cjType === 'string' ? pc.cjType : writer.getNodeName(pc.cjType as idl.IDLType);
+                defaultValue = pc.defaultValue;
+            }
+            
+            // 应用高频联合类型收敛
+            tName = this.rewriteTypeName(tName);
+            
+            // 根据《规则》优先使用默认值而非可选语法
+            params.push(this.formatParameter(name, tName, defaultValue, isOptional));
+        });
+        
+        return params;
+    }
+    
+    /**
+     * 构建标准方法的参数列表
+     */
+    private buildParameterList(
+        perParamConversions: TypeConversionResult[], 
+        method: any, 
+        writer: LanguageWriter
+    ): string[] {
+        const params: string[] = [];
+        
+        perParamConversions.forEach((pc: TypeConversionResult, idx: number) => {
+            const name = method.signature.argName(idx);
+            const isOptional = method.signature.isArgOptional(idx);
+            let tName = typeof pc.cjType === 'string' ? pc.cjType : writer.getNodeName(pc.cjType as idl.IDLType);
+            
+            // 应用高频联合类型收敛
+            tName = this.rewriteTypeName(tName);
+            
+            // 根据《规则》优先使用默认值而非可选语法
+            params.push(this.formatParameter(name, tName, pc.defaultValue, isOptional));
+        });
+        
+        return params;
+    }
+    
+    /**
+     * 格式化单个参数，符合《基础类型映射与联合类型优化规则》
+     * 优先使用默认值，基础类型避免使用 ? 语法
+     */
+    private formatParameter(name: string, typeName: string, defaultValue: string | undefined, isOptional: boolean): string {
+        // 优先使用默认值（基础类型可选：使用默认值）
+        if (defaultValue && defaultValue !== 'None') {
+            return `${name}: ${typeName} = ${defaultValue}`;
+        }
+        // 只有在没有默认值时才使用可选语法（非基础类型可选：使用 Option<T>）
+        else if (isOptional) {
+            return `${name}?: ${typeName}`;
+        }
+        // 必需参数
+        else {
+            return `${name}: ${typeName}`;
+        }
+    }
+    
+    /**
+     * 打印方法实现体
+     */
+    private printSingleMethodImplementation(
+        method: any, 
+        params: string[], 
+        argNames: string[], 
+        peerClassName: string, 
+        returnTypeName: string, 
+        writer: LanguageWriter
+    ): void {
+        const paramsStr = params.join(', ');
+        writer.print(`public func ${method.name}(${paramsStr}): ${returnTypeName} {`);
+        writer.pushIndent();
+        
+        const argList = argNames.join(', ');
+        writer.print(`if (this.checkPriority("${method.name}")) {`);
+        writer.pushIndent();
+        writer.print(`(this.getPeer() as ${peerClassName}).${method.name}Attribute(${argList})`);
+        writer.popIndent();
+        writer.print('}');
+        writer.print('return this');
+        
+        writer.popIndent();
+        writer.print('}');
+    }
+
+    /**
+     * 转换 Cangjie 参数类型，委托给 CJTypeMapper 处理
+     * 符合《基础类型映射与联合类型优化规则》
+     */
+    private convertCjParameterType(paramType: idl.IDLType, paramName: string, isOptional: boolean): TypeConversionResult {
         return this.typeMapper.convertParameterType(paramType, paramName, isOptional);
     }
 
-    private getTypeDisplayName(type: idl.IDLType): string {
-        return this.typeMapper.getTypeDisplayName(type)
+    /**
+     * 在最终打印前，对类型名进行高频联合类型收敛改写，确保组件层不暴露 Union_*。
+     * 基于《基础类型映射与联合类型优化规则》的 P0-P2 收敛策略：
+     * P0: FontWeight|number|string → FontWeight, string|Resource → ResourceStr
+     * P1: Date|Bindable → Date
+     * P2: String|Array<String> → Array<ResourceStr>, Number|Array<Number> → Array<Int64>
+     * 其他: string|number|Color → ResourceColor
+     */
+    private rewriteTypeName(typeName: string): string {
+        if (!typeName) return typeName;
+        
+        let s = typeName.replace(/\s+/g, ' '); // 规范化空白符
+        
+        // P0 高优先级收敛
+        s = this.applyP0Convergence(s);
+        
+        // P1 特殊类型收敛  
+        s = this.applyP1Convergence(s);
+        
+        // P2 数组类型收敛
+        s = this.applyP2Convergence(s);
+        
+        // 其他高频模式收敛
+        s = this.applyOtherConvergence(s);
+        
+        return s;
+    }
+    
+    /**
+     * P0 高优先级收敛规则
+     */
+    private applyP0Convergence(s: string): string {
+        // FontWeight | number | string → FontWeight
+        s = s.replace(/Union_FontWeight_Number_String/g, 'FontWeight');
+        s = s.replace(/FontWeight\s*\|\s*[Nn]umber\s*\|\s*[Ss]tring/g, 'FontWeight');
+        s = s.replace(/[Ss]tring\s*\|\s*[Nn]umber\s*\|\s*FontWeight/g, 'FontWeight');
+        
+        // string | Resource → ResourceStr
+        s = s.replace(/Union_String_Resource/g, 'ResourceStr');
+        s = s.replace(/[Ss]tring\s*\|\s*Resource/g, 'ResourceStr');
+        s = s.replace(/Resource\s*\|\s*[Ss]tring/g, 'ResourceStr');
+        
+        return s;
+    }
+    
+    /**
+     * P1 特殊类型收敛规则
+     */
+    private applyP1Convergence(s: string): string {
+        // Date | Bindable → Date
+        s = s.replace(/Union_Date_Bindable/g, 'Date');
+        s = s.replace(/Date\s*\|\s*Bindable(?:<[^>]*>)?/g, 'Date');
+        s = s.replace(/Bindable(?:<\s*Date\s*>)?\s*\|\s*Date/g, 'Date');
+        
+        return s;
+    }
+    
+    /**
+     * P2 数组类型收敛规则
+     */
+    private applyP2Convergence(s: string): string {
+        // String | Array<String> → Array<ResourceStr>
+        s = s.replace(/Union_String_Array_String/g, 'Array<ResourceStr>');
+        s = s.replace(/[Ss]tring\s*\|\s*Array<\s*[Ss]tring\s*>/g, 'Array<ResourceStr>');
+        s = s.replace(/Array<\s*[Ss]tring\s*>\s*\|\s*[Ss]tring/g, 'Array<ResourceStr>');
+        
+        // Number | Array<Number> → Array<Int64>
+        s = s.replace(/Union_Number_Array_Number/g, 'Array<Int64>');
+        s = s.replace(/[Nn]umber\s*\|\s*Array<\s*[Nn]umber\s*>/g, 'Array<Int64>');
+        s = s.replace(/Array<\s*[Nn]umber\s*>\s*\|\s*[Nn]umber/g, 'Array<Int64>');
+        
+        return s;
+    }
+    
+    /**
+     * 其他高频模式收敛
+     */
+    private applyOtherConvergence(s: string): string {
+        // string | number | Color → ResourceColor
+        s = s.replace(/Union_String_Number_Color/g, 'ResourceColor');
+        s = s.replace(/[Ss]tring\s*\|\s*[Nn]umber\s*\|\s*Color/g, 'ResourceColor');
+        s = s.replace(/Color\s*\|\s*[Nn]umber\s*\|\s*[Ss]tring/g, 'ResourceColor');
+        
+        return s;
     }
 
+    /**
+     * 获取类型显示名称，委托给 CJTypeMapper 处理
+     */
+    private getTypeDisplayName(type: idl.IDLType): string {
+        return this.typeMapper.getTypeDisplayName(type);
+    }
+
+    /**
+     * 生成 Peer 类名称
+     */
     private getPeerClassName(componentClassName: string): string {
         if (componentClassName.endsWith('Component')) {
-            return componentClassName.slice(0, -9) + 'Peer'
+            return componentClassName.slice(0, -9) + 'Peer';
         }
-        return componentClassName + 'Peer'
+        return componentClassName + 'Peer';
     }
 
     private printComponent(peer: PeerClass): PrinterResult[] {
@@ -519,11 +736,13 @@ class CJComponentFileVisitor implements ComponentFileVisitor {
             const isOptional = callableMethod.signature.isArgOptional(index)
             
             const converted = this.convertCjParameterType(paramType, paramName, isOptional)
-            // 直接使用转换后的类型名称，而不是通过 getNodeName
-            const cjTypeName = typeof converted.cjType === 'string' ? converted.cjType : printer.getNodeName(converted.cjType)
-            
-            if (converted.defaultValue) {
-                return `${paramName}: ${cjTypeName} = ${converted.defaultValue}`
+            // 选择首选类型（单一类型或重载的第一个）
+            const chosenType = converted.cjType ?? converted.overloads?.[0]?.cjType ?? idl.IDLAnyType
+            const chosenDefault = converted.defaultValue ?? converted.overloads?.[0]?.defaultValue
+            const cjTypeName = typeof chosenType === 'string' ? chosenType : printer.getNodeName(chosenType)
+
+            if (chosenDefault) {
+                return `${paramName}: ${cjTypeName} = ${chosenDefault}`
             } else if (isOptional) {
                 return `${paramName}?: ${cjTypeName}`
             } else {

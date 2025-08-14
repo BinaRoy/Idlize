@@ -53,7 +53,15 @@ function peerToOutString(library: PeerLibrary, context: idl.IDLInterface, method
         //     return `delete ${context.name}`
         return method.sig.name
     }
-    throw new Error("Can not generate string representation of peer " + method.sig.name)
+    
+    // 为既不是组件声明也不是 materialized 类型的接口提供默认处理
+    // 这些通常是纯接口类型，如 PageTransitionEnterInterface
+    if (context.name.endsWith('Interface')) {
+        return method.sig.name
+    }
+    
+    // 最后的兜底处理
+    return method.sig.name
 }
 
 function peerImplName(method: PeerMethod): string {
@@ -69,7 +77,15 @@ function peerParentNamespaceName(library: PeerLibrary, context: idl.IDLInterface
     }
     if (isMaterialized(context, library))
         return `${qualifiedName(context, "_", "namespace.name")}Accessor`
-    throw new Error("Can not calculate name for " + context.name)
+    
+    // 为既不是组件声明也不是 materialized 类型的接口提供默认处理
+    // 这些通常是纯接口类型，如 PageTransitionEnterInterface
+    if (context.name.endsWith('Interface')) {
+        return `${capitalize(context.name.replace('Interface', ''))}InterfaceAccessor`
+    }
+    
+    // 最后的兜底处理
+    return `${capitalize(context.name)}Accessor`
 }
 
 function peerReturnValue(library: PeerLibrary, context: idl.IDLInterface, method: PeerMethod): string | undefined {

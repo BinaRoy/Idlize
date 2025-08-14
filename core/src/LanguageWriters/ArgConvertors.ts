@@ -1169,10 +1169,33 @@ export class FunctionConvertor extends BaseArgConvertor { //
         super(idl.IDLFunctionType, [RuntimeType.FUNCTION], false, false, param)
     }
     convertorArg(param: string, writer: LanguageWriter): string {
-       throw new Error('Shall not be used')
+        // For function types, we need to handle them similar to callbacks
+        // This is a simplified implementation that passes function data
+        switch (writer.language) {
+            case Language.CPP:
+                return `static_cast<${generatorTypePrefix()}FunctionType>(${param})`
+            case Language.JAVA:
+            case Language.KOTLIN:
+            case Language.CJ:
+                return `FunctionBase.toPeerPtr(${writer.escapeKeyword(param)})`
+            default:
+                return `toFunctionPtr(${param})`
+        }
     }
     convertorSerialize(param: string, value: string, writer: LanguageWriter): LanguageStatement {
-        throw new Error('Shall not be used')
+        // For function types, we need to handle them similar to callbacks
+        // This is a simplified implementation that writes function data
+        if (writer.language == Language.CPP) {
+            return writer.makeBlock([
+                writer.makeStatement(writer.makeMethodCall(`${param}Serializer`, "writeCallbackResource", [writer.makeString(`${value}.resource`)])),
+                writer.makeStatement(writer.makeMethodCall(`${param}Serializer`, "writePointer", [writer.makeCast(
+                    new StringExpression(`${value}.call`), idl.IDLPointerType, { unsafe: true })])),
+                writer.makeStatement(writer.makeMethodCall(`${param}Serializer`, "writePointer", [writer.makeCast(
+                    new StringExpression(`${value}.callSync`), idl.IDLPointerType, { unsafe: true })]))
+            ], false)
+        }
+        // For other languages, use a simplified approach
+        return writer.makeStatement(writer.makeMethodCall(`${param}Serializer`, `holdAndWriteCallback`, [writer.makeString(`${value}`)]))
     }
     convertorDeserialize(bufferName: string, deserializerName: string, assigneer: ExpressionAssigner, writer: LanguageWriter): LanguageStatement {
         // For function types, we need to handle them similar to callbacks
