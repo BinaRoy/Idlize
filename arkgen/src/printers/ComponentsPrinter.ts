@@ -55,6 +55,7 @@ import { componentToAttributesInterface } from './PeersPrinter'
 import { HandwrittenModule } from '../ArkoalaLayout'
 import { convertNumberProperty } from '../declaration/CJNumberConversion'
 import { CJTypeMapper, TypeConversionResult, DEFAULT_VALUES } from '../declaration/CJTypeMapper'
+import { CJCallbackTypeManager } from '../declaration/CJCallbackTypeManager'
 
 export function generateArkComponentName(component: string) {
     return `Ark${component}Component`
@@ -346,6 +347,7 @@ class JavaComponentFileVisitor implements ComponentFileVisitor {
 
 class CJComponentFileVisitor implements ComponentFileVisitor {
     private readonly typeMapper: CJTypeMapper
+    private readonly callbackManager: CJCallbackTypeManager
 
     constructor(
         protected readonly library: PeerLibrary,
@@ -355,6 +357,7 @@ class CJComponentFileVisitor implements ComponentFileVisitor {
         }
     ) {
         this.typeMapper = new CJTypeMapper()
+        this.callbackManager = new CJCallbackTypeManager()
     }
 
     private overloadsPrinter(printer:LanguageWriter) {
@@ -365,8 +368,11 @@ class CJComponentFileVisitor implements ComponentFileVisitor {
      * CJ 专用的组件方法重载打印器
      * 应用类型映射规则到方法参数
      */
-    private printCjComponentOverloads(className: string, methods: any[], writer: LanguageWriter) {
-        methods.forEach(methodGroup => {
+    private printCjComponentOverloads(className: string, methods: any[], writer: LanguageWriter, componentName: string) {
+        // 按方法名分组去重，优先保留命名回调版本
+        const methodsByName = this.groupAndDeduplicateMethods(methods, writer, componentName)
+        
+        methodsByName.forEach(methodGroup => {
             const method = methodGroup.method
             if (!method) return
 
@@ -389,17 +395,20 @@ class CJComponentFileVisitor implements ComponentFileVisitor {
             const returnTypeName = writer.getNodeName(method.signature.returnType)
 
             if (hasOverloads) {
-                // 简化处理：当前只支持单参数重载，找出第一个有重载的参数
+                // 处理重载：优先选择语义类型，避免生成内联函数版本
                 const overloadParam = perParamConversions.find(c => c.overloads && c.overloads.length > 0)
                 const overloadIndex = perParamConversions.findIndex(c => c.overloads && c.overloads.length > 0)
                 
                 if (overloadParam && overloadParam.overloads) {
-                    for (const alt of overloadParam.overloads) {
-                        this.printSingleMethod(method, perParamConversions, overloadIndex, alt, className, writer)
+                    // 过滤重载：优先使用命名回调，避免内联函数
+                    const filteredOverloads = this.filterOverloadsForCallback(overloadParam.overloads, method.signature.argName(overloadIndex), writer)
+                    
+                    for (const alt of filteredOverloads) {
+                        this.printSingleMethod(method, perParamConversions, overloadIndex, alt, className, writer, componentName)
                     }
                 }
             } else {
-                const params = this.buildParameterList(perParamConversions, method, writer);
+                const params = this.buildParameterList(perParamConversions, method, writer, componentName);
                 this.printSingleMethodImplementation(method, params, argNames, peerClassName, returnTypeName, writer);
             }
         })
@@ -417,12 +426,51 @@ class CJComponentFileVisitor implements ComponentFileVisitor {
 
     private printImports(peer: PeerClass, component:IdlComponentDeclaration): ImportsCollector {
         const imports = new ImportsCollector()
+        // 添加 cores 包导入以使用命名回调类型
+        imports.addFeatures(['*'], 'idlize.cores')
         return imports
     }
 
     /**
      * 打印单个方法重载版本
      */
+    /**
+     * 过滤重载选项，避免同时生成内联函数和命名回调版本
+     */
+    private filterOverloadsForCallback(overloads: any[], paramName: string, writer: LanguageWriter): any[] {
+        // 检查是否存在内联函数类型
+        const hasInlineFunction = overloads.some(alt => {
+            const typeName = typeof alt.cjType === 'string' ? alt.cjType : writer.getNodeName(alt.cjType as idl.IDLType)
+            return CJCallbackTypeManager.isFunctionType(typeName)
+        })
+
+        if (hasInlineFunction) {
+            // 如果存在内联函数，优先保留命名回调版本，过滤掉内联函数版本
+            const filteredOverloads = overloads.filter(alt => {
+                const typeName = typeof alt.cjType === 'string' ? alt.cjType : writer.getNodeName(alt.cjType as idl.IDLType)
+                
+                // 保留命名回调类型：XxxCallback 或 Option<XxxCallback>
+                if (/\w+Callback\b/.test(typeName) || /^Option<\s*\w+Callback\s*>$/.test(typeName)) {
+                    return true
+                }
+                
+                // 过滤掉内联函数类型：(args) -> Ret
+                if (CJCallbackTypeManager.isFunctionType(typeName)) {
+                    console.log(`[ComponentsPrinter] Filtering out inline function type for ${paramName}: ${typeName}`)
+                    return false
+                }
+                
+                // 保留其他类型
+                return true
+            })
+            
+            return filteredOverloads.length > 0 ? filteredOverloads : overloads
+        }
+        
+        // 如果没有内联函数，返回所有重载
+        return overloads
+    }
+
     /**
      * 打印单个方法重载版本
      * 符合《基础类型映射与联合类型优化规则》的重载生成策略
@@ -433,13 +481,14 @@ class CJComponentFileVisitor implements ComponentFileVisitor {
         overloadIndex: number, 
         overloadAlt: { cjType: idl.IDLType | string; defaultValue?: string; useOption?: boolean }, 
         className: string, 
-        writer: LanguageWriter
+        writer: LanguageWriter,
+        componentName: string
     ): void {
         const peerClassName = this.getPeerClassName(className);
         const argNames = method.signature.args.map((_: idl.IDLType, index: number) => method.signature.argName(index));
         const returnTypeName = writer.getNodeName(method.signature.returnType);
         
-        const params = this.buildOverloadParameterList(allConversions, method, overloadIndex, overloadAlt, writer);
+        const params = this.buildOverloadParameterList(allConversions, method, overloadIndex, overloadAlt, writer, componentName);
         this.printSingleMethodImplementation(method, params, argNames, peerClassName, returnTypeName, writer);
     }
     
@@ -451,32 +500,35 @@ class CJComponentFileVisitor implements ComponentFileVisitor {
         method: any,
         overloadIndex: number,
         overloadAlt: { cjType: idl.IDLType | string; defaultValue?: string; useOption?: boolean },
-        writer: LanguageWriter
+        writer: LanguageWriter,
+        componentName: string
     ): string[] {
         const params: string[] = [];
         
         allConversions.forEach((pc: TypeConversionResult, idx: number) => {
-            const name = method.signature.argName(idx);
-            const isOptional = method.signature.isArgOptional(idx);
-            
-            let tName: string;
-            let defaultValue: string | undefined;
-            
             if (idx === overloadIndex) {
                 // 使用重载的替代类型
-                tName = typeof overloadAlt.cjType === 'string' ? overloadAlt.cjType : writer.getNodeName(overloadAlt.cjType);
-                defaultValue = overloadAlt.defaultValue;
+                params.push(this.processAndFormatParameter(
+                    method.signature.args[idx],
+                    idx,
+                    method,
+                    componentName,
+                    writer,
+                    overloadAlt, // 重载类型
+                    undefined
+                ))
             } else {
                 // 使用原有转换结果
-                tName = typeof pc.cjType === 'string' ? pc.cjType : writer.getNodeName(pc.cjType as idl.IDLType);
-                defaultValue = pc.defaultValue;
+                params.push(this.processAndFormatParameter(
+                    method.signature.args[idx],
+                    idx,
+                    method,
+                    componentName,
+                    writer,
+                    undefined, // 无重载类型
+                    pc // 使用已有转换结果
+                ))
             }
-            
-            // 应用高频联合类型收敛
-            tName = this.rewriteTypeName(tName);
-            
-            // 根据《规则》优先使用默认值而非可选语法
-            params.push(this.formatParameter(name, tName, defaultValue, isOptional));
         });
         
         return params;
@@ -488,20 +540,21 @@ class CJComponentFileVisitor implements ComponentFileVisitor {
     private buildParameterList(
         perParamConversions: TypeConversionResult[], 
         method: any, 
-        writer: LanguageWriter
+        writer: LanguageWriter,
+        componentName: string
     ): string[] {
         const params: string[] = [];
         
         perParamConversions.forEach((pc: TypeConversionResult, idx: number) => {
-            const name = method.signature.argName(idx);
-            const isOptional = method.signature.isArgOptional(idx);
-            let tName = typeof pc.cjType === 'string' ? pc.cjType : writer.getNodeName(pc.cjType as idl.IDLType);
-            
-            // 应用高频联合类型收敛
-            tName = this.rewriteTypeName(tName);
-            
-            // 根据《规则》优先使用默认值而非可选语法
-            params.push(this.formatParameter(name, tName, pc.defaultValue, isOptional));
+            params.push(this.processAndFormatParameter(
+                method.signature.args[idx],
+                idx,
+                method,
+                componentName,
+                writer,
+                undefined, // 无重载类型
+                pc // 使用已有转换结果
+            ))
         });
         
         return params;
@@ -511,8 +564,17 @@ class CJComponentFileVisitor implements ComponentFileVisitor {
      * 格式化单个参数，符合《基础类型映射与联合类型优化规则》
      * 优先使用默认值，基础类型避免使用 ? 语法
      */
+    /**
+     * 格式化单个参数，符合《基础类型映射与联合类型优化规则》
+     * 优先使用默认值，基础类型避免使用 ? 语法
+     */
     private formatParameter(name: string, typeName: string, defaultValue: string | undefined, isOptional: boolean): string {
-        // 优先使用默认值（基础类型可选：使用默认值）
+        // 回调参数：使用统一的回调格式化逻辑
+        if (CJCallbackTypeManager.isCallbackType(typeName)) {
+            return CJCallbackTypeManager.formatCallbackParameter(name, typeName)
+        }
+
+        // 非回调参数：优先使用默认值（基础类型可选：使用默认值）
         if (defaultValue && defaultValue !== 'None') {
             return `${name}: ${typeName} = ${defaultValue}`;
         }
@@ -523,6 +585,77 @@ class CJComponentFileVisitor implements ComponentFileVisitor {
         // 必需参数
         else {
             return `${name}: ${typeName}`;
+        }
+    }
+
+
+
+    /**
+     * 统一处理类型名：高频收敛 + 回调命名化
+     */
+    private processTypeName(typeName: string, paramName: string, methodName: string, componentName: string): string {
+        // 步骤1：应用高频联合类型收敛
+        let processedType = this.rewriteTypeName(typeName)
+        // 步骤2：回调命名化
+        processedType = this.callbackManager.processCallbackType(paramName, processedType, methodName, componentName)
+        return processedType
+    }
+
+    /**
+     * 统一的参数转换和格式化逻辑，用于属性方法、重载方法和构建函数
+     */
+    private processAndFormatParameter(
+        paramType: any,
+        index: number,
+        method: any,
+        componentName: string,
+        writer: LanguageWriter,
+        overrideType?: { cjType: any; defaultValue?: string },
+        baseConversion?: TypeConversionResult
+    ): string {
+        try {
+            const paramName = method.signature.argName(index) || `param${index}`
+            const isOptional = method.signature.isArgOptional(index)
+            
+            // 使用重载类型或基础转换结果
+            let tName: string
+            let defaultValue: string | undefined
+            
+            if (overrideType) {
+                tName = typeof overrideType.cjType === 'string' ? overrideType.cjType : writer.getNodeName(overrideType.cjType)
+                defaultValue = overrideType.defaultValue
+            } else {
+                const converted = baseConversion ?? this.convertCjParameterType(paramType, paramName, isOptional)
+                
+                // 容错处理：确保 cjType 不为空
+                if (!converted || !converted.cjType) {
+                    console.warn(`[ComponentsPrinter] No cjType for parameter ${paramName} in method ${method.name}, falling back to paramType`)
+                    // 兜底：使用原始 paramType 的 nodeName
+                    try {
+                        tName = writer.getNodeName(paramType) || 'Any'
+                    } catch (error) {
+                        console.warn(`[ComponentsPrinter] Failed to get nodeName for paramType, using 'Any'`)
+                        tName = 'Any'
+                    }
+                    defaultValue = undefined
+                } else {
+                    const chosenType = converted.cjType ?? converted.overloads?.[0]?.cjType ?? 'Any'
+                    tName = typeof chosenType === 'string' ? chosenType : writer.getNodeName(chosenType)
+                    defaultValue = converted.defaultValue ?? converted.overloads?.[0]?.defaultValue
+                }
+            }
+            
+            // 统一处理类型名：高频收敛 + 回调命名化
+            const processedTypeName = this.processTypeName(tName, paramName, method.name, componentName)
+            
+            // 使用统一的参数格式化逻辑
+            return this.formatParameter(paramName, processedTypeName, defaultValue, isOptional)
+            
+        } catch (error) {
+            console.warn(`[ComponentsPrinter] Error processing parameter ${index} in method ${method.name}:`, error)
+            // 最终兜底：返回基本参数格式
+            const paramName = `param${index}`
+            return `${paramName}: Any`
         }
     }
     
@@ -569,7 +702,7 @@ class CJComponentFileVisitor implements ComponentFileVisitor {
      * P2: String|Array<String> → Array<ResourceStr>, Number|Array<Number> → Array<Int64>
      * 其他: string|number|Color → ResourceColor
      */
-    private rewriteTypeName(typeName: string): string {
+    public rewriteTypeName(typeName: string): string {
         if (!typeName) return typeName;
         
         let s = typeName.replace(/\s+/g, ' '); // 规范化空白符
@@ -585,6 +718,12 @@ class CJComponentFileVisitor implements ComponentFileVisitor {
         
         // 其他高频模式收敛
         s = this.applyOtherConvergence(s);
+        
+        // 基础类型映射
+        s = this.applyBasicTypeMapping(s);
+        
+        // Union类型清理
+        s = this.applyUnionTypeCleanup(s);
         
         return s;
     }
@@ -648,6 +787,316 @@ class CJComponentFileVisitor implements ComponentFileVisitor {
     }
 
     /**
+     * 基础类型映射：Float64→Float32, Any→CustomObject
+     */
+    private applyBasicTypeMapping(s: string): string {
+        // Float64 → Float32（仅组件层）
+        s = s.replace(/\bFloat64\b/g, 'Float32');
+        
+        // Any → CustomObject（仅组件层）
+        s = s.replace(/\bAny\b/g, 'CustomObject');
+        
+        return s;
+    }
+
+    /**
+     * 修复构建函数模板中的内联回调，替换为命名回调类型
+     */
+    private fixInlineCallbacksInTemplate(templateContent: string, componentName: string): string {
+        let content = templateContent
+        
+        // 修复构建函数参数中的内联回调
+        content = this.fixBuildFunctionParameters(content, componentName)
+        
+        // 修复 Holder 类中的内联回调
+        content = this.fixHolderClassCallbacks(content, componentName)
+        
+        console.log(`[ComponentsPrinter] Fixed inline callbacks in template for ${componentName}`)
+        return content
+    }
+
+    /**
+     * 修复构建函数参数中的内联回调
+     */
+    private fixBuildFunctionParameters(content: string, componentName: string): string {
+        // 修复 style 参数的各种形态
+        content = content.replace(
+            /style:\s*\?\(\(attributes:\s*(\w+)\s*\)\s*->\s*Unit\)/g,
+            'style: Option<On' + componentName + 'StyleCallback> = None'
+        )
+        content = content.replace(
+            /style:\s*\(\(attributes:\s*(\w+)\s*\)\s*->\s*Unit\)/g,
+            'style: Option<On' + componentName + 'StyleCallback> = None'
+        )
+        
+        // 修复 content_ 参数的各种形态
+        content = content.replace(
+            /content_:\s*\?\(\(\)\s*->\s*Unit\)/g,
+            'content_: Option<On' + componentName + 'ContentCallback> = None'
+        )
+        content = content.replace(
+            /content_:\s*\(\(\)\s*->\s*Unit\)/g,
+            'content_: Option<On' + componentName + 'ContentCallback> = None'
+        )
+        
+        return content
+    }
+
+    /**
+     * 修复 Holder 类中的内联回调
+     */
+    private fixHolderClassCallbacks(content: string, componentName: string): string {
+        // 修复 StyleHolder 类字段
+        content = content.replace(
+            /var\s+value:\s*\?\(\(attributes:\s*(\w+)\s*\)\s*->\s*Unit\)/g,
+            'var value: Option<On' + componentName + 'StyleCallback>'
+        )
+        content = content.replace(
+            /var\s+value:\s*\(\(attributes:\s*(\w+)\s*\)\s*->\s*Unit\)/g,
+            'var value: Option<On' + componentName + 'StyleCallback>'
+        )
+        
+        // 修复 ContentHolder 类字段
+        content = content.replace(
+            /var\s+value:\s*\?\(\(\)\s*->\s*Unit\)/g,
+            'var value: Option<On' + componentName + 'ContentCallback>'
+        )
+        content = content.replace(
+            /var\s+value:\s*\(\(\)\s*->\s*Unit\)/g,
+            'var value: Option<On' + componentName + 'ContentCallback>'
+        )
+        
+        // 修复 StyleHolder 构造函数
+        content = content.replace(
+            /init\s*\(value:\s*\?\(\(attributes:\s*(\w+)\s*\)\s*->\s*Unit\)\)/g,
+            'init (value: Option<On' + componentName + 'StyleCallback>)'
+        )
+        content = content.replace(
+            /init\s*\(value:\s*\(\(attributes:\s*(\w+)\s*\)\s*->\s*Unit\)\)/g,
+            'init (value: Option<On' + componentName + 'StyleCallback>)'
+        )
+        
+        // 修复 ContentHolder 构造函数
+        content = content.replace(
+            /init\s*\(value:\s*\?\(\(\)\s*->\s*Unit\)\)/g,
+            'init (value: Option<On' + componentName + 'ContentCallback>)'
+        )
+        content = content.replace(
+            /init\s*\(value:\s*\(\(\)\s*->\s*Unit\)\)/g,
+            'init (value: Option<On' + componentName + 'ContentCallback>)'
+        )
+        
+        return content
+    }
+
+    /**
+     * 按方法名分组并去重，优先保留命名回调版本
+     */
+    private groupAndDeduplicateMethods(methods: any[], writer: LanguageWriter, componentName: string): any[] {
+        const methodsByName = new Map<string, any[]>()
+        
+        // 按方法名分组
+        methods.forEach(methodGroup => {
+            const method = methodGroup.method
+            if (!method) return
+            
+            const methodName = method.name
+            if (!methodsByName.has(methodName)) {
+                methodsByName.set(methodName, [])
+            }
+            methodsByName.get(methodName)!.push(methodGroup)
+        })
+        
+        // 对每个同名方法组进行去重
+        const deduplicatedMethods: any[] = []
+        methodsByName.forEach((methodGroupList, methodName) => {
+            if (methodGroupList.length === 1) {
+                // 只有一个版本，直接保留
+                deduplicatedMethods.push(methodGroupList[0])
+            } else {
+                // 多个版本，优先选择命名回调版本
+                const preferredMethod = this.selectPreferredMethodVersion(methodGroupList, writer, componentName)
+                deduplicatedMethods.push(preferredMethod)
+            }
+        })
+        
+        return deduplicatedMethods
+    }
+
+    /**
+     * 从同名方法的多个版本中选择优先版本
+     * 优先规则：命名回调版本 > 内联函数版本
+     */
+    private selectPreferredMethodVersion(methodGroupList: any[], writer: LanguageWriter, componentName: string): any {
+        let bestMethod = methodGroupList[0]
+        let bestScore = this.scoreMethodForCallbackPreference(bestMethod, writer, componentName)
+        
+        for (let i = 1; i < methodGroupList.length; i++) {
+            const currentMethod = methodGroupList[i]
+            const currentScore = this.scoreMethodForCallbackPreference(currentMethod, writer, componentName)
+            
+            if (currentScore > bestScore) {
+                bestMethod = currentMethod
+                bestScore = currentScore
+            }
+        }
+        
+        return bestMethod
+    }
+
+    /**
+     * 对方法版本进行评分，命名回调版本得分更高
+     */
+    private scoreMethodForCallbackPreference(methodGroup: any, writer: LanguageWriter, componentName: string): number {
+        const method = methodGroup.method
+        if (!method) return 0
+        
+        let score = 0
+        let callbackCount = 0
+        let inlineFunctionCount = 0
+        
+        // 检查每个参数，命名回调参数增加得分
+        method.signature.args.forEach((paramType: idl.IDLType, index: number) => {
+            try {
+                const paramName = method.signature.argName(index) || `param${index}`
+                const isOptional = method.signature.isArgOptional(index)
+                const converted = this.convertCjParameterType(paramType, paramName, isOptional)
+                
+                let typeName: string
+                
+                // 容错处理：确保能获取到类型名
+                if (!converted || !converted.cjType) {
+                    try {
+                        typeName = writer.getNodeName(paramType) || 'Any'
+                    } catch (error) {
+                        typeName = 'Any'
+                    }
+                } else {
+                    if (typeof converted.cjType === 'string') {
+                        typeName = converted.cjType
+                    } else {
+                        typeName = writer.getNodeName(converted.cjType as idl.IDLType)
+                    }
+                }
+                
+                // 应用类型处理链（高频收敛 + 回调命名化）
+                typeName = this.processTypeName(typeName, paramName, method.name, componentName)
+                
+                // 精确检测命名回调类型
+                if (/\w+Callback\b/.test(typeName) || /^Option<\s*\w+Callback\s*>$/.test(typeName)) {
+                    score += 10
+                    callbackCount++
+                }
+                // 检测内联函数类型（归一化后检测）
+                else if (CJCallbackTypeManager.isFunctionType(typeName)) {
+                    score -= 5
+                    inlineFunctionCount++
+                }
+                
+            } catch (error) {
+                console.warn(`[ComponentsPrinter] Error processing parameter ${index} in method ${method.name}:`, error)
+            }
+        })
+        
+        // 额外评分规则：命名回调数量越多越好，内联函数越少越好
+        score += callbackCount * 5  // 每个命名回调额外加分
+        score -= inlineFunctionCount * 3  // 每个内联函数额外减分
+        
+        console.log(`[ComponentsPrinter] Method ${method.name} score: ${score} (callbacks: ${callbackCount}, inline: ${inlineFunctionCount})`)
+        return score
+    }
+
+    /**
+     * 生成构建函数专用的回调类型定义
+     */
+    private generateBuildFunctionCallbackDefinitions(componentName: string): string[] {
+        const definitions: string[] = []
+        
+        // Style 回调类型定义
+        const styleCallbackName = `On${componentName}StyleCallback`
+        const styleCallbackDef = `public type ${styleCallbackName} = (attributes: ${componentName}AttributeInterfaces) -> Unit`
+        definitions.push(styleCallbackDef)
+        
+        // Content 回调类型定义
+        const contentCallbackName = `On${componentName}ContentCallback`
+        const contentCallbackDef = `public type ${contentCallbackName} = () -> Unit`
+        definitions.push(contentCallbackDef)
+        
+        return definitions
+    }
+
+    /**
+     * 清理剩余的Union_类型
+     */
+    private applyUnionTypeCleanup(s: string): string {
+        // 通用Union_类型替换策略
+        
+        // 四元及以上 Union_X_Y_Z_W... → 选择语义化类型
+        s = s.replace(/Union_(\w+)_(\w+)_(\w+)_(\w+)/g, (match, type1, type2, type3, type4) => {
+            const types = [type1, type2, type3, type4];
+            return this.selectBestTypeFromUnion(types);
+        });
+        
+        // 三元 Union_X_Y_Z → 选择语义化类型
+        s = s.replace(/Union_(\w+)_(\w+)_(\w+)/g, (match, type1, type2, type3) => {
+            const types = [type1, type2, type3];
+            return this.selectBestTypeFromUnion(types);
+        });
+        
+        // 二元 Union_X_Y → 选择更语义化的类型
+        s = s.replace(/Union_(\w+)_(\w+)/g, (match, type1, type2) => {
+            const types = [type1, type2];
+            return this.selectBestTypeFromUnion(types);
+        });
+        
+        // 处理剩余的复杂 Union 模式
+        s = s.replace(/Union_[\w_]+/g, (match) => {
+            console.log(`[ComponentsPrinter] Converting complex Union to CustomObject: ${match}`);
+            return 'CustomObject';
+        });
+        
+        return s;
+    }
+
+    /**
+     * 从 Union 类型数组中选择最佳类型
+     */
+    private selectBestTypeFromUnion(types: string[]): string {
+        // 优先级1：已知的高频语义类型
+        const highPriorityTypes = ['ResourceStr', 'ResourceColor', 'Length', 'Date', 'FontWeight'];
+        for (const priority of highPriorityTypes) {
+            if (types.includes(priority)) {
+                console.log(`[ComponentsPrinter] Union converged to high-priority type: ${priority}`);
+                return priority;
+            }
+        }
+        
+        // 优先级2：常用基础类型
+        const mediumPriorityTypes = ['String', 'Int32', 'Int64', 'Float32', 'Bool'];
+        for (const priority of mediumPriorityTypes) {
+            if (types.includes(priority)) {
+                console.log(`[ComponentsPrinter] Union converged to medium-priority type: ${priority}`);
+                return priority;
+            }
+        }
+        
+        // 优先级3：避免选择过于通用的类型
+        const lowPriorityTypes = ['Any', 'Object', 'Number'];
+        const filteredTypes = types.filter(t => !lowPriorityTypes.includes(t));
+        
+        if (filteredTypes.length > 0) {
+            const selected = filteredTypes[0];
+            console.log(`[ComponentsPrinter] Union converged to filtered type: ${selected}`);
+            return selected;
+        }
+        
+        // 兜底：选择第一个类型
+        const fallback = types[0] || 'CustomObject';
+        console.log(`[ComponentsPrinter] Union converged to fallback type: ${fallback}`);
+        return fallback;
+    }
+
+    /**
      * 获取类型显示名称，委托给 CJTypeMapper 处理
      */
     private getTypeDisplayName(type: idl.IDLType): string {
@@ -664,6 +1113,8 @@ class CJComponentFileVisitor implements ComponentFileVisitor {
         return componentClassName + 'Peer';
     }
 
+
+
     private printComponent(peer: PeerClass): PrinterResult[] {
 
         const component = findComponentByType(this.library, idl.createReferenceType(peer.originalClassName!))!
@@ -671,10 +1122,33 @@ class CJComponentFileVisitor implements ComponentFileVisitor {
         const imports = this.printImports(peer, component)
         const printer = this.library.createLanguageWriter()
 
+        // 为 Cangjie 组件添加 cores 包导入以使用命名回调类型
+        printer.print('import idlize.cores.*')
+        printer.print('') // 空行分隔
+
         const componentClassName = generateArkComponentName(peer.componentName)
         const parentComponentClassName = peer.parentComponentName ? generateArkComponentName(peer.parentComponentName!) : `ComponentBase`
         const peerClassName = componentToPeerClass(peer.componentName)
 
+        // 清理组件回调缓存并预扫描
+        const componentName = peer.originalClassName!
+        this.callbackManager.clearComponentCallbacks(componentName)
+        // 预扫描所有方法以收集回调类型，传入 this 作为 typeRewriter
+        this.callbackManager.prescanMethods(peer.methods, componentName, this.typeMapper, this)
+        
+        // 打印回调类型定义（当前阶段：仍然在组件内就地声明，确保类型可用；后续将统一迁移至 cores/Common.cj）
+        const callbackDefinitions = this.callbackManager.getCallbackDefinitions(componentName)
+        
+        // 添加构建函数专用的回调类型定义
+        const buildFunctionCallbacks = this.generateBuildFunctionCallbackDefinitions(componentName)
+        
+        // 合并并去重回调定义
+        const allCallbackDefinitions = [...callbackDefinitions, ...buildFunctionCallbacks]
+        const uniqueDefinitions = [...new Set(allCallbackDefinitions)]
+        
+        for (const def of uniqueDefinitions) {
+            printer.print(def)
+        }
 
         printer.writeClass(componentClassName, (writer) => {
             writer.writeMethodImplementation(
@@ -698,7 +1172,7 @@ class CJComponentFileVisitor implements ComponentFileVisitor {
                 }
             )
             // 使用 CJ 专用的类型映射处理方法参数
-            this.printCjComponentOverloads(peer.originalClassName!, peer.methods, writer)
+            this.printCjComponentOverloads(peer.originalClassName!, peer.methods, writer, componentName)
             // todo stub until we can process AttributeModifier
             if (isCommonMethod(peer.originalClassName!) || peer.originalClassName == "ContainerSpanAttribute")
                 writer.print(`public func attributeModifier(modifier: AttributeModifier<Object>) { throw Exception("not implemented") }`)
@@ -730,24 +1204,15 @@ class CJComponentFileVisitor implements ComponentFileVisitor {
         const callableMethods = peer.methods.filter(it => it.isCallSignature).map(it => it.method)
         const callableMethod = callableMethods.length ? collapseSameNamedMethods(callableMethods) : undefined
         
-        // 应用 CJ 类型映射到构建函数参数
+        // 应用 CJ 类型映射到构建函数参数（同属性方法一致：高频收敛 + 回调命名 + Option 默认值）
         const mappedCallableParams = callableMethod?.signature.args.map((paramType, index) => {
-            const paramName = callableMethod.signature.argName(index)
-            const isOptional = callableMethod.signature.isArgOptional(index)
-            
-            const converted = this.convertCjParameterType(paramType, paramName, isOptional)
-            // 选择首选类型（单一类型或重载的第一个）
-            const chosenType = converted.cjType ?? converted.overloads?.[0]?.cjType ?? idl.IDLAnyType
-            const chosenDefault = converted.defaultValue ?? converted.overloads?.[0]?.defaultValue
-            const cjTypeName = typeof chosenType === 'string' ? chosenType : printer.getNodeName(chosenType)
-
-            if (chosenDefault) {
-                return `${paramName}: ${cjTypeName} = ${chosenDefault}`
-            } else if (isOptional) {
-                return `${paramName}?: ${cjTypeName}`
-            } else {
-                return `${paramName}: ${cjTypeName}`
-            }
+            return this.processAndFormatParameter(
+                paramType,
+                index,
+                callableMethod,
+                peer.originalClassName!,
+                printer
+            )
         })
         
         const mappedCallableParamsValues = callableMethod?.signature.args.map((_, index) => callableMethod.signature.argName(index))
@@ -758,13 +1223,18 @@ class CJComponentFileVisitor implements ComponentFileVisitor {
         const declaredPostrix = this.options.isDeclared ? "decl_" : ""
         const stagePostfix = this.library.useMemoM3 ? "m3" : "m1"
         let paramsList = mappedCallableParams?.join(", ")
-        printer.writeLines(readLangTemplate(`component_builder_${declaredPostrix}${stagePostfix}`, this.library.language)
+        let templateContent = readLangTemplate(`component_builder_${declaredPostrix}${stagePostfix}`, this.library.language)
             .replaceAll("%COMPONENT_NAME%", component.name)
             .replaceAll("%COMPONENT_ATTRIBUTE_NAME%", componentInterfaceName)
             .replaceAll("%FUNCTION_PARAMETERS%", paramsList ? `,\n${paramsList}`: "")
             .replaceAll("%COMPONENT_CLASS_NAME%", componentClassImplName)
             .replaceAll("%PEER_CLASS_NAME%", peerClassName)
-            .replaceAll("%PEER_CALLABLE_INVOKE%", callableInvocation))
+            .replaceAll("%PEER_CALLABLE_INVOKE%", callableInvocation)
+        
+        // 修复构建函数模板中的内联回调：替换为命名回调类型
+        templateContent = this.fixInlineCallbacksInTemplate(templateContent, component.name)
+        
+        printer.writeLines(templateContent)
         return [{
             collector: this.printImports(peer, component),
             content: printer,

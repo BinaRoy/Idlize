@@ -39,7 +39,7 @@ export interface NumberConversionInput {
 }
 
 export interface NumberConversionResult {
-  cjType: 'Length' | 'Float32' | 'Int32' | 'Int64';
+  cjType: 'Length' | 'Float64' | 'Int32' | 'Int64';
   defaultValue: string;
   unit?: 'vp' | 'px' | 'fp' | 'percent' | 'lpx';
 }
@@ -50,14 +50,14 @@ export interface NumberConversionResult {
  * @param context 映射上下文信息
  * @returns 对应的 Cangjie 类型名称
  */
-export function mapNumberType(context: NumberMappingContext): 'Length' | 'Float32' | 'Int32' | 'Int64' {
+export function mapNumberType(context: NumberMappingContext): 'Length' | 'Float64' | 'Int32' | 'Int64' {
   // 场景1: 可选尺寸场景 - 使用 Length 默认值（基于仓颉语言实际使用）
   if (context.semanticHint === 'optionalSize' ||
       (context.propertyName === 'width' || context.propertyName === 'height')) {
     return 'Length';
   }
   
-  // 场景2: 比例和角度场景 - 使用 Float32 类型（优先级高于尺寸场景）
+  // 场景2: 比例和角度场景 - 使用 Float64 类型（优先级高于尺寸场景）
   if (context.semanticHint === 'ratio' ||
       context.semanticHint === 'angle' ||
       includesAny(context.propertyName, [
@@ -66,7 +66,7 @@ export function mapNumberType(context: NumberMappingContext): 'Length' | 'Float3
         'blur', 'brightness', 'contrast', 'saturate', 'sepia', 'hueRotate',
         'invert', 'grayscale', 'dropShadow', 'perspective', 'zoom'
       ])) {
-    return 'Float32';
+    return 'Float64';
   }
   
   // 场景3: 尺寸相关场景 - 使用 Length 类型（仅限 number 类型）
@@ -79,11 +79,12 @@ export function mapNumberType(context: NumberMappingContext): 'Length' | 'Float3
     return 'Length';
   }
   
-  // 场景4: 计数和索引场景 - 使用 Int32 类型
+  // 场景4: 计数和索引场景 - 使用 Int32 类型（优先级高于尺寸场景）
   if (context.semanticHint === 'count' ||
       includesAny(context.propertyName, [
         'count', 'total', 'num', 'quantity', 'maxLines', 'itemCount', 
-        'selectedIndex', 'duration', 'step', 'loop', 'iterations', 'repeat'
+        'selectedIndex', 'duration', 'step', 'loop', 'iterations', 'repeat',
+        'lines', 'selection', 'selectionStart', 'selectionEnd'
       ])) {
     return 'Int32';
   }
@@ -146,13 +147,13 @@ export function generateLengthDefault(propertyName: string, unit: string): strin
   const name = propertyName || '';
   
   // 根据属性类型选择合适的默认值
-  if (name.includes('fontSize')) {
+  if (name.includes('fontSize') || name.includes('fontsize')) {
     return `16.${unit}`;  // 默认字体大小
   }
-  if (name.includes('lineHeight')) {
+  if (name.includes('lineHeight') || name.includes('lineheight')) {
     return `20.${unit}`;  // 默认行高
   }
-  if (name.includes('borderRadius')) {
+  if (name.includes('borderRadius') || name.includes('radius')) {
     return `8.${unit}`;   // 默认圆角
   }
   if (name.includes('margin') || name.includes('padding')) {
@@ -160,6 +161,9 @@ export function generateLengthDefault(propertyName: string, unit: string): strin
   }
   if (name.includes('width') || name.includes('height')) {
     return `0.${unit}`;   // 默认尺寸
+  }
+  if (name.includes('maxLines') || name.includes('maxlines')) {
+    return `1`;   // 针对maxLines特殊处理，应该是Int32类型
   }
   
   return `0.${unit}`;     // 默认值
@@ -186,8 +190,8 @@ export function convertNumberProperty(input: NumberConversionInput): NumberConve
     return { cjType, defaultValue, unit };
   }
   
-  if (cjType === 'Float32') {
-    // 特殊的 Float32 默认值处理
+  if (cjType === 'Float64') {
+    // 特殊的 Float64 默认值处理
     if (includesAny(input.propertyName, ['opacity', 'scale', 'ratio', 'factor', 'brightness', 'contrast', 'saturate'])) {
       return { cjType, defaultValue: '1.0' };
     }
@@ -241,7 +245,8 @@ function inferSemanticHint(propertyName: string): NumberSemanticHint {
   // 计数相关属性
   if (includesAny(name, [
     'count', 'total', 'num', 'quantity', 'maxlines', 'itemcount', 
-    'selectedindex', 'duration', 'step', 'loop', 'iterations', 'repeat'
+    'selectedindex', 'duration', 'step', 'loop', 'iterations', 'repeat',
+    'lines', 'selection', 'selectionstart', 'selectionend'
   ])) {
     return 'count';
   }

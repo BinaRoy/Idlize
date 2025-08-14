@@ -16,6 +16,7 @@
 import * as idl from '@idlizer/core/idl'
 import { JavaTypeNameConvertor, CJTypeNameConvertor } from '@idlizer/core'
 import { ARK_CUSTOM_OBJECT } from '@idlizer/libohos'
+import { CJCallbackTypeManager } from './declaration/CJCallbackTypeManager'
 
 export class ArkoalaJavaTypeNameConvertor extends JavaTypeNameConvertor {
     override convertTypeReference(type: idl.IDLReferenceType): string {
@@ -35,10 +36,19 @@ export class ArkoalaJavaTypeNameConvertor extends JavaTypeNameConvertor {
 }
 
 export class ArkoalaCJTypeNameConvertor extends CJTypeNameConvertor {
+    private callbackManager: CJCallbackTypeManager = new CJCallbackTypeManager()
+    
     override convertTypeReference(type: idl.IDLReferenceType): string {
         switch (type.name) {
             case 'Date': return ARK_CUSTOM_OBJECT
             default: return super.convertTypeReference(type)
         }
+    }
+    
+    /**
+     * 获取回调类型管理器实例
+     */
+    public getCallbackManager(): CJCallbackTypeManager {
+        return this.callbackManager
     }
 }

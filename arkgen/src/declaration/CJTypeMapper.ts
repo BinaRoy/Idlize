@@ -3,7 +3,7 @@ import { convertNumberProperty, NumberConversionInput, NumberConversionResult } 
 
 export const DEFAULT_VALUES = {
     LENGTH: '0.vp',
-    FLOAT32: '0.0',
+    FLOAT64: '1.0',
     INT32: '0',
     INT64: '0',
     BOOLEAN: 'false',
@@ -14,7 +14,11 @@ export const DEFAULT_VALUES = {
     FONT_WEIGHT: 'FontWeight.Normal',
     FONT_SIZE: '16.fp',
     OPACITY: '1.0',
-    Z_INDEX: '0'
+    Z_INDEX: '0',
+    // 针对具体属性的更合理默认值
+    MAX_LINES: '1',
+    SELECTION_START: '0',
+    SELECTION_END: '0'
 } as const;
 
 export interface TypeConversionResult {
@@ -730,53 +734,8 @@ export class CJTypeMapper {
     }
 
     private convertFunctionType(baseType: idl.IDLType): TypeConversionResult {
-        // 尝试对函数签名内部的高频联合类型做最小可行的字符串级收敛
-        try {
-            if (typeof (baseType as any).toString === 'function') {
-                const sig = String((baseType as any).toString());
-                const rewritten = this.rewriteFunctionSignature(sig);
-                if (rewritten !== sig && rewritten.trim().length > 0) {
-                    // 以字符串形式返回重写后的函数类型签名
-                    return { cjType: rewritten, defaultValue: undefined };
-                }
-            }
-        } catch {
-            // ignore and fallback
-        }
-        // 默认：函数类型保持原样，由可选处理统一决定是否包 Option
-        return { cjType: baseType, defaultValue: undefined };
-    }
-
-    /**
-     * 对函数类型签名进行最小可行的字符串级重写，仅处理高频场景：
-     * - Date | Bindable → Date
-     * - Union_Date_Bindable → Date
-     * - string | Resource / Union_String_Resource → ResourceStr
-     * - string | number | Color / Union_String_Number_Color → ResourceColor
-     * 注意：不在函数签名内生成重载；仅做安全收敛，避免在组件层暴露 Union_*。
-     */
-    private rewriteFunctionSignature(signature: string): string {
-        let s = signature;
-        // 规范空白
-        const norm = (x: string) => x.replace(/\s+/g, ' ');
-        s = norm(s);
-
-        // Date|Bindable 收敛为 Date
-        s = s.replace(/Union_Date_Bindable/g, 'Date');
-        s = s.replace(/Date\s*\|\s*Bindable<[^>]*>/g, 'Date');
-        s = s.replace(/Bindable<\s*Date\s*>\s*\|\s*Date/g, 'Date');
-
-        // string|Resource 收敛为 ResourceStr
-        s = s.replace(/Union_String_Resource/g, 'ResourceStr');
-        s = s.replace(/String\s*\|\s*Resource/g, 'ResourceStr');
-        s = s.replace(/Resource\s*\|\s*String/g, 'ResourceStr');
-
-        // string|number|Color 收敛为 ResourceColor
-        s = s.replace(/Union_String_Number_Color/g, 'ResourceColor');
-        s = s.replace(/String\s*\|\s*Number\s*\|\s*Color/g, 'ResourceColor');
-        s = s.replace(/Color\s*\|\s*Number\s*\|\s*String/g, 'ResourceColor');
-
-        return s;
+        // 函数类型保持原样，由可选处理统一决定是否包 Option
+        return { cjType: baseType, defaultValue: undefined }
     }
 
     private mapSpecialType(type: idl.IDLType): { targetType: idl.IDLType; defaultValue: string; useOption: boolean } {
@@ -808,7 +767,7 @@ export class CJTypeMapper {
     }
 
     private isBasicSemanticType(typeName: string): boolean {
-        return ['Length', 'Float64', 'Float32', 'Int32', 'Int64', 'Bool'].includes(typeName);
+        return ['Length', 'Float64', 'Int32', 'Int64', 'Bool'].includes(typeName);
     }
 
     private isSemanticResourceType(typeName: string): boolean {
@@ -818,8 +777,7 @@ export class CJTypeMapper {
     private getBasicTypeDefault(typeName: string): string {
         const defaults: Record<string, string> = {
             'Length': DEFAULT_VALUES.LENGTH,
-            'Float64': DEFAULT_VALUES.FLOAT32,
-            'Float32': DEFAULT_VALUES.FLOAT32,
+            'Float64': DEFAULT_VALUES.FLOAT64,
             'Int32': DEFAULT_VALUES.INT32,
             'Int64': DEFAULT_VALUES.INT64,
             'Bool': DEFAULT_VALUES.BOOLEAN
