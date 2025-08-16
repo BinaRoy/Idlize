@@ -49,9 +49,12 @@ export class CJTypeMapper {
     private readonly typeCache: Map<string, boolean> = new Map();
     private readonly conversionCache: Map<string, TypeConversionResult> = new Map();
     private readonly errorStats: Map<string, number> = new Map();
+    // 新增：枚举映射缓存，用于将 Literal_* 和 Union_* 类型映射到对应的枚举
+    private readonly enumMappingCache: Map<string, string> = new Map();
     
     constructor() {
         this.initializeTypeCheckers();
+        this.initializeCommonEnumMappings();
     }
 
     private initializeTypeCheckers(): void {
@@ -59,6 +62,149 @@ export class CJTypeMapper {
         this.typeCheckers.set('string', this.createTypeChecker(['string', 'String']));
         this.typeCheckers.set('boolean', this.createTypeChecker(['boolean', 'Boolean']));
         this.typeCheckers.set('special', this.createSpecialTypeChecker());
+    }
+
+    private initializeCommonEnumMappings(): void {
+        // 常见的字面量联合类型到枚举的映射
+        const commonMappings: Array<[string[], string]> = [
+            // 对齐相关
+            [['left', 'center', 'right'], 'HorizontalAlign'],
+            [['start', 'center', 'end'], 'HorizontalAlign'],
+            [['top', 'middle', 'bottom'], 'VerticalAlign'],
+            [['top', 'center', 'bottom'], 'VerticalAlign'],
+            
+            // 尺寸相关
+            [['small', 'medium', 'large'], 'ComponentSize'],
+            [['xs', 's', 'm', 'l', 'xl'], 'ComponentSize'],
+            
+            // 主题相关
+            [['light', 'dark', 'auto'], 'ThemeType'],
+            [['default', 'primary', 'secondary'], 'ThemeType'],
+            
+            // Canvas 相关
+            [['butt', 'round', 'square'], 'CanvasLineCap'],
+            [['miter', 'round', 'bevel'], 'CanvasLineJoin'],
+            [['ltr', 'rtl'], 'CanvasDirection'],
+            
+            // 边框相关
+            [['solid', 'dashed', 'dotted'], 'BorderStyle'],
+            
+            // 字体相关
+            [['normal', 'bold', 'lighter'], 'FontWeight'],
+            [['normal', 'italic', 'oblique'], 'FontStyle']
+        ];
+        
+        // 为每个映射生成所有可能的 Literal_ 和 Union_ 组合
+        for (const [literals, enumName] of commonMappings) {
+            // 单个 Literal_ 类型
+            for (const literal of literals) {
+                this.enumMappingCache.set(`Literal_String_${literal}`, enumName);
+                this.enumMappingCache.set(`Literal_${literal}`, enumName);
+            }
+            
+            // Union_ 类型（各种组合）
+            const sortedLiterals = [...literals].sort();
+            this.enumMappingCache.set(`Union_String_${sortedLiterals.join('_')}`, enumName);
+            this.enumMappingCache.set(`Union_${sortedLiterals.join('_')}`, enumName);
+            
+            // 生成部分组合
+            for (let i = 2; i <= literals.length; i++) {
+                const combinations = this.getCombinations(literals, i);
+                for (const combo of combinations) {
+                    const sortedCombo = combo.sort();
+                    this.enumMappingCache.set(`Union_String_${sortedCombo.join('_')}`, enumName);
+                    this.enumMappingCache.set(`Union_${sortedCombo.join('_')}`, enumName);
+                }
+            }
+        }
+        
+        console.log(`[CJTypeMapper] Initialized ${this.enumMappingCache.size} enum mappings`);
+    }
+
+    private getCombinations<T>(array: T[], size: number): T[][] {
+        if (size === 0) return [[]];
+        if (size > array.length) return [];
+        if (size === array.length) return [array];
+        
+        const result: T[][] = [];
+        for (let i = 0; i <= array.length - size; i++) {
+            const smaller = this.getCombinations(array.slice(i + 1), size - 1);
+            for (const combo of smaller) {
+                result.push([array[i], ...combo]);
+            }
+        }
+        return result;
+    }
+
+    private tryMapToEnum(type: idl.IDLType): { enumName: string; defaultValue: string } | null {
+        const typeName = this.getTypeDisplayName(type);
+        
+        // 直接查找映射
+        const directMapping = this.enumMappingCache.get(typeName);
+        if (directMapping) {
+            return {
+                enumName: directMapping,
+                defaultValue: this.getEnumDefaultValue(directMapping)
+            };
+        }
+        
+        // 尝试提取 Literal_ 或 Union_ 类型中的字面量值
+        const extractedLiterals = this.extractLiteralsFromTypeName(typeName);
+        if (extractedLiterals.length > 0) {
+            // 尝试匹配已知的枚举
+            for (const [key, enumName] of this.enumMappingCache) {
+                if (this.isLiteralSubsetMatch(extractedLiterals, key)) {
+                    console.log(`[CJTypeMapper] Found subset match: ${typeName} -> ${enumName} (via ${key})`);
+                    return {
+                        enumName,
+                        defaultValue: this.getEnumDefaultValue(enumName)
+                    };
+                }
+            }
+        }
+        
+        return null;
+    }
+
+    private extractLiteralsFromTypeName(typeName: string): string[] {
+        // 从 Literal_String_xxx 或 Union_String_xxx_yyy 中提取字面量
+        const literalMatch = typeName.match(/^Literal_(?:String_)?(.+)$/);
+        if (literalMatch) {
+            return [literalMatch[1]];
+        }
+        
+        const unionMatch = typeName.match(/^Union_(?:String_)?(.+)$/);
+        if (unionMatch) {
+            return unionMatch[1].split('_').filter(s => s.length > 0);
+        }
+        
+        return [];
+    }
+
+    private isLiteralSubsetMatch(literals: string[], mappingKey: string): boolean {
+        const keyLiterals = this.extractLiteralsFromTypeName(mappingKey);
+        if (keyLiterals.length === 0) return false;
+        
+        // 检查 literals 是否是 keyLiterals 的子集或相等
+        return literals.every(lit => keyLiterals.includes(lit)) && literals.length > 0;
+    }
+
+    private getEnumDefaultValue(enumName: string): string {
+        // 根据枚举类型提供合理的默认值
+        const enumDefaults: Record<string, string> = {
+            'HorizontalAlign': 'HorizontalAlign.Start',
+            'VerticalAlign': 'VerticalAlign.Top',
+            'ComponentSize': 'ComponentSize.Medium',
+            'ThemeType': 'ThemeType.Auto',
+            'CanvasLineCap': 'CanvasLineCap.Butt',
+            'CanvasLineJoin': 'CanvasLineJoin.Miter',
+            'CanvasDirection': 'CanvasDirection.Ltr',
+            'BorderStyle': 'BorderStyle.Solid',
+            'FontWeight': 'FontWeight.Normal',
+            'FontStyle': 'FontStyle.Normal'
+        };
+        
+        return enumDefaults[enumName] || `${enumName}.Default`;
     }
 
     private createTypeChecker(typeNames: string[]): TypeChecker {
@@ -163,6 +309,16 @@ export class CJTypeMapper {
     }
 
     private determineTypeConversion(baseType: idl.IDLType, paramName: string): TypeConversionResult {
+        // 首先尝试枚举映射 - 检查是否是 Literal_ 或 Union_ 类型
+        const enumMapping = this.tryMapToEnum(baseType);
+        if (enumMapping) {
+            console.log(`[CJTypeMapper] Mapped ${this.getTypeDisplayName(baseType)} to enum ${enumMapping.enumName}`);
+            return {
+                cjType: enumMapping.enumName,
+                defaultValue: enumMapping.defaultValue
+            };
+        }
+
         // 函数类型优先识别，避免被字符串语义等规则误伤
         if (this.isFunctionType(baseType)) {
             return this.convertFunctionType(baseType)
@@ -317,6 +473,18 @@ export class CJTypeMapper {
             // 增强的类型检测，包含调试信息
             const typeNames = memberTypes.map(t => this.getTypeDisplayName(t));
             console.log(`[CJTypeMapper] Union type members for ${paramName}: [${typeNames.join(', ')}]`);
+            
+            // 首先尝试枚举映射 - 检查是否整个联合可以映射为单个枚举
+            for (const memberType of memberTypes) {
+                const enumMapping = this.tryMapToEnum(memberType);
+                if (enumMapping) {
+                    console.log(`[CJTypeMapper] Union member ${this.getTypeDisplayName(memberType)} mapped to enum ${enumMapping.enumName}`);
+                    return {
+                        cjType: enumMapping.enumName,
+                        defaultValue: enumMapping.defaultValue
+                    };
+                }
+            }
             
             // 额外的 Debug 信息：检查原始类型对象
             memberTypes.forEach((t, idx) => {

@@ -178,6 +178,15 @@ export class CJEnumWithGetter implements LanguageStatement {
         })
 
         const isStringEnum = initializers.every(it => typeof it.id == 'string')
+        
+        // Debug: 输出枚举生成信息
+        console.log(`🔧 [CJEnumWithGetter] Generating enum: ${this.enumEntity.name}`)
+        console.log(`   isStringEnum: ${isStringEnum}`)
+        if (isStringEnum) {
+            console.log(`   🎯 Will generate String get() method`)
+        } else {
+            console.log(`   📊 Will generate Int32 get() method`)
+        }
 
         let memberValue = 0
         const members: {
@@ -212,13 +221,18 @@ export class CJEnumWithGetter implements LanguageStatement {
         
         writer.print('')
         
-        // 生成get()方法
-        writer.print('func get(): Int32 {')
+        // 生成get()方法 - 对于字面量枚举，返回String而非Int32
+        const returnType = isStringEnum ? 'String' : 'Int32'
+        writer.print(`func get(): ${returnType} {`)
         writer.pushIndent()
         writer.print('match(this) {')
         writer.pushIndent()
         members.forEach(member => {
-            writer.print(`case ${member.name} => ${member.numberId}`)
+            // 对于字符串枚举，返回原始字符串字面量值
+            const returnValue = isStringEnum ? 
+                `"${member.stringId || member.name.toLowerCase()}"` : 
+                `${member.numberId}`
+            writer.print(`case ${member.name} => ${returnValue}`)
         })
         writer.popIndent()
         writer.print('}')
@@ -255,6 +269,36 @@ export class CJEnumWithGetter implements LanguageStatement {
         writer.popIndent()
         writer.print('}')
         
+        // 为字符串枚举补充 parse/tryParse(String)
+        if (isStringEnum) {
+            writer.print('')
+            writer.print(`static func parse(val: String): ${enumName} {`)
+            writer.pushIndent()
+            writer.print('match(val) {')
+            writer.pushIndent()
+            members.forEach(member => {
+                const strVal = member.stringId ?? member.name.toLowerCase()
+                writer.print(`case "${strVal}" => ${member.name}`)
+            })
+            writer.print(`case _ => throw IllegalArgumentException("unknown value \${val}")`)
+            writer.popIndent()
+            writer.print('}')
+            writer.popIndent()
+            writer.print('}')
+
+            writer.print('')
+            writer.print(`static func tryParse(val: ?String): ?${enumName} {`)
+            writer.pushIndent()
+            writer.print('match(val) {')
+            writer.pushIndent()
+            writer.print('case Some(v) => parse(v)')
+            writer.print('case None => None')
+            writer.popIndent()
+            writer.print('}')
+            writer.popIndent()
+            writer.print('}')
+        }
+
         writer.print('')
         
         // 生成toString()方法
@@ -573,8 +617,17 @@ export class CJLanguageWriter extends LanguageWriter {
         name = name.startsWith('_') ? name.slice(1) : name
         this.print(`func ${name}(${signture}): ${this.typeForeignConvertor.convert(method.signature.returnType)}`)
     }
-    override i32FromEnum(value: LanguageExpression, _enumEntry: idl.IDLEnum): LanguageExpression {
-        return this.makeString(`${value.asString()}.value`)
+    override i32FromEnum(value: LanguageExpression, enumEntry: idl.IDLEnum): LanguageExpression {
+        // 检查是否是字符串枚举
+        const isStringEnum = enumEntry.elements.every(it => typeof it.initializer == 'string');
+        
+        if (isStringEnum) {
+            // 字符串枚举，直接返回 get() 方法的结果，它已经是字符串了
+            return this.makeString(`${value.asString()}.get()`);
+        } else {
+            // 数字枚举，返回 value 属性
+            return this.makeString(`${value.asString()}.value`);
+        }
     }
     makeAssign(variableName: string, type: idl.IDLType | undefined, expr: LanguageExpression, isDeclared: boolean = true, isConst: boolean = true): LanguageStatement {
         return new CJAssignStatement(this.escapeKeyword(variableName), type, expr, isDeclared, isConst)
@@ -699,7 +752,26 @@ export class CJLanguageWriter extends LanguageWriter {
         return this.makeString(`${value}.value${index}`)
     }
     enumFromI32(value: LanguageExpression, enumEntry: idl.IDLEnum): LanguageExpression {
-        return this.makeString(`${this.getNodeName(enumEntry)}(${value.asString()})`)
+        // 检查是否是字符串枚举
+        const isStringEnum = enumEntry.elements.every(it => typeof it.initializer == 'string');
+        
+        if (isStringEnum) {
+            // 对于字符串枚举，需要根据字符串值查找对应的枚举成员
+            const enumName = this.getNodeName(enumEntry);
+            return this.makeString(`
+                match(${value.asString()}) {
+                    ${enumEntry.elements.map(elem => {
+                        const stringValue = typeof elem.initializer === 'string' ? 
+                            elem.initializer : elem.name.toLowerCase();
+                        return `case "${stringValue}" => ${enumName}.${elem.name}`;
+                    }).join('\n')}
+                    case _ => throw IllegalArgumentException("Invalid enum value: \${${value.asString()}}")
+                }
+            `);
+        } else {
+            // 数字枚举，直接使用数字索引构造
+            return this.makeString(`${this.getNodeName(enumEntry)}(${value.asString()})`);
+        }
     }
     makeEnumEntity(enumEntity: idl.IDLEnum, options: { isExport: boolean, isDeclare?: boolean }): LanguageStatement {
         return new CJEnumWithGetter(enumEntity, options.isExport)

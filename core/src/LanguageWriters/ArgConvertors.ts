@@ -290,15 +290,31 @@ export class EnumConvertor extends BaseArgConvertor {
         return writer.i32FromEnum(writer.makeString(writer.escapeKeyword(param)), this.enumEntry).asString()
     }
     convertorSerialize(param: string, value: string, writer: LanguageWriter): LanguageStatement {
-        return writer.makeStatement(
-            writer.makeMethodCall(`${param}Serializer`, "writeInt32",
-                [writer.i32FromEnum(writer.makeString(value), this.enumEntry)]
-            ))
+        if (idl.isStringEnum(this.enumEntry)) {
+            // 对于字符串字面量枚举，按字符串序列化
+            return writer.makeStatement(
+                writer.makeMethodCall(`${param}Serializer`, "writeString",
+                    [writer.i32FromEnum(writer.makeString(value), this.enumEntry)]
+                ))
+        } else {
+            // 数字枚举按 Int32 序列化
+            return writer.makeStatement(
+                writer.makeMethodCall(`${param}Serializer`, "writeInt32",
+                    [writer.i32FromEnum(writer.makeString(value), this.enumEntry)]
+                ))
+        }
     }
     convertorDeserialize(bufferName: string, deserializerName: string, assigneer: ExpressionAssigner, writer: LanguageWriter): LanguageStatement {
-        const readExpr = writer.makeMethodCall(`${deserializerName}`, "readInt32", [])
-        const enumExpr = writer.enumFromI32(readExpr, this.enumEntry)
-        return assigneer(enumExpr)
+        if (idl.isStringEnum(this.enumEntry)) {
+            // 读取字符串并反解析为枚举
+            const readExpr = writer.makeMethodCall(`${deserializerName}`, "readString", [])
+            const enumExpr = writer.enumFromI32(readExpr, this.enumEntry)
+            return assigneer(enumExpr)
+        } else {
+            const readExpr = writer.makeMethodCall(`${deserializerName}`, "readInt32", [])
+            const enumExpr = writer.enumFromI32(readExpr, this.enumEntry)
+            return assigneer(enumExpr)
+        }
     }
     nativeType(): idl.IDLType {
         return this.idlType

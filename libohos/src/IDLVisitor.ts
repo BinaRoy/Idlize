@@ -1418,6 +1418,42 @@ export class IDLVisitor implements GenerateVisitor<idl.IDLFile> {
         nodes: ts.TypeNode[],
         nameSuggestion: NameSuggestion | undefined,
     ) {
+        // NEW: literal union detection -> synthetic enum
+        const allStringLiterals = nodes.every(n => ts.isLiteralTypeNode(n) && ts.isStringLiteral(n.literal))
+        const allNumberLiterals = nodes.every(n => ts.isLiteralTypeNode(n) && ts.isNumericLiteral(n.literal))
+        
+        // Debug: 简化的调试输出
+        if (nodes.length > 1 && nodes.length < 10) {
+            console.log(`[IDLVisitor] Processing union: ${sourceText} (${nodes.length} nodes, strings:${allStringLiterals}, numbers:${allNumberLiterals})`)
+        }
+        
+        if (allStringLiterals || allNumberLiterals) {
+            const literals = nodes.map(n => {
+                const literalNode = (n as ts.LiteralTypeNode).literal
+                if (!literalNode || !literalNode.getText) {
+                    console.warn('[IDLVisitor] Invalid literal node:', n)
+                    return 'unknown'
+                }
+                return literalNode.getText().replace(/^['"]|['"]$/g, '')
+            })
+            const unique = Array.from(new Set(literals))
+            const pascal = (s: string) => s.replace(/^[a-z]/, c => c.toUpperCase()).replace(/[-_](\w)/g, (_, g1) => g1.toUpperCase())
+            const members = unique.map(pascal)
+            const enumNameBase = pascal(unique[0] || 'Literal')
+            const enumName = selectName(nameSuggestion, `${enumNameBase}Enum`)
+            
+            console.log(`🎯 [IDLVisitor] Creating literal enum: ${enumName} from [${literals.join(', ')}]`)
+            
+            // create enum entry
+            const enumEntry = idl.createEnum(enumName, [], { fileName: this.sourceFile.fileName, extendedAttributes: [{ name: idl.IDLExtendedAttributes.Synthetic }] })
+            // 对于字符串字面量，使用原始字符串值作为枚举值；对于数字字面量，使用原始数字值
+            enumEntry.elements = members.map((m, idx) => idl.createEnumMember(m, enumEntry, allStringLiterals ? idl.IDLStringType : idl.IDLNumberType, allStringLiterals ? literals[idx] : idx))
+            this.addSyntheticType(enumEntry)
+            
+            console.log(`✅ [IDLVisitor] Successfully created enum ${enumName} with ${enumEntry.elements.length} elements (isStringEnum: ${allStringLiterals})`)
+            
+            return idl.createReferenceType(enumEntry.name)
+        }
         let types = nodes
             .map((it, index) => this.serializeType(it, nameSuggestion?.extend(`u${index}`)))
             .reduce<idl.IDLType[]>((uniqueTypes, it) => uniqueTypes.concat(uniqueTypes.includes(it) ? [] : [it]), [])
