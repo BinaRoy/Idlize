@@ -992,6 +992,8 @@ export class ArkTSDeclConvertor extends TSDeclConvertor {
             this.writer.print(`export declare const ${node.name} = ${node.value};`)
         }
     }
+
+
 }
 
 class ArkTSSyntheticGenerator extends DependenciesCollector {
@@ -1193,6 +1195,7 @@ export class CJInterfacesVisitor implements InterfacesVisitor {
 
 class CJSyntheticGenerator extends DependenciesCollector {
     private readonly nameConvertor = this.library.createTypeNameConvertor(Language.CJ)
+    private readonly emittedLiteralEnums: Set<string> = new Set()
 
     constructor(
         library: PeerLibrary,
@@ -1202,8 +1205,196 @@ class CJSyntheticGenerator extends DependenciesCollector {
     }
 
     convertUnion(type: idl.IDLUnionType): idl.IDLEntry[] {
-        this.onSyntheticDeclaration(idl.createTypedef(this.nameConvertor.convert(type), type))
+        // 🎯 First check if this union's converted name matches ArkLiteralUnionString* pattern
+        const typeName = this.nameConvertor.convert(type)
+        const arkLiteralEnum = this.tryDetectArkLiteralUnionFromName(typeName, type)
+        if (arkLiteralEnum && !this.emittedLiteralEnums.has(arkLiteralEnum.enumName)) {
+            this.emittedLiteralEnums.add(arkLiteralEnum.enumName)
+            const enumEntry = this.createSyntheticEnum(arkLiteralEnum.enumName, arkLiteralEnum.members, arkLiteralEnum.literals, true)
+            this.onSyntheticDeclaration(enumEntry)
+            console.log(`🎯 [CJSyntheticGenerator] Generated string enum ${arkLiteralEnum.enumName} from union type`)
+            return super.convertUnion(type)
+        }
+        
+        // Try to detect literal enum from content
+        const literalEnum = this.detectLiteralEnumFromUnion(type)
+        if (literalEnum && !this.emittedLiteralEnums.has(literalEnum.enumName)) {
+            this.emittedLiteralEnums.add(literalEnum.enumName)
+            // Create a synthetic enum instead of typedef
+            const enumEntry = this.createSyntheticEnum(literalEnum.enumName, literalEnum.members, literalEnum.literals, literalEnum.isString)
+            this.onSyntheticDeclaration(enumEntry)
+        } else {
+            // Fallback to original union typedef behavior
+            this.onSyntheticDeclaration(idl.createTypedef(typeName, type))
+        }
         return super.convertUnion(type)
+    }
+
+    private detectLiteralEnumFromUnion(type: idl.IDLUnionType): { enumName: string, members: string[], literals: string[], isString: boolean } | null {
+        const literals: string[] = []
+        for (const t of type.types) {
+            const lit = this.extractStringLiteral(t) ?? this.extractNumberLiteral(t)
+            if (lit == null) return null
+            literals.push(lit)
+        }
+        if (literals.length < 2) return null
+        const members = Array.from(new Set(literals.map(this.toPascalCase)))
+        const enumName = this.guessEnumName(literals)
+        const isAllNumeric = literals.every(v => /^\d+$/.test(String(v)))
+        return { enumName, members, literals, isString: !isAllNumeric }
+    }
+
+    private extractStringLiteral(t: idl.IDLType): string | null {
+        try {
+            const anyT = t as any
+            if (anyT.kind && String(anyT.kind).toLowerCase().includes('literal')) {
+                const s = String(anyT.name ?? anyT.value ?? anyT.toString?.() ?? '')
+                if (s) return s.replace(/^['"]|['"]$/g, '')
+            }
+            const s = t.toString?.()
+            if (s && /^("[^"]+"|'[^']+')$/.test(String(s))) return String(s).slice(1, -1)
+        } catch {}
+        return null
+    }
+
+    private extractNumberLiteral(t: idl.IDLType): string | null {
+        try {
+            const anyT = t as any
+            const v = anyT?.value ?? anyT?.name ?? t.toString?.()
+            if (v != null && /^\d+$/.test(String(v))) return String(v)
+        } catch {}
+        return null
+    }
+
+    private toPascalCase = (value: string): string => {
+        const numberMap: Record<string, string> = {
+            '0': 'Zero', '1': 'One', '2': 'Two', '3': 'Three', '4': 'Four',
+            '5': 'Five', '6': 'Six', '7': 'Seven', '8': 'Eight', '9': 'Nine',
+            '10': 'Ten', '20': 'Twenty', '30': 'Thirty', '40': 'Forty', '50': 'Fifty',
+            '60': 'Sixty', '70': 'Seventy', '80': 'Eighty', '90': 'Ninety', '100': 'Hundred'
+        }
+        if (numberMap[value] !== undefined) return numberMap[value]
+        const normalized = value.replace(/[_\-]+/g, ' ').replace(/\s+/g, ' ').trim()
+        return normalized.split(' ').map(part => part.charAt(0).toUpperCase() + part.slice(1)).join('')
+    }
+
+    private guessEnumName(literals: string[]): string {
+        const set = new Set(literals.map(l => l.toLowerCase()))
+        const allIn = (...vals: string[]) => vals.every(v => set.has(v))
+        if (allIn('left', 'center', 'right')) return 'HorizontalAlign'
+        if (allIn('top', 'middle', 'bottom')) return 'VerticalAlign'
+        if (allIn('small', 'medium', 'large')) return 'ComponentSize'
+        if (allIn('light', 'dark', 'auto')) return 'ThemeType'
+        const base = this.toPascalCase(literals[0] || 'Literal')
+        return `${base}Option`
+    }
+
+    private createSyntheticEnum(enumName: string, members: string[], literals: string[], isString: boolean): idl.IDLEnum {
+        const enumEntity = idl.createEnum(enumName, [], {})
+        enumEntity.elements = members.map((member, index) => {
+            if (isString) {
+                const literalValue = literals[index] ?? member
+                return idl.createEnumMember(member, enumEntity, idl.IDLStringType, literalValue)
+            } else {
+                const num = Number(literals[index] ?? index)
+                return idl.createEnumMember(member, enumEntity, idl.IDLNumberType, Number.isFinite(num) ? num : index)
+            }
+        })
+        return enumEntity
+    }
+    
+    // 🎯 新增：基于类型名检测 ArkLiteralUnionString* 模式
+    private tryDetectArkLiteralUnionFromName(typeName: string, type: idl.IDLUnionType): { enumName: string, members: string[], literals: string[] } | null {
+        // 强约束：仅匹配 ArkLiteralUnionString* 或 ArkLiteralString* 命名模式
+        if (!/^ArkLiteralUnionString[A-Z]/.test(typeName) && !/^ArkLiteralString[A-Z]/.test(typeName)) {
+            return null
+        }
+        
+        // 尝试从 union 内容中提取字符串字面量
+        const stringLiterals = this.extractStringLiteralsFromUnionType(type)
+        if (!stringLiterals || stringLiterals.length < 2) {
+            // 如果无法从内容提取，尝试从类型名推断
+            const inferredLiterals = this.inferStringLiteralsFromTypeName(typeName)
+            if (!inferredLiterals || inferredLiterals.length < 2) {
+                return null
+            }
+            return this.buildEnumFromInferredLiterals(typeName, inferredLiterals)
+        }
+        
+        // 从提取的字面量构建枚举
+        return this.buildEnumFromExtractedLiterals(typeName, stringLiterals)
+    }
+    
+    // 从 UnionType 中提取字符串字面量
+    private extractStringLiteralsFromUnionType(type: idl.IDLUnionType): string[] | null {
+        const literals: string[] = []
+        for (const t of type.types) {
+            const literal = this.extractStringLiteral(t)
+            if (!literal) {
+                return null // 如果有任何一个不是字符串字面量，则失败
+            }
+            literals.push(literal)
+        }
+        return literals.length >= 2 ? literals : null
+    }
+    
+    // 从类型名推断字符串字面量（兜底逻辑）
+    private inferStringLiteralsFromTypeName(typeName: string): string[] | null {
+        const lowerName = typeName.toLowerCase()
+        
+        // 常见的字面量模式匹配
+        if (lowerName.includes('align') && lowerName.includes('horizontal')) {
+            return ['left', 'center', 'right']
+        }
+        if (lowerName.includes('align') && lowerName.includes('vertical')) {
+            return ['top', 'middle', 'bottom']
+        }
+        if (lowerName.includes('align') && lowerName.includes('text')) {
+            return ['left', 'center', 'right', 'justify']
+        }
+        if (lowerName.includes('size')) {
+            return ['small', 'medium', 'large']
+        }
+        if (lowerName.includes('theme')) {
+            return ['light', 'dark', 'auto']
+        }
+        
+        return null
+    }
+    
+    // 从推断的字面量构建枚举信息
+    private buildEnumFromInferredLiterals(typeName: string, literals: string[]): { enumName: string, members: string[], literals: string[] } {
+        const enumName = this.deriveEnumNameFromArkLiteral(typeName, literals)
+        const members = Array.from(new Set(literals.map(this.toPascalCase)))
+        return { enumName, members, literals }
+    }
+    
+    // 从提取的字面量构建枚举信息
+    private buildEnumFromExtractedLiterals(typeName: string, literals: string[]): { enumName: string, members: string[], literals: string[] } {
+        const enumName = this.deriveEnumNameFromArkLiteral(typeName, literals)
+        const members = Array.from(new Set(literals.map(this.toPascalCase)))
+        return { enumName, members, literals }
+    }
+    
+    // 从 ArkLiteral 类型名派生枚举名
+    private deriveEnumNameFromArkLiteral(typeName: string, literals: string[]): string {
+        // 移除 ArkLiteralUnionString 或 ArkLiteralString 前缀
+        let baseName = typeName.replace(/^ArkLiteralUnionString/, '').replace(/^ArkLiteralString/, '')
+        
+        // 如果移除前缀后为空，则用字面量推测
+        if (!baseName) {
+            return this.guessEnumName(literals)
+        }
+        
+        // 确保首字母大写
+        baseName = baseName.charAt(0).toUpperCase() + baseName.slice(1)
+        
+        // 添加合适的后缀（如果没有的话）
+        if (!baseName.includes('Align') && !baseName.includes('Type') && !baseName.includes('Mode')) {
+            baseName += 'Enum'
+        }
+        
+        return baseName
     }
 
     convertTypeReferenceAsImport(type: idl.IDLReferenceType, importClause: string): idl.IDLEntry[] {
@@ -1214,6 +1405,8 @@ class CJSyntheticGenerator extends DependenciesCollector {
 }
 
 class CJDeclarationConvertor implements DeclarationConvertor<void> {
+    private readonly emittedLiteralEnums: Set<string> = new Set()
+
     constructor(
         protected readonly writer: LanguageWriter,
         protected readonly seenInterfaceNames: Set<string>,
@@ -1242,9 +1435,27 @@ class CJDeclarationConvertor implements DeclarationConvertor<void> {
         if (idl.isReferenceType(node.type) && this.peerLibrary.resolveTypeReference(node.type)?.name == node.name) {
             return
         }
+        
+        // 🎯 新增：ArkLiteralUnionString* 类型检测与处理
+        const arkLiteralResult = this.tryConvertArkLiteralUnionString(node)
+        if (arkLiteralResult) {
+            console.log(`🎯 [CJDeclarationConvertor] Converting ${node.name} to string enum: ${arkLiteralResult.enumName}`)
+            return
+        }
+        
         const type = this.writer.getNodeName(node.type)
         if (node.name == type) {
             if (idl.isUnionType(node.type)) {
+                // 新增：检测字面量联合
+                const literalEnum = this.detectLiteralEnumFromUnion(node.type)
+                if (literalEnum && !this.emittedLiteralEnums.has(literalEnum.enumName)) {
+                    this.emittedLiteralEnums.add(literalEnum.enumName)
+                    // 生成枚举而不是 Union 类
+                    const enumEntry = this.createSyntheticEnum(literalEnum.enumName, literalEnum.members)
+                    this.writer.writeStatement(this.writer.makeEnumEntity(enumEntry, { isExport: true }))
+                    return
+                }
+                // 非字面量联合走原逻辑
                 this.makeUnion(this.writer, node.type)
                 return
             }
@@ -1497,6 +1708,199 @@ class CJDeclarationConvertor implements DeclarationConvertor<void> {
         //                 }
         //             })
         // }, undefined, [`${FQInterfaceName}Interfaces${typeParams}`])
+    }
+
+    // 新增：字面量枚举检测方法
+    private detectLiteralEnumFromUnion(type: idl.IDLUnionType): { enumName: string, members: string[] } | null {
+        const literals: string[] = []
+        for (const t of type.types) {
+            const lit = this.extractStringLiteral(t) ?? this.extractNumberLiteral(t)
+            if (lit == null) return null
+            literals.push(lit)
+        }
+        if (literals.length < 2) return null
+        const members = Array.from(new Set(literals.map(this.toPascalCase)))
+        const enumName = this.guessEnumName(literals)
+        return { enumName, members }
+    }
+
+    private extractStringLiteral(t: idl.IDLType): string | null {
+        try {
+            const anyT = t as any
+            if (anyT.kind && String(anyT.kind).toLowerCase().includes('literal')) {
+                const s = String(anyT.name ?? anyT.value ?? anyT.toString?.() ?? '')
+                if (s) return s.replace(/^['"]|['"]$/g, '')
+            }
+            const s = t.toString?.()
+            if (s && /^("[^"]+"|'[^']+')$/.test(String(s))) return String(s).slice(1, -1)
+        } catch {}
+        return null
+    }
+
+    private extractNumberLiteral(t: idl.IDLType): string | null {
+        try {
+            const anyT = t as any
+            const v = anyT?.value ?? anyT?.name ?? t.toString?.()
+            if (v != null && /^\d+$/.test(String(v))) return String(v)
+        } catch {}
+        return null
+    }
+
+    private toPascalCase = (value: string): string => {
+        const numberMap: Record<string, string> = {
+            '0': 'Zero', '1': 'One', '2': 'Two', '3': 'Three', '4': 'Four',
+            '5': 'Five', '6': 'Six', '7': 'Seven', '8': 'Eight', '9': 'Nine',
+            '10': 'Ten', '20': 'Twenty', '30': 'Thirty', '40': 'Forty', '50': 'Fifty',
+            '60': 'Sixty', '70': 'Seventy', '80': 'Eighty', '90': 'Ninety', '100': 'Hundred'
+        }
+        if (numberMap[value] !== undefined) return numberMap[value]
+        const normalized = value.replace(/[_\-]+/g, ' ').replace(/\s+/g, ' ').trim()
+        return normalized.split(' ').map(part => part.charAt(0).toUpperCase() + part.slice(1)).join('')
+    }
+
+    private guessEnumName(literals: string[]): string {
+        const set = new Set(literals.map(l => l.toLowerCase()))
+        const allIn = (...vals: string[]) => vals.every(v => set.has(v))
+        if (allIn('left', 'center', 'right')) return 'HorizontalAlign'
+        if (allIn('top', 'middle', 'bottom')) return 'VerticalAlign'
+        if (allIn('small', 'medium', 'large')) return 'ComponentSize'
+        if (allIn('light', 'dark', 'auto')) return 'ThemeType'
+        const base = this.toPascalCase(literals[0] || 'Literal')
+        return `${base}Option`
+    }
+
+    private createSyntheticEnum(enumName: string, members: string[]): idl.IDLEnum {
+        const enumEntity = idl.createEnum(enumName, [], {})
+        enumEntity.elements = members.map((member, index) => 
+            idl.createEnumMember(member, enumEntity, idl.IDLNumberType, index)
+        )
+        return enumEntity
+    }
+    
+    // 🎯 新增：专用于字符串枚举的创建方法
+    private createSyntheticStringEnum(enumName: string, members: string[], literals: string[]): idl.IDLEnum {
+        const enumEntity = idl.createEnum(enumName, [], {})
+        enumEntity.elements = members.map((member, index) => {
+            const literalValue = literals[index] ?? member.toLowerCase()
+            return idl.createEnumMember(member, enumEntity, idl.IDLStringType, literalValue)
+        })
+        return enumEntity
+    }
+
+    // 🎯 新增：ArkLiteralUnionString* 类型检测与转换
+    private tryConvertArkLiteralUnionString(node: idl.IDLTypedef): { enumName: string; literals: string[] } | null {
+        // 强约束：仅匹配 ArkLiteralUnionString* 命名模式
+        if (!this.isArkLiteralUnionStringType(node.name)) {
+            return null
+        }
+        
+        // 解析 typedef 指向的类型，提取字符串字面量
+        const stringLiterals = this.extractStringLiteralsFromTypedef(node)
+        if (!stringLiterals || stringLiterals.length < 2) {
+            return null
+        }
+        
+        // 检查是否已生成过同样的枚举
+        const enumName = this.deriveEnumNameFromArkLiteral(node.name, stringLiterals)
+        if (this.emittedLiteralEnums.has(enumName)) {
+            return null
+        }
+        
+        // 生成字符串枚举
+        this.emittedLiteralEnums.add(enumName)
+        const members = Array.from(new Set(stringLiterals.map(this.toPascalCase)))
+        const enumEntry = this.createSyntheticStringEnum(enumName, members, stringLiterals)
+        this.writer.writeStatement(this.writer.makeEnumEntity(enumEntry, { isExport: true }))
+        
+        console.log(`🔧 [CJDeclarationConvertor] Generated string enum ${enumName} with literals: [${stringLiterals.join(', ')}]`)
+        return { enumName, literals: stringLiterals }
+    }
+    
+    // 检查是否为 ArkLiteralUnionString* 命名模式
+    private isArkLiteralUnionStringType(typeName: string): boolean {
+        return /^ArkLiteralUnionString[A-Z]/.test(typeName) || /^ArkLiteralString[A-Z]/.test(typeName)
+    }
+    
+    // 从 typedef 中提取字符串字面量
+    private extractStringLiteralsFromTypedef(node: idl.IDLTypedef): string[] | null {
+        const type = node.type
+        
+        // 情况1：直接指向 IDLUnionType
+        if (idl.isUnionType(type)) {
+            return this.extractStringLiteralsFromUnion(type)
+        }
+        
+        // 情况2：指向 IDLReferenceType，需要解析引用
+        if (idl.isReferenceType(type)) {
+            const resolved = this.peerLibrary.resolveTypeReference(type)
+            if (resolved && idl.isTypedef(resolved) && idl.isUnionType(resolved.type)) {
+                return this.extractStringLiteralsFromUnion(resolved.type)
+            }
+        }
+        
+        // 情况3：尝试从类型名中推断（兜底逻辑）
+        return this.inferStringLiteralsFromTypeName(node.name)
+    }
+    
+    // 从 Union 类型中提取字符串字面量
+    private extractStringLiteralsFromUnion(union: idl.IDLUnionType): string[] | null {
+        const literals: string[] = []
+        for (const t of union.types) {
+            const literal = this.extractStringLiteral(t)
+            if (!literal) {
+                // 如果有任何一个不是字符串字面量，则返回 null
+                return null
+            }
+            literals.push(literal)
+        }
+        return literals.length >= 2 ? literals : null
+    }
+    
+    // 从类型名推断字符串字面量（兜底逻辑）
+    private inferStringLiteralsFromTypeName(typeName: string): string[] | null {
+        // 根据常见的 ArkLiteral 命名模式推断
+        const lowerName = typeName.toLowerCase()
+        
+        // 已知的字面量模式
+        if (lowerName.includes('align') && lowerName.includes('horizontal')) {
+            return ['left', 'center', 'right']
+        }
+        if (lowerName.includes('align') && lowerName.includes('vertical')) {
+            return ['top', 'middle', 'bottom']
+        }
+        if (lowerName.includes('align') && lowerName.includes('text')) {
+            return ['left', 'center', 'right', 'justify']
+        }
+        if (lowerName.includes('size')) {
+            return ['small', 'medium', 'large']
+        }
+        if (lowerName.includes('theme')) {
+            return ['light', 'dark', 'auto']
+        }
+        
+        // 无法推断
+        return null
+    }
+    
+    // 从 ArkLiteral 类型名派生枚举名
+    private deriveEnumNameFromArkLiteral(typeName: string, literals: string[]): string {
+        // 移除 ArkLiteralUnionString 前缀
+        let baseName = typeName.replace(/^ArkLiteralUnionString/, '').replace(/^ArkLiteralString/, '')
+        
+        // 如果移除前缀后为空，则用字面量推测
+        if (!baseName) {
+            return this.guessEnumName(literals)
+        }
+        
+        // 确保首字母大写
+        baseName = baseName.charAt(0).toUpperCase() + baseName.slice(1)
+        
+        // 添加合适的后缀（如果没有的话）
+        if (!baseName.includes('Align') && !baseName.includes('Type') && !baseName.includes('Mode')) {
+            baseName += 'Enum'
+        }
+        
+        return baseName
     }
 }
 
