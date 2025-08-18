@@ -41,8 +41,43 @@ const STRING_PATTERNS = {
     PLAIN_TEXT: /(message|error|debug|log|description|comment|reason|info|warning|trace|note|memo)/i,
     // 新增更精确的分类
     DIMENSIONAL: /(width|height|size|length|margin|padding|radius|gap|space|offset|position|left|right|top|bottom|x|y|z)/i,
-    CALLBACK: /(on|event|handler|listener|callback|trigger|action)/i
+    CALLBACK: /(on|event|handler|listener|callback|trigger|action)/i,
+    // 联合类型收敛专用模式
+    INDEX_COUNT: /(index|count|indices|rows|cols|selected|current|active)/i
 } as const;
+
+// 联合类型匹配常量
+const UNION_PATTERNS = {
+    PREFIX: /^Union_/,
+    EXTRACT_TOKENS: /^Union_(.+)$/
+} as const;
+
+/**
+ * 联合类型特征接口
+ */
+interface UnionTypeFlags {
+    hasString: boolean;
+    hasNumber: boolean;
+    hasResource: boolean;
+    hasColor: boolean;
+    hasArray: boolean;
+    hasBindable: boolean;
+    hasDate: boolean;
+    hasFontWeight: boolean;
+    hasCustomBuilder: boolean;
+    hasFunction: boolean;
+    isIndexOrCount: boolean;
+    tokens: string[];
+    paramName: string;
+}
+
+/**
+ * 未处理联合类型统计
+ */
+interface UnhandledUnionStats {
+    count: number;
+    examples: string[];
+}
 
 export class CJTypeMapper {
     private readonly typeCheckers: Map<string, TypeChecker> = new Map();
@@ -51,6 +86,10 @@ export class CJTypeMapper {
     private readonly errorStats: Map<string, number> = new Map();
     // 新增：枚举映射缓存，用于将 Literal_* 和 Union_* 类型映射到对应的枚举
     private readonly enumMappingCache: Map<string, string> = new Map();
+    // 未处理联合类型统计
+    private readonly unhandledUnions: Map<string, UnhandledUnionStats> = new Map();
+    // 调试配置
+    private readonly debugEnabled: boolean = process.env.CJ_TYPE_MAPPER_DEBUG === 'true';
     
     constructor() {
         this.initializeTypeCheckers();
@@ -118,7 +157,7 @@ export class CJTypeMapper {
             }
         }
         
-        console.log(`[CJTypeMapper] Initialized ${this.enumMappingCache.size} enum mappings`);
+        this.debugLog(`Initialized ${this.enumMappingCache.size} enum mappings`);
     }
 
     private getCombinations<T>(array: T[], size: number): T[][] {
@@ -267,10 +306,23 @@ export class CJTypeMapper {
             
             // 调试信息：记录类型检测
             const typeDisplayName = this.getTypeDisplayName(baseType);
-            console.log(`[CJTypeMapper] Converting ${paramName}: ${typeDisplayName}, isOptional: ${isOptional}`);
+            this.debugLog(`Converting ${paramName}: ${typeDisplayName}, isOptional: ${isOptional}`);
             
             let result: TypeConversionResult;
             
+            // 处理命名联合类型：Union_* 作为引用类型进入此分支
+            if (UNION_PATTERNS.PREFIX.test(typeDisplayName)) {
+                this.debugLog(`Processing named union: ${typeDisplayName}`);
+                const namedUnion = this.convertNamedUnionDisplay(typeDisplayName, paramName, isOptional)
+                result = this.applyOptionalHandling(namedUnion, isOptional, baseType)
+                this.debugLog(`Named union ${typeDisplayName} -> ${typeof namedUnion.cjType === 'string' ? namedUnion.cjType : this.getTypeDisplayName(namedUnion.cjType as idl.IDLType)}`);
+                // 缓存成功的转换结果
+                if (!result.error) {
+                    this.conversionCache.set(cacheKey, result);
+                }
+                return result
+            }
+
             // Handle union types first
             if (idl.isUnionType(baseType)) {
                 console.log(`[CJTypeMapper] Detected union type for ${paramName}: ${baseType.types.map(t => this.getTypeDisplayName(t)).join(' | ')}`);
@@ -302,6 +354,144 @@ export class CJTypeMapper {
                 error: `Conversion failed: ${error}`
             };
         }
+    }
+
+    /**
+     * 将命名的 Union_* 类型按语义进行收敛或重载
+     */
+    private convertNamedUnionDisplay(typeName: string, paramName: string, isOptional: boolean): TypeConversionResult {
+        try {
+            // 提取并规范化类型标记
+            const tokens = this.extractUnionTokens(typeName);
+            const typeFlags = this.analyzeUnionTokens(tokens, paramName);
+            
+            this.debugLog(`Union analysis: ${typeName} -> tokens=[${tokens.join(',')}], flags=${JSON.stringify(typeFlags)}`);
+            
+            return this.applyUnionConvergenceRules(typeFlags, paramName, isOptional);
+        } catch (error) {
+            this.logError('convertNamedUnionDisplay failed', error);
+            return { cjType: idl.createReferenceType(typeName) };
+        }
+    }
+    
+    /**
+     * 从 Union_* 类型名提取标记
+     */
+    private extractUnionTokens(typeName: string): string[] {
+        const match = typeName.match(UNION_PATTERNS.EXTRACT_TOKENS);
+        return match ? match[1].split('_').filter(Boolean) : [];
+    }
+    
+    /**
+     * 分析联合类型标记，生成类型特征
+     */
+    private analyzeUnionTokens(tokens: string[], paramName: string): UnionTypeFlags {
+        const lowerSet = new Set(tokens.map(t => t.toLowerCase()));
+        const has = (t: string) => lowerSet.has(t.toLowerCase());
+        
+        return {
+            hasString: has('string') || has('resourcestr'),
+            hasNumber: has('number') || has('int32') || has('int64') || has('float64') || has('length'),
+            hasResource: has('resource') || has('resourcestr'),
+            hasColor: has('color') || has('resourcecolor'),
+            hasArray: has('array'),
+            hasBindable: has('bindable'),
+            hasDate: has('date'),
+            hasFontWeight: has('fontweight'),
+            hasCustomBuilder: has('custombuilder') || has('builder'),
+            hasFunction: has('function') || has('callback'),
+            isIndexOrCount: STRING_PATTERNS.INDEX_COUNT.test(paramName),
+            tokens,
+            paramName
+        };
+    }
+    
+    /**
+     * 应用联合类型收敛规则（按优先级排序）
+     */
+    private applyUnionConvergenceRules(flags: UnionTypeFlags, paramName: string, isOptional: boolean): TypeConversionResult {
+        // 优先级 1: 颜色相关 → ResourceColor
+        if (flags.hasColor || STRING_PATTERNS.COLOR.test(paramName)) {
+            this.debugLog(`Rule: Color convergence`);
+            return { cjType: 'ResourceColor', defaultValue: this.generateResourceColorDefault(paramName) };
+        }
+
+        // 优先级 2: FontWeight | number | string → FontWeight
+        if (flags.hasFontWeight && (flags.hasNumber || flags.hasString)) {
+            this.debugLog(`Rule: FontWeight convergence`);
+            return { cjType: 'FontWeight', defaultValue: DEFAULT_VALUES.FONT_WEIGHT };
+        }
+
+        // 优先级 3: 函数相关（命名联合无法还原函数签名）→ 退化为 ResourceStr，避免生成无效类型
+        if (flags.hasFunction && flags.hasString) {
+            this.debugLog(`Rule: Function-like named union -> ResourceStr (safe fallback)`);
+            return { cjType: 'ResourceStr', defaultValue: DEFAULT_VALUES.RESOURCE_STR };
+        }
+
+        // 优先级 4: String | Array<String> → Array<ResourceStr>
+        if (flags.hasString && flags.hasArray && !flags.hasNumber) {
+            console.log(`[CJTypeMapper] Rule: String array convergence`);
+            return { cjType: idl.createReferenceType('Array', [idl.createReferenceType('ResourceStr')]), defaultValue: '[]' };
+        }
+
+        // 优先级 5: Number | Array<Number> → Array<Int32/Int64>
+        if (flags.hasNumber && flags.hasArray && !flags.hasString) {
+            const elem = flags.isIndexOrCount ? 'Int32' : 'Int64';
+            console.log(`[CJTypeMapper] Rule: Number array convergence -> Array<${elem}>`);
+            return { cjType: idl.createReferenceType('Array', [idl.createReferenceType(elem)]), defaultValue: '[]' };
+        }
+
+        // 优先级 6: string | Resource → ResourceStr
+        if (flags.hasString && flags.hasResource && !flags.hasNumber) {
+            console.log(`[CJTypeMapper] Rule: String+Resource convergence`);
+            return { cjType: 'ResourceStr', defaultValue: DEFAULT_VALUES.RESOURCE_STR };
+        }
+
+        // 优先级 7: string | number → 重载（数字语义 vs 文本语义）
+        if (flags.hasString && flags.hasNumber) {
+            console.log(`[CJTypeMapper] Rule: String+Number overloads`);
+            try {
+                const numMapping: NumberConversionResult = convertNumberProperty({ propertyName: paramName, isOptional });
+                const strMapping = this.mapStringType(paramName);
+                const stringCjType = this.getSemanticTypeName(strMapping.targetType);
+                return { overloads: [
+                    { cjType: numMapping.cjType, defaultValue: numMapping.defaultValue },
+                    { cjType: stringCjType, defaultValue: strMapping.defaultValue }
+                ]};
+            } catch {
+                return { cjType: 'ResourceStr', defaultValue: DEFAULT_VALUES.RESOURCE_STR };
+            }
+        }
+
+        // 优先级 8: Date | Bindable → Date
+        if (flags.hasDate && flags.hasBindable) {
+            console.log(`[CJTypeMapper] Rule: Date+Bindable convergence`);
+            return { cjType: 'Date', defaultValue: 'Date()' };
+        }
+
+        // 优先级 9: 兜底：若包含 Resource → ResourceStr
+        if (flags.hasResource && !flags.hasNumber) {
+            console.log(`[CJTypeMapper] Rule: Resource fallback`);
+            return { cjType: 'ResourceStr', defaultValue: DEFAULT_VALUES.RESOURCE_STR };
+        }
+
+        // 优先级 10: 保留原始（记录未处理类型用于后续规则补充）
+        this.debugLog(`Rule: No convergence, keeping original: ${flags.tokens.join('_')}`);
+        this.trackUnhandledUnion(flags.tokens, paramName);
+        return { cjType: idl.createReferenceType(`Union_${flags.tokens.join('_')}`) };
+    }
+    
+    /**
+     * 追踪未处理的联合类型，用于后续规则补充
+     */
+    private trackUnhandledUnion(tokens: string[], paramName: string): void {
+        const key = tokens.join('_');
+        const existing = this.unhandledUnions.get(key) || { count: 0, examples: [] };
+        existing.count++;
+        if (existing.examples.length < 3 && !existing.examples.includes(paramName)) {
+            existing.examples.push(paramName);
+        }
+        this.unhandledUnions.set(key, existing);
     }
 
     private extractBaseType(paramType: idl.IDLType): idl.IDLType {
@@ -362,18 +552,21 @@ export class CJTypeMapper {
                             ...overload,
                             defaultValue: overload.defaultValue || this.getBasicTypeDefault(cjTypeName)
                         }
+                    } else if (this.isSemanticResourceType(cjTypeName)) {
+                        // 语义资源类型默认值
+                        return {
+                            ...overload,
+                            defaultValue: overload.defaultValue || this.getSemanticResourceDefault(cjTypeName)
+                        }
                     } else {
-                        // 非基础类型：ResourceStr、ResourceColor等用合理默认值，复杂类型用 Option<T>
-                        if (this.isSemanticResourceType(cjTypeName)) {
-                            return {
-                                ...overload,
-                                defaultValue: overload.defaultValue || this.getSemanticResourceDefault(cjTypeName)
-                            }
-                        } else {
-                            return {
-                                cjType: idl.createOptionalType(overload.cjType as idl.IDLType),
-                                defaultValue: DEFAULT_VALUES.OPTION_NONE
-                            }
+                        // 复杂类型：Option<ResolvedType>
+                        const resolvedInner: idl.IDLType | undefined = ((): idl.IDLType | undefined => {
+                            if (!overload.cjType) return undefined
+                            return typeof overload.cjType === 'string' ? idl.createReferenceType(overload.cjType) : overload.cjType
+                        })()
+                        return {
+                            cjType: resolvedInner ? idl.createOptionalType(resolvedInner) : idl.createOptionalType(idl.IDLStringType),
+                            defaultValue: DEFAULT_VALUES.OPTION_NONE
                         }
                     }
                 })
@@ -410,12 +603,18 @@ export class CJTypeMapper {
             };
         }
 
-        // 非基础类型：使用 Option<T>
-        return {
-            cjType: idl.createOptionalType(conversion.cjType as idl.IDLType),
-            defaultValue: DEFAULT_VALUES.OPTION_NONE,
-            error: conversion.error
-        };
+        // 非基础类型：使用 Option<T>，并安全解析字符串/空类型
+        {
+            const resolved: idl.IDLType = ((): idl.IDLType => {
+                if (!conversion.cjType) return idl.IDLStringType
+                return typeof conversion.cjType === 'string' ? idl.createReferenceType(conversion.cjType) : conversion.cjType
+            })()
+            return {
+                cjType: idl.createOptionalType(resolved),
+                defaultValue: DEFAULT_VALUES.OPTION_NONE,
+                error: conversion.error
+            };
+        }
     }
 
     private convertNumberType(baseType: idl.IDLType, paramName: string): TypeConversionResult {
@@ -603,11 +802,12 @@ export class CJTypeMapper {
                 }
             }
             
-            // P2 优化: Number | Array<Number> → Array<Int64>
+            // P2 优化: Number | Array<Number> → Array<Int32>(index/count) 或 Array<Int64>
             if (hasNumber && hasArray) {
-                console.log(`[CJTypeMapper] P2 Converging ${paramName} to Array<Int64> (Number|Array<Number>)`);
+                const elem = STRING_PATTERNS.INDEX_COUNT.test(paramName) ? 'Int32' : 'Int64'
+                console.log(`[CJTypeMapper] P2 Converging ${paramName} to Array<${elem}> (Number|Array<Number>)`);
                 return {
-                    cjType: idl.createReferenceType('Array', [idl.createReferenceType('Int64')]),
+                    cjType: idl.createReferenceType('Array', [idl.createReferenceType(elem)]),
                     defaultValue: '[]'
                 }
             }
@@ -1099,6 +1299,15 @@ export class CJTypeMapper {
         console.warn(`[CJTypeMapper] ${message}: ${error}`);
     }
 
+    /**
+     * 调试日志输出（可通过环境变量控制）
+     */
+    private debugLog(message: string): void {
+        if (this.debugEnabled) {
+            console.log(`[CJTypeMapper] ${message}`);
+        }
+    }
+
     private trackError(message: string, error: any): void {
         const errorKey = `${message}: ${String(error)}`;
         const count = this.errorStats.get(errorKey) || 0;
@@ -1121,12 +1330,20 @@ export class CJTypeMapper {
     }
 
     /**
+     * 获取未处理联合类型统计（用于调试和规则补充）
+     */
+    public getUnhandledUnions(): Map<string, UnhandledUnionStats> {
+        return new Map(this.unhandledUnions);
+    }
+
+    /**
      * 清理缓存（用于测试或重置）
      */
     public clearCaches(): void {
         this.typeCache.clear();
         this.conversionCache.clear();
         this.errorStats.clear();
+        this.unhandledUnions.clear();
         console.log('[CJTypeMapper] All caches cleared');
     }
 }

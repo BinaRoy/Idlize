@@ -15,7 +15,8 @@
 
 import * as idl from "@idlizer/core/idl"
 import { collapseIdlPeerMethods, collectPeers, componentToStyleClass, findComponentByDeclaration, findComponentByName, groupOverloads, isComponentDeclaration, KotlinInterfacesVisitor, PrinterFunction } from "@idlizer/libohos"
-import { ArkTSInterfacesVisitor, CJInterfacesVisitor, InterfacesVisitor, JavaInterfacesVisitor, TSDeclConvertor, TSInterfacesVisitor } from "@idlizer/libohos"
+import { ArkTSInterfacesVisitor, CJInterfacesVisitor, InterfacesVisitor, JavaInterfacesVisitor, TSDeclConvertor, TSInterfacesVisitor, PrinterResult } from "@idlizer/libohos"
+import { CJTypeMapper, TypeConversionResult } from "../declaration/CJTypeMapper"
 import { DeclarationConvertor, getSuper, indentedBy, Language, LanguageWriter, Method, MethodModifier, NamedMethodSignature, PeerLibrary, ReferenceResolver, stringOrNone } from "@idlizer/core"
 import { generateAttributeModifierSignature } from "./ComponentsPrinter"
 import { componentToAttributesInterface, generateStyleParentClass } from "./PeersPrinter"
@@ -148,7 +149,70 @@ function getVisitor(peerLibrary: PeerLibrary, isDeclarations: boolean): Interfac
         return new ArkoalaArkTSInterfacesVisitor(peerLibrary, isDeclarations, true)
     }
     if (peerLibrary.language == Language.CJ) {
-        return new CJInterfacesVisitor(peerLibrary)
+        const inner = new CJInterfacesVisitor(peerLibrary)
+        const mapper = new CJTypeMapper()
+        return {
+            printInterfaces(): PrinterResult[] {
+                for (const file of peerLibrary.files.values()) {
+                    // IDLFile: entries 列出所有顶层声明
+                    file.entries.forEach((node: idl.IDLEntry) => {
+                        if (idl.isInterface(node)) {
+                            node.properties.forEach(prop => {
+                                try {
+                                    const conv = mapper.convertParameterType(prop.type, prop.name, true)
+                                    if (conv.overloads && conv.overloads.length > 0) {
+                                        const t = conv.overloads[0].cjType
+                                        if (t) {
+                                            const assigned = typeof t === 'string' ? idl.createReferenceType(t) : t
+                                            prop.type = (assigned as any).kind === 'optionalType' ? (assigned as any).type : assigned
+                                        }
+                                    } else if (conv.cjType) {
+                                        const assigned = typeof conv.cjType === 'string' ? idl.createReferenceType(conv.cjType) : conv.cjType
+                                        prop.type = (assigned as any).kind === 'optionalType' ? (assigned as any).type : assigned
+                                    }
+                                } catch {}
+                            })
+                            node.methods.forEach((method: idl.IDLMethod) => {
+                                // 参数（就地修改，避免破坏 IDLParameter 的结构/品牌字段）
+                                method.parameters.forEach((param: idl.IDLParameter, idx: number) => {
+                                    try {
+                                        const name = param.name || `param${idx}`
+                                        const isOpt = param.isOptional
+                                        const conv: TypeConversionResult = mapper.convertParameterType(param.type, name, isOpt)
+                                        if (conv.overloads && conv.overloads.length > 0) {
+                                            const t = conv.overloads[0].cjType
+                                            if (t) {
+                                                const assigned = typeof t === 'string' ? idl.createReferenceType(t) : t
+                                                param.type = (assigned as any).kind === 'optionalType' ? (assigned as any).type : assigned
+                                            }
+                                        } else if (conv.cjType) {
+                                            const assigned = typeof conv.cjType === 'string' ? idl.createReferenceType(conv.cjType) : conv.cjType
+                                            param.type = (assigned as any).kind === 'optionalType' ? (assigned as any).type : assigned
+                                        }
+                                    } catch {
+                                        // keep original
+                                    }
+                                })
+                                try {
+                                    const convRet: TypeConversionResult = mapper.convertParameterType(method.returnType, `${method.name}_return`, false)
+                                    if (convRet.overloads && convRet.overloads.length > 0) {
+                                        const t = convRet.overloads[0].cjType
+                                        if (t) {
+                                            const assigned = typeof t === 'string' ? idl.createReferenceType(t) : t
+                                            method.returnType = (assigned as any).kind === 'optionalType' ? (assigned as any).type : assigned
+                                        }
+                                    } else if (convRet.cjType) {
+                                        const assigned = typeof convRet.cjType === 'string' ? idl.createReferenceType(convRet.cjType) : convRet.cjType
+                                        method.returnType = (assigned as any).kind === 'optionalType' ? (assigned as any).type : assigned
+                                    }
+                                } catch {}
+                            })
+                        }
+                    })
+                }
+                return inner.printInterfaces()
+            }
+        } as InterfacesVisitor
     }
     if (peerLibrary.language == Language.KOTLIN) {
         return new KotlinInterfacesVisitor(peerLibrary)

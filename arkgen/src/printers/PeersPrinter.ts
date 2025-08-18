@@ -55,6 +55,7 @@ import {
     writePeerMethod
 } from "@idlizer/libohos";
 import { HandwrittenModule } from '../ArkoalaLayout';
+import { CJTypeMapper, TypeConversionResult } from '../declaration/CJTypeMapper'
 
 export function componentToPeerClass(component: string) {
     return `Ark${component}Peer`
@@ -96,16 +97,66 @@ class PeerFileVisitor {
             imports.addFeature(this.generatePeerParentName(peer), this.library.layout.resolve({node: parentComponent!.attributeDeclaration, role: LayoutNodeRole.PEER}))
         }
         const component = findComponentByType(this.library, idl.createReferenceType(peer.originalClassName!))!
-        collectDeclDependencies(this.library, component.attributeDeclaration, imports, { expandTypedefs: true })
+        // 为 CJ 语言收敛联合类型，避免将 Union_* 拉入公共层
+        if (this.library.language !== Language.CJ) {
+            collectDeclDependencies(this.library, component.attributeDeclaration, imports, { expandTypedefs: true })
+        }
         component.attributeDeclaration.methods.forEach(method => {
-            method.parameters.map(p => p.type).concat([method.returnType]).forEach(type => {
-                collectDeclDependencies(this.library, type, (dep) => {
-                    collectDeclDependencies(this.library, dep, imports, { expandTypedefs: true })
-                }, { expandTypedefs: true })
-            })
+            if (this.library.language === Language.CJ) {
+                const mapper = new CJTypeMapper()
+                // 先对参数与返回类型进行语义收敛，再参与依赖收集
+                const mappedTypes: idl.IDLType[] = []
+                // 参数
+                method.parameters.forEach((p: any, index: number) => {
+                    try {
+                        const conv: TypeConversionResult = mapper.convertParameterType(p.type, p.name ?? `param${index}`, !!p.optional)
+                        const addType = (t: idl.IDLType | string | undefined) => {
+                            if (!t) return
+                            mappedTypes.push(typeof t === 'string' ? idl.createReferenceType(t) : t)
+                        }
+                        if (conv.overloads && conv.overloads.length > 0) {
+                            conv.overloads.forEach(o => addType(o.cjType))
+                        } else {
+                            addType(conv.cjType as any)
+                        }
+                    } catch {
+                        mappedTypes.push(p.type)
+                    }
+                })
+                // 返回类型
+                try {
+                    const convRet: TypeConversionResult = mapper.convertParameterType(method.returnType, `${method.name}_return`, false)
+                    const addType = (t: idl.IDLType | string | undefined) => {
+                        if (!t) return
+                        mappedTypes.push(typeof t === 'string' ? idl.createReferenceType(t) : t)
+                    }
+                    if (convRet.overloads && convRet.overloads.length > 0) {
+                        convRet.overloads.forEach(o => addType(o.cjType))
+                    } else {
+                        addType(convRet.cjType as any)
+                    }
+                } catch {
+                    mappedTypes.push(method.returnType)
+                }
+
+                // 仅对收敛后的类型做依赖收集，避免引入 Union_*
+                mappedTypes.forEach(type => {
+                    collectDeclDependencies(this.library, type, (dep) => {
+                        collectDeclDependencies(this.library, dep, imports, { expandTypedefs: true })
+                    }, { expandTypedefs: true })
+                })
+            } else {
+                method.parameters.map(p => p.type).concat([method.returnType]).forEach(type => {
+                    collectDeclDependencies(this.library, type, (dep) => {
+                        collectDeclDependencies(this.library, dep, imports, { expandTypedefs: true })
+                    }, { expandTypedefs: true })
+                })
+            }
         })
         if (component.interfaceDeclaration)
-            collectDeclDependencies(this.library, component.interfaceDeclaration, imports, { expandTypedefs: true })
+            if (this.library.language !== Language.CJ) {
+                collectDeclDependencies(this.library, component.interfaceDeclaration, imports, { expandTypedefs: true })
+            }
         if (this.library.language === Language.TS) {
             imports.addFeature('GestureName', './framework/shared/generated-utils')
             imports.addFeature('GestureComponent', './framework/shared/generated-utils')
