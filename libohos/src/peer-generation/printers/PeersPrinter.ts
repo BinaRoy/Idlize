@@ -60,8 +60,25 @@ export function writePeerMethod(library: PeerLibrary, printer: LanguageWriter, m
     const hookMethod = getHookMethod(method.originalParentName, method.method.name)
     if (hookMethod && hookMethod.replaceImplementation) return
     const signature = method.method.signature as NamedMethodSignature
+    // 事件命名规范化（仅对 CJ 输出生效）：
+    // 1) _onChangeEvent_foo   → onFoo
+    // 2) set_onChangeEvent_foo → onFoo（去掉 set_ 前缀，以匹配组件层 onFooAttribute 调用）
+    const normalizeEventName = (name: string): string => {
+        let n = name
+        let m: RegExpMatchArray | null
+        if ((m = n.match(/^set_onChangeEvent_(.+)$/))) {
+            const tail = m[1]
+            return 'on' + tail.replace(/^(.)/, (c) => c.toUpperCase())
+        }
+        if ((m = n.match(/^_onChangeEvent_(.+)$/))) {
+            const tail = m[1]
+            return 'on' + tail.replace(/^(.)/, (c) => c.toUpperCase())
+        }
+        return name
+    }
+    const normalizedName = printer.language === Language.CJ ? normalizeEventName(method.sig.name) : method.sig.name
     let peerMethod = new Method(
-        `${method.sig.name}${methodPostfix}`,
+        `${normalizedName}${methodPostfix}`,
         new NamedMethodSignature(returnType, signature.args, signature.argsNames, signature.defaults, signature.argsModifiers),
         method.method.modifiers, method.method.generics
     )
@@ -123,6 +140,7 @@ export function writePeerMethod(library: PeerLibrary, printer: LanguageWriter, m
         })
         let call = writer.makeNativeCall(
             NativeModule.Generated,
+            // Native 符号保持原始签名，避免与其他语言/既有导出不一致
             `_${method.originalParentName}_${method.sig.name}`,
             params)
 

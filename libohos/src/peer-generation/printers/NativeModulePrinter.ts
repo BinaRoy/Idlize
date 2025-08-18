@@ -162,7 +162,24 @@ class NativeModuleArkUIGeneratedVisitor extends NativeModulePrinterBase {
         if (hookMethod && hookMethod.replaceImplementation) return
         returnType = toNativeReturnType(returnType, this.library)
         const component = method.originalParentName
-        const name = `_${component}_${method.sig.name}`
+        // 事件命名规范化（仅对 CJ 输出生效）：
+        // 1) _onChangeEvent_foo   → onFoo
+        // 2) set_onChangeEvent_foo → onFoo（去掉 set_ 前缀）
+        const normalizeEventName = (name: string): string => {
+            let n = name
+            let m: RegExpMatchArray | null
+            if ((m = n.match(/^set_onChangeEvent_(.+)$/))) {
+                const tail = m[1]
+                return 'on' + tail.replace(/^(.)/, (c) => c.toUpperCase())
+            }
+            if ((m = n.match(/^_onChangeEvent_(.+)$/))) {
+                const tail = m[1]
+                return 'on' + tail.replace(/^(.)/, (c) => c.toUpperCase())
+            }
+            return name
+        }
+        const normalizedSigName = this.language === Language.CJ ? normalizeEventName(method.sig.name) : method.sig.name
+        const name = `_${component}_${normalizedSigName}`
         const interopMethod = makeInteropMethod(this.library, name, method)
         this.printMethod(interopMethod)
     }
