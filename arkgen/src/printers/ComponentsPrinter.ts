@@ -76,6 +76,223 @@ interface BuildFunctionParamConfig {
     isOptional: boolean;
 }
 
+import * as fs from "fs";
+import * as ts from "typescript";
+
+type Meta = { level: number; flags: Record<string, true>; values: Record<string,string> };
+
+const BOOLEAN_TAGS = new Set(["form","crossplatform","atomicservice","systemapi","noninterop"]);
+const VALUE_TAGS   = new Set(["syscap","kit","version","deprecated"]);
+
+const jsdocTypes   = new Map<string, Meta>();            // "TypeName" -> meta
+const jsdocMembers = new Map<string, Meta>();            // "TypeName#method" or "HostType#constName" -> meta
+
+const num = (s?: string) => (s?.match(/(\d+)/)?.[1] ? Number(RegExp.$1) : undefined);
+const tagVal = (j: ts.JSDoc, n: string) => j.tags?.find(t => t.tagName.text === n)?.comment?.toString().trim();
+
+function metaFromJSDoc(j: ts.JSDoc): Meta | undefined {
+  const level = num(tagVal(j, "since"));
+  if (level == null) return;
+  const flags: Record<string, true> = {};
+  const values: Record<string,string> = {};
+  for (const t of j.tags ?? []) {
+    const n = t.tagName.text;
+    const v = t.comment?.toString().trim();
+    if (BOOLEAN_TAGS.has(n)) flags[n] = true;
+    else if (VALUE_TAGS.has(n) && v) values[n] = v;
+  }
+  return { level, flags, values };
+}
+function merge(list: (Meta|undefined)[]): Meta | undefined {
+  const metas = list.filter(Boolean) as Meta[];
+  if (!metas.length) return;
+  const out: Meta = { level: metas[0].level, flags: {}, values: {} };
+  for (const m of metas) {
+    out.level = Math.max(out.level, m.level);
+    Object.assign(out.values, m.values);
+    for (const k of Object.keys(m.flags)) out.flags[k] = true;
+  }
+  return out;
+}
+
+// REPLACE these two with the versions below
+function getTypeMeta(name: string) { return jsdocTypes.get(name); }
+function getMemberMeta(host: string, member: string) { return jsdocMembers.get(`${host}#${member}`); }
+
+// KEEP getMetaForType, but REPLACE getMetaForMember with a dual-lookup
+function getMetaForMember(hostName: string, memberName: string): Meta | undefined {
+  return (
+    jsdocMembers.get(`${hostName}.${memberName}`) || // dot
+    jsdocMembers.get(`${hostName}#${memberName}`)    // hash
+  );
+}
+
+function indexDtsText(text: string) {
+  const sf = ts.createSourceFile("x.d.ts", text, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
+  const visit = (node: ts.Node) => {
+    const docs = (node as any).jsDoc as ts.JSDoc[] | undefined;
+    if (docs?.length) {
+      const m = merge(docs.map(metaFromJSDoc));
+      if (m) {
+        if (ts.isInterfaceDeclaration(node) || ts.isClassDeclaration(node) || ts.isTypeAliasDeclaration(node)) {
+          const name = node.name?.text?.trim();
+          if (name) jsdocTypes.set(name, m);
+        } else if (ts.isMethodSignature(node) || ts.isMethodDeclaration(node)) {
+          const method = ts.isIdentifier(node.name) ? node.name.text : undefined;
+          const host = (node.parent as any)?.name?.text as string | undefined;
+          if (method && host) jsdocMembers.set(`${host}#${method}`, m);
+        } else if (ts.isVariableStatement(node)) {
+          // e.g. declare const ColumnInstance: ColumnAttribute;
+          for (const d of node.declarationList.declarations) {
+            const id = ts.isIdentifier(d.name) ? d.name.text : undefined;
+            if (id && d.type && ts.isTypeReferenceNode(d.type) && ts.isIdentifier(d.type.typeName)) {
+              const host = d.type.typeName.text;
+              jsdocMembers.set(`${host}#${id}`, m); // allows host#constName lookups
+              jsdocTypes.set(id, m);                 // also useful as a “type” meta
+            }
+          }
+        }
+      }
+    }
+    if (ts.isInterfaceDeclaration(node)) {
+      const host = node.name?.text?.trim();
+      if (host) {
+        for (const mem of node.members) {
+          if ((mem as any).jsDoc?.length && ts.isCallSignatureDeclaration(mem)) {
+            const mm = merge(((mem as any).jsDoc as ts.JSDoc[]).map(metaFromJSDoc));
+            if (mm) {
+              jsdocMembers.set(`${host}#(call)`, mm);
+            }
+          }
+        }
+      }
+    }
+
+    ts.forEachChild(node, visit);
+  };
+  visit(sf);
+}
+function getCallMeta(host: string): Meta | undefined {
+  return jsdocMembers.get(`${host}.(call)`) || jsdocMembers.get(`${host}#(call)`);
+}
+function textFromIDLFile(file: any): string | undefined {
+  return file?.text ?? file?.sourceText ?? file?.originalText ?? (file?.fileName && fs.existsSync(file.fileName) ? fs.readFileSync(file.fileName, "utf8") : undefined);
+}
+
+function ensureIndexed(file: any) {
+  const text = textFromIDLFile(file);
+  if (text) indexDtsText(text);
+}
+
+
+
+function mergeMetas(ms: (Meta | undefined)[]): Meta | undefined {
+  const list = ms.filter(Boolean) as Meta[];
+  if (!list.length) return undefined;
+
+  const out: Meta = { level: list[0].level, flags: {}, values: {} };
+  for (const m of list) {
+    out.level = Math.max(out.level, m.level);
+    Object.assign(out.values, m.values); // last-wins
+    for (const k of Object.keys(m.flags)) out.flags[k] = true; // union
+  }
+  return out;
+}
+function renderDirective(meta: Meta): string {
+  const { level, flags, values } = meta;
+  const parts: string[] = [String(level)];
+
+  // stable order for clean diffs:
+  if (values.syscap) parts.push(`syscap: "${values.syscap}"`);
+  if (values.kit) parts.push(`kit: ${values.kit}`);
+  if (values.version) parts.push(`version: ${values.version}`);
+  if (values.deprecated) parts.push(`deprecated: ${values.deprecated}`);
+
+  // any other values (last-wins already applied)
+  for (const k of Object.keys(values)) {
+    if (["syscap","kit","version","deprecated"].includes(k)) continue;
+    parts.push(`${k}: ${values[k]}`);
+  }
+  for (const k of Object.keys(flags)) parts.push(`${k}: true`);
+
+  
+  return `@!APILevel [${parts.join(", ")}]`;
+}
+
+// Public API so arkoala.ts (or any bootstrap) can feed all .d.ts contents:
+export function registerJSDocSource(text: string, fileName = "virtual.d.ts") {
+  const sf = ts.createSourceFile(fileName, text, ts.ScriptTarget.Latest, true);
+
+  const typeMetasByDecl = new Map<ts.Node, Meta[]>();
+  const memberMetasByDecl = new Map<ts.Node, Meta[]>();
+
+  const push = (map: Map<ts.Node, Meta[]>, node: ts.Node, meta?: Meta) => {
+    if (!meta) return;
+    const bucket = map.get(node) ?? [];
+    bucket.push(meta);
+    map.set(node, bucket);
+  };
+
+  const visit = (node: ts.Node) => {
+    // collect JSDoc attached to this node (if any)
+    const jsDocs = (node as any).jsDoc as ts.JSDoc[] | undefined;
+    if (jsDocs?.length) {
+      const metas = jsDocs.map(metaFromJSDoc).filter(Boolean) as Meta[];
+
+      if (ts.isInterfaceDeclaration(node) || ts.isClassDeclaration(node) || ts.isTypeAliasDeclaration(node)) {
+        push(typeMetasByDecl, node, mergeMetas(metas));
+      }
+
+      // methods / properties signatures living under a host
+      if (
+        ts.isMethodSignature(node) ||
+        ts.isPropertySignature(node) ||
+        ts.isMethodDeclaration(node) ||
+        ts.isPropertyDeclaration(node)
+      ) {
+        push(memberMetasByDecl, node, mergeMetas(metas));
+      }
+    }
+    ts.forEachChild(node, visit);
+  };
+  visit(sf);
+
+  // Resolve names and index
+  const resolveName = (n?: ts.Node): string | undefined => {
+    if (!n) return;
+    if (ts.isIdentifier(n)) return n.text;
+    if ("name" in (n as any) && (n as any).name && ts.isIdentifier((n as any).name)) {
+      return ((n as any).name as ts.Identifier).text;
+    }
+    return;
+  };
+
+  // type-level
+  for (const [decl, metas] of typeMetasByDecl) {
+    const name = resolveName(decl);
+    const merged = mergeMetas(metas);
+    if (name && merged) jsdocTypes.set(name, merged);
+  }
+
+  // member-level
+  for (const [decl, metas] of memberMetasByDecl) {
+    let host: ts.Node | undefined = decl.parent;
+    while (host && !ts.isInterfaceDeclaration(host) && !ts.isClassDeclaration(host) && !ts.isTypeLiteralNode(host)) {
+      host = host.parent;
+    }
+    const hostName = resolveName(host);
+    const memberName = resolveName(decl);
+    const merged = mergeMetas(metas);
+    if (hostName && memberName && merged) {
+      jsdocMembers.set(`${hostName}.${memberName}`, merged);
+    }
+  }
+}
+
+function getMetaForType(typeName: string): Meta | undefined {
+  return jsdocTypes.get(typeName);
+}
+
 export function generateArkComponentName(component: string) {
     return `Ark${component}Component`
 }
@@ -1324,6 +1541,11 @@ class CJComponentFileVisitor implements ComponentFileVisitor {
             printer.print(def)
         }
 
+        if (typeMeta) {
+            printer.print(renderDirective(typeMeta));
+            console.log(renderDirective(typeMeta))
+            console.log('Printing Class')
+        }
         printer.writeClass(componentClassName, (writer) => {
             writer.writeMethodImplementation(
                 new Method('getPeer',
@@ -1331,6 +1553,7 @@ class CJComponentFileVisitor implements ComponentFileVisitor {
                     ), [MethodModifier.PROTECTED], []),
                 writer => {
                     writer.print('if (let Some(peer) <- this.peer) {')
+
                     writer.pushIndent()
                     writer.writeStatement(
                         writer.makeReturn(
@@ -1448,19 +1671,21 @@ class KotlinComponentFileVisitor implements ComponentFileVisitor {
 class ComponentsVisitor {
     readonly components: Map<TargetFile, LanguageWriter> = new Map()
     private readonly language = this.peerLibrary.language
-
+    
     constructor(
         private readonly peerLibrary: PeerLibrary,
         private options: {
             isDeclared: boolean
         }
     ) { }
-
+    
     printComponents(): PrinterResult[] {
         const result: PrinterResult[] = []
         for (const file of this.peerLibrary.files.values()) {
             if (!collectPeersForFile(this.peerLibrary, file).length)
                 continue
+            ensureIndexed(file)
+            console.log("JSDoc index:", jsdocTypes.size, jsdocMembers.size)
             let visitor: ComponentFileVisitor
             if (this.language == Language.TS) {
                 visitor = new TSComponentFileVisitor(this.peerLibrary, file, this.options)
@@ -1497,3 +1722,4 @@ export function printComponentsDeclarations(peerLibrary: PeerLibrary): PrinterRe
 
     return new ComponentsVisitor(peerLibrary, { isDeclared: true }).printComponents()
 }
+
