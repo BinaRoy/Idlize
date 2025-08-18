@@ -110,8 +110,8 @@ export class CJCallbackTypeManager {
             return aliasName
         }
         
-        // 生成新的别名名称
-        aliasName = this.generateCallbackAliasName(paramName, methodName)
+        // 生成新的别名名称（带组件名，确保 onChange 命名化：OnTextPickerChangeCallback）
+        aliasName = this.generateCallbackAliasName(paramName, methodName, componentName)
         
         // 注册别名
         this.callbackAliasBySignature.set(normalizedSignature, aliasName)
@@ -148,25 +148,33 @@ export class CJCallbackTypeManager {
      * 2. 其次基于方法名：onClick -> OnClickCallback
      * 3. 确保唯一性：添加数字后缀避免冲突
      */
-    private generateCallbackAliasName(paramName: string, methodName: string): string {
+    private generateCallbackAliasName(paramName: string, methodName: string, componentName?: string): string {
         let baseName = ''
-        
-        // 基于参数名生成
-        if (paramName.startsWith('on') && paramName.length > 2) {
-            // onXxx -> OnXxxCallback
-            baseName = this.toPascalCase(paramName) + 'Callback'
-        } else if (paramName.includes('callback') || paramName.includes('Callback')) {
-            // callback_ -> Callback
-            baseName = this.toPascalCase(paramName.replace(/[_\-]/g, '')) + 'Callback'
-        } else if (methodName.startsWith('on') && methodName.length > 2) {
-            // 方法名：onClick -> OnClickCallback
-            baseName = this.toPascalCase(methodName) + 'Callback'
-        } else {
-            // 默认：参数名 + Callback
+
+        // 优先使用“组件名 + 方法名”规则：onXxx → On{Component}XxxCallback
+        if (methodName.startsWith('on') && methodName.length > 2 && componentName && componentName.length > 0) {
+            const suffix = methodName.slice(2) // 去掉前缀 on
+            // 去掉组件名结尾的 Attribute/Component 再组名
+            const sanitized = componentName.replace(/(Attribute|Component)$/,'')
+            baseName = `On${this.toPascalCase(sanitized)}${this.toPascalCase(suffix)}Callback`
+        }
+        // 其次使用“参数名 onXxx”规则
+        else if (paramName.startsWith('on') && paramName.length > 2) {
             baseName = this.toPascalCase(paramName) + 'Callback'
         }
-        
-        // 确保唯一性
+        // 再次使用“参数名包含 callback”规则：callback_ → CallbackCallback（保持历史行为）
+        else if (paramName.toLowerCase().includes('callback')) {
+            baseName = this.toPascalCase(paramName.replace(/[_\-]/g, '')) + 'Callback'
+        }
+        // 退化为“方法名 onXxx”规则
+        else if (methodName.startsWith('on') && methodName.length > 2) {
+            baseName = this.toPascalCase(methodName) + 'Callback'
+        }
+        // 最后默认：参数名 + Callback
+        else {
+            baseName = this.toPascalCase(paramName) + 'Callback'
+        }
+
         return this.ensureUniqueName(baseName)
     }
     
@@ -236,6 +244,9 @@ export class CJCallbackTypeManager {
         return t
     }
 
+    // Option包装正则，编译一次复用
+    private static readonly OPTION_WRAPPER_REGEX = /^Option<\s*(.+)\s*>$/;
+    
     /**
      * 检测是否为回调类型（命名回调或内联函数）
      */
@@ -247,6 +258,30 @@ export class CJCallbackTypeManager {
         if (/^Option<\s*\w+Callback\s*>$/.test(s)) return true
         // 3) 内联函数类型
         return CJCallbackTypeManager.isFunctionType(s)
+    }
+    
+    /**
+     * 提取 Option<CallbackType> 中的基础回调类型
+     */
+    public static extractBaseCallbackType(typeName: string): string {
+        const match = typeName.match(this.OPTION_WRAPPER_REGEX);
+        return match ? match[1] : typeName;
+    }
+    
+    /**
+     * 根据可选性包装回调类型
+     */
+    public static wrapCallbackType(baseType: string, isOptional: boolean): string {
+        return isOptional ? `Option<${baseType}>` : baseType;
+    }
+    
+    /**
+     * 格式化回调参数（统一入口）
+     */
+    public static formatCallbackParameter(name: string, typeName: string, isOptional: boolean): string {
+        const baseType = this.extractBaseCallbackType(typeName);
+        const wrappedType = this.wrapCallbackType(baseType, isOptional);
+        return isOptional ? `${name}: ${wrappedType} = None` : `${name}: ${wrappedType}`;
     }
 
     /**
@@ -261,13 +296,7 @@ export class CJCallbackTypeManager {
         return `Option<${typeName}>`
     }
 
-    /**
-     * 格式化回调参数：统一使用 Option<Callback> = None
-     */
-    public static formatCallbackParameter(name: string, typeName: string): string {
-        const ensured = CJCallbackTypeManager.ensureOptionCallbackType(typeName)
-        return `${name}: ${ensured} = None`
-    }
+
 
     /**
      * 预扫描单个方法，收集其中的回调类型

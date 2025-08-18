@@ -57,6 +57,24 @@ import { convertNumberProperty } from '../declaration/CJNumberConversion'
 import { CJTypeMapper, TypeConversionResult, DEFAULT_VALUES } from '../declaration/CJTypeMapper'
 import { CJCallbackTypeManager } from '../declaration/CJCallbackTypeManager'
 
+/**
+ * 参数处理结果
+ */
+interface ParameterProcessResult {
+    formatted: string;
+    needsValidation: boolean;
+    isCallback: boolean;
+}
+
+/**
+ * 构建函数参数配置
+ */
+interface BuildFunctionParamConfig {
+    name: string;
+    type: string;
+    isOptional: boolean;
+}
+
 export function generateArkComponentName(component: string) {
     return `Ark${component}Component`
 }
@@ -346,6 +364,10 @@ class JavaComponentFileVisitor implements ComponentFileVisitor {
 }
 
 class CJComponentFileVisitor implements ComponentFileVisitor {
+    // 常量定义：避免重复编译正则表达式
+    private static readonly OPTION_TYPE_PATTERN = /^Option<\s*.+\s*>$/
+    private static readonly VALID_DEFAULT_VALUES = new Set(['true', 'false', '0', '1', 'Option.None'])
+    
     private readonly typeMapper: CJTypeMapper
     private readonly callbackManager: CJCallbackTypeManager
 
@@ -569,26 +591,89 @@ class CJComponentFileVisitor implements ComponentFileVisitor {
      * 优先使用默认值，基础类型避免使用 ? 语法
      */
     private formatParameter(name: string, typeName: string, defaultValue: string | undefined, isOptional: boolean): string {
-        // 回调参数：使用统一的回调格式化逻辑
+        // 回调参数：统一使用 CJCallbackTypeManager 处理
         if (CJCallbackTypeManager.isCallbackType(typeName)) {
-            return CJCallbackTypeManager.formatCallbackParameter(name, typeName)
+            return CJCallbackTypeManager.formatCallbackParameter(name, typeName, isOptional);
         }
 
-        // 非回调参数：优先使用默认值（基础类型可选：使用默认值）
-        if (defaultValue && defaultValue !== 'None') {
-            return `${name}: ${typeName} = ${defaultValue}`;
-        }
-        // 只有在没有默认值时才使用可选语法（非基础类型可选：使用 Option<T>）
-        else if (isOptional) {
-            return `${name}?: ${typeName}`;
-        }
-        // 必需参数
-        else {
-            return `${name}: ${typeName}`;
-        }
+        // 非回调参数：统一可选参数表达，避免双重可选 "?: Option<T>"
+        return this.formatNonCallbackParameter(name, typeName, defaultValue, isOptional);
     }
 
+    /**
+     * 格式化非回调参数：统一可选表达规则
+     */
+    private formatNonCallbackParameter(name: string, typeName: string, defaultValue: string | undefined, isOptional: boolean): string {
+        if (!isOptional) {
+            return `${name}: ${typeName}`;
+        }
 
+        // 可选参数：优先使用有效默认值
+        const validDefault = this.getValidDefaultValue(typeName, defaultValue);
+        if (validDefault) {
+            return `${name}: ${typeName} = ${validDefault}`;
+        }
+
+        // Option<T> 类型：统一默认为 Option.None
+        if (this.isOptionType(typeName)) {
+            return `${name}: ${typeName} = Option.None`;
+        }
+
+        // 其他类型：输出为必选形式，避免 "?:" 双可选
+        return `${name}: ${typeName}`;
+    }
+
+    /**
+     * 检测是否为 Option<T> 类型
+     */
+    private isOptionType(typeName: string): boolean {
+        return CJComponentFileVisitor.OPTION_TYPE_PATTERN.test(typeName);
+    }
+
+    /**
+     * 获取有效的默认值
+     */
+    private getValidDefaultValue(typeName: string, defaultValue: string | undefined): string | null {
+        if (!defaultValue || defaultValue === 'None') {
+            return null;
+        }
+        
+        // 检查是否为常用的有效默认值
+        if (CJComponentFileVisitor.VALID_DEFAULT_VALUES.has(defaultValue)) {
+            return defaultValue;
+        }
+
+        // 检查是否为数字类型的默认值
+        if (/^-?\d+(\.\d+)?$/.test(defaultValue)) {
+            return defaultValue;
+        }
+
+        // 检查是否为字符串字面量
+        if (/^["'].*["']$/.test(defaultValue)) {
+            return defaultValue;
+        }
+
+        return null;
+    }
+
+    /**
+     * 统一参数处理入口
+     */
+    private processParameter(
+        name: string, 
+        typeName: string, 
+        defaultValue: string | undefined, 
+        isOptional: boolean
+    ): ParameterProcessResult {
+        const isCallback = CJCallbackTypeManager.isCallbackType(typeName);
+        const formatted = this.formatParameter(name, typeName, defaultValue, isOptional);
+        
+        return {
+            formatted,
+            needsValidation: isOptional && isCallback, // 可选回调需要验证
+            isCallback
+        };
+    }
 
     /**
      * 统一处理类型名：高频收敛 + 回调命名化
@@ -671,7 +756,9 @@ class CJComponentFileVisitor implements ComponentFileVisitor {
         writer: LanguageWriter
     ): void {
         const paramsStr = params.join(', ');
-        writer.print(`public func ${method.name}(${paramsStr}): ${returnTypeName} {`);
+        // 统一组件方法返回类型为 This，避免出现声明为 Unit 却返回 this 的不一致
+        const effectiveReturnTypeName = 'This';
+        writer.print(`public func ${method.name}(${paramsStr}): ${effectiveReturnTypeName} {`);
         writer.pushIndent();
         
         const argList = argNames.join(', ');
@@ -766,10 +853,10 @@ class CJComponentFileVisitor implements ComponentFileVisitor {
         s = s.replace(/[Ss]tring\s*\|\s*Array<\s*[Ss]tring\s*>/g, 'Array<ResourceStr>');
         s = s.replace(/Array<\s*[Ss]tring\s*>\s*\|\s*[Ss]tring/g, 'Array<ResourceStr>');
         
-        // Number | Array<Number> → Array<Int64>
-        s = s.replace(/Union_Number_Array_Number/g, 'Array<Int64>');
-        s = s.replace(/[Nn]umber\s*\|\s*Array<\s*[Nn]umber\s*>/g, 'Array<Int64>');
-        s = s.replace(/Array<\s*[Nn]umber\s*>\s*\|\s*[Nn]umber/g, 'Array<Int64>');
+        // Number | Array<Number> → Array<Int32>（索引/计数优先整型）
+        s = s.replace(/Union_Number_Array_Number/g, 'Array<Int32>');
+        s = s.replace(/[Nn]umber\s*\|\s*Array<\s*[Nn]umber\s*>/g, 'Array<Int32>');
+        s = s.replace(/Array<\s*[Nn]umber\s*>\s*\|\s*[Nn]umber/g, 'Array<Int32>');
         
         return s;
     }
@@ -818,25 +905,83 @@ class CJComponentFileVisitor implements ComponentFileVisitor {
     /**
      * 修复构建函数参数中的内联回调
      */
+    /**
+     * 生成构建函数参数列表（避免后期字符串替换）
+     */
+    private generateBuildFunctionParams(componentName: string): BuildFunctionParamConfig[] {
+        return [
+            {
+                name: 'style',
+                type: `On${componentName}StyleCallback`,
+                isOptional: true
+            },
+            {
+                name: 'content_',
+                type: `On${componentName}ContentCallback`,
+                isOptional: true
+            }
+        ];
+    }
+
+    /**
+     * 格式化构建函数参数
+     */
+    private formatBuildFunctionParams(componentName: string): string {
+        const params = this.generateBuildFunctionParams(componentName);
+        return params.map(param => {
+            const wrappedType = CJCallbackTypeManager.wrapCallbackType(param.type, param.isOptional);
+            // 构建函数入参：根据类型智能设置默认值
+            const defaultValue = this.getSmartDefaultForBuildParam(wrappedType, param.name);
+            return `${param.name}: ${wrappedType} = ${defaultValue}`;
+        }).join(',\n    ');
+    }
+
+    /**
+     * 为构建函数参数获取智能默认值
+     */
+    private getSmartDefaultForBuildParam(typeName: string, paramName: string): string {
+        // Option 类型统一为 Option.None
+        if (this.isOptionType(typeName)) {
+            return 'Option.None';
+        }
+
+        // 根据参数名推断特殊默认值
+        if (paramName.includes('visible') || paramName.includes('enabled')) {
+            return 'true';
+        }
+        
+        if (paramName.includes('count') || paramName.includes('index')) {
+            return '0';
+        }
+
+        // 回调类型
+        if (CJCallbackTypeManager.isCallbackType(typeName)) {
+            return 'Option.None';
+        }
+
+        // 默认为 Option.None（最安全的选择）
+        return 'Option.None';
+    }
+
     private fixBuildFunctionParameters(content: string, componentName: string): string {
-        // 修复 style 参数的各种形态
+        // 使用新的结构化生成后，大部分修复已不需要
+        // 只处理遗留的边缘情况
         content = content.replace(
             /style:\s*\?\(\(attributes:\s*(\w+)\s*\)\s*->\s*Unit\)/g,
-            'style: Option<On' + componentName + 'StyleCallback> = None'
+            'style: Option<On' + componentName + 'StyleCallback>'
         )
         content = content.replace(
             /style:\s*\(\(attributes:\s*(\w+)\s*\)\s*->\s*Unit\)/g,
-            'style: Option<On' + componentName + 'StyleCallback> = None'
+            'style: Option<On' + componentName + 'StyleCallback>'
         )
         
-        // 修复 content_ 参数的各种形态
         content = content.replace(
             /content_:\s*\?\(\(\)\s*->\s*Unit\)/g,
-            'content_: Option<On' + componentName + 'ContentCallback> = None'
+            'content_: Option<On' + componentName + 'ContentCallback>'
         )
         content = content.replace(
             /content_:\s*\(\(\)\s*->\s*Unit\)/g,
-            'content_: Option<On' + componentName + 'ContentCallback> = None'
+            'content_: Option<On' + componentName + 'ContentCallback>'
         )
         
         return content

@@ -242,10 +242,10 @@ function inferSemanticHint(propertyName: string): NumberSemanticHint {
     return 'ratio';
   }
   
-  // 计数相关属性
+  // 计数/索引相关属性（包含通用 index）
   if (includesAny(name, [
     'count', 'total', 'num', 'quantity', 'maxlines', 'itemcount', 
-    'selectedindex', 'duration', 'step', 'loop', 'iterations', 'repeat',
+    'selectedindex', 'index', 'duration', 'step', 'loop', 'iterations', 'repeat',
     'lines', 'selection', 'selectionstart', 'selectionend'
   ])) {
     return 'count';
@@ -257,9 +257,9 @@ function inferSemanticHint(propertyName: string): NumberSemanticHint {
     return 'timestamp';
   }
   
-  // 位置相关属性
+  // 位置相关属性（不包含通用 index，避免与索引混淆）
   if (includesAny(name, [
-    'index', 'position', 'top', 'left', 'right', 'bottom', 'x', 'y', 'z'
+    'position', 'top', 'left', 'right', 'bottom', 'x', 'y', 'z'
   ])) {
     return 'position';
   }
