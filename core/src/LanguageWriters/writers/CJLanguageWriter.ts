@@ -178,10 +178,12 @@ export class CJEnumWithGetter implements LanguageStatement {
         })
 
         const isStringEnum = initializers.every(it => typeof it.id == 'string')
+        const isLiteralUnionEnum = idl.hasExtAttribute(this.enumEntity, idl.IDLExtendedAttributes.LiteralUnionEnum)
         
         // Debug: 输出枚举生成信息
         console.log(`🔧 [CJEnumWithGetter] Generating enum: ${this.enumEntity.name}`)
         console.log(`   isStringEnum: ${isStringEnum}`)
+        console.log(`   isLiteralUnionEnum: ${isLiteralUnionEnum}`)
         if (isStringEnum) {
             console.log(`   🎯 Will generate String get() method`)
         } else {
@@ -221,17 +223,23 @@ export class CJEnumWithGetter implements LanguageStatement {
         
         writer.print('')
         
-        // 生成get()方法 - 对于字面量枚举，返回String而非Int32
-        const returnType = isStringEnum ? 'String' : 'Int32'
+        // 生成get()方法 - 对于字面量联合枚举，返回String而非Int32
+        const returnType = (isStringEnum || isLiteralUnionEnum) ? 'String' : 'Int32'
         writer.print(`func get(): ${returnType} {`)
         writer.pushIndent()
         writer.print('match(this) {')
         writer.pushIndent()
         members.forEach(member => {
-            // 对于字符串枚举，返回原始字符串字面量值
-            const returnValue = isStringEnum ? 
-                `"${member.stringId || member.name.toLowerCase()}"` : 
-                `${member.numberId}`
+            // 对于字符串枚举或字面量联合枚举，返回字符串值
+            let returnValue: string
+            if (isStringEnum || isLiteralUnionEnum) {
+                // 对于字面量联合枚举，返回大写的枚举成员名
+                returnValue = isLiteralUnionEnum ? 
+                    `"${member.name}"` : 
+                    `"${member.stringId || member.name.toLowerCase()}"`
+            } else {
+                returnValue = `${member.numberId}`
+            }
             writer.print(`case ${member.name} => ${returnValue}`)
         })
         writer.popIndent()
@@ -269,15 +277,15 @@ export class CJEnumWithGetter implements LanguageStatement {
         writer.popIndent()
         writer.print('}')
         
-        // 为字符串枚举补充 parse/tryParse(String)
-        if (isStringEnum) {
+        // 为字符串枚举或字面量联合枚举补充 parse/tryParse(String)
+        if (isStringEnum || isLiteralUnionEnum) {
             writer.print('')
             writer.print(`static func parse(val: String): ${enumName} {`)
             writer.pushIndent()
             writer.print('match(val) {')
             writer.pushIndent()
             members.forEach(member => {
-                const strVal = member.stringId ?? member.name.toLowerCase()
+                const strVal = isLiteralUnionEnum ? member.name : (member.stringId ?? member.name.toLowerCase())
                 writer.print(`case "${strVal}" => ${member.name}`)
             })
             writer.print(`case _ => throw IllegalArgumentException("unknown value \${val}")`)
@@ -618,11 +626,12 @@ export class CJLanguageWriter extends LanguageWriter {
         this.print(`func ${name}(${signture}): ${this.typeForeignConvertor.convert(method.signature.returnType)}`)
     }
     override i32FromEnum(value: LanguageExpression, enumEntry: idl.IDLEnum): LanguageExpression {
-        // 检查是否是字符串枚举
+        // 检查是否是字符串枚举或字面量联合枚举
         const isStringEnum = enumEntry.elements.every(it => typeof it.initializer == 'string');
+        const isLiteralUnionEnum = idl.hasExtAttribute(enumEntry, idl.IDLExtendedAttributes.LiteralUnionEnum);
         
-        if (isStringEnum) {
-            // 字符串枚举，直接返回 get() 方法的结果，它已经是字符串了
+        if (isStringEnum || isLiteralUnionEnum) {
+            // 字符串枚举或字面量联合枚举，直接返回 get() 方法的结果，它已经是字符串了
             return this.makeString(`${value.asString()}.get()`);
         } else {
             // 数字枚举，返回 value 属性
@@ -752,17 +761,19 @@ export class CJLanguageWriter extends LanguageWriter {
         return this.makeString(`${value}.value${index}`)
     }
     enumFromI32(value: LanguageExpression, enumEntry: idl.IDLEnum): LanguageExpression {
-        // 检查是否是字符串枚举
+        // 检查是否是字符串枚举或字面量联合枚举
         const isStringEnum = enumEntry.elements.every(it => typeof it.initializer == 'string');
+        const isLiteralUnionEnum = idl.hasExtAttribute(enumEntry, idl.IDLExtendedAttributes.LiteralUnionEnum);
         
-        if (isStringEnum) {
-            // 对于字符串枚举，需要根据字符串值查找对应的枚举成员
+        if (isStringEnum || isLiteralUnionEnum) {
+            // 对于字符串枚举或字面量联合枚举，需要根据字符串值查找对应的枚举成员
             const enumName = this.getNodeName(enumEntry);
             return this.makeString(`
                 match(${value.asString()}) {
                     ${enumEntry.elements.map(elem => {
-                        const stringValue = typeof elem.initializer === 'string' ? 
-                            elem.initializer : elem.name.toLowerCase();
+                        const stringValue = isLiteralUnionEnum ? 
+                            elem.name : 
+                            (typeof elem.initializer === 'string' ? elem.initializer : elem.name.toLowerCase());
                         return `case "${stringValue}" => ${enumName}.${elem.name}`;
                     }).join('\n')}
                     case _ => throw IllegalArgumentException("Invalid enum value: \${${value.asString()}}")

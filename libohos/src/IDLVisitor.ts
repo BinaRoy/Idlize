@@ -1445,7 +1445,13 @@ export class IDLVisitor implements GenerateVisitor<idl.IDLFile> {
             console.log(`🎯 [IDLVisitor] Creating literal enum: ${enumName} from [${literals.join(', ')}]`)
             
             // create enum entry
-            const enumEntry = idl.createEnum(enumName, [], { fileName: this.sourceFile.fileName, extendedAttributes: [{ name: idl.IDLExtendedAttributes.Synthetic }] })
+            const enumEntry = idl.createEnum(enumName, [], { 
+                fileName: this.sourceFile.fileName, 
+                extendedAttributes: [
+                    { name: idl.IDLExtendedAttributes.Synthetic },
+                    { name: idl.IDLExtendedAttributes.LiteralUnionEnum }
+                ] 
+            })
             // 对于字符串字面量，使用原始字符串值作为枚举值；对于数字字面量，使用原始数字值
             enumEntry.elements = members.map((m, idx) => idl.createEnumMember(m, enumEntry, allStringLiterals ? idl.IDLStringType : idl.IDLNumberType, allStringLiterals ? literals[idx] : idx))
             this.addSyntheticType(enumEntry)
