@@ -245,7 +245,29 @@ class PeerFileVisitor {
 
     protected printPeerMethod(method: PeerMethod, printer: LanguageWriter) {
         this.library.setCurrentContext(`${method.originalParentName}.${method.sig.name}`)
+        // CJ 兜底规范化：将 set_onChangeEvent_*/_onChangeEvent_* 统一为 onXxx
+        const normalizeEventName = (name: string): string => {
+            let n = name
+            let m: RegExpMatchArray | null
+            if ((m = n.match(/^set_onChangeEvent_(.+)$/))) {
+                const tail = m[1]
+                return 'on' + tail.replace(/^(.)/, (c) => c.toUpperCase())
+            }
+            if ((m = n.match(/^_onChangeEvent_(.+)$/))) {
+                const tail = m[1]
+                return 'on' + tail.replace(/^(.)/, (c) => c.toUpperCase())
+            }
+            return name
+        }
+        const isCJ = printer.language === Language.CJ
+        const originalSigName = (method as any).sig?.name
+        if (isCJ && originalSigName) {
+            (method as any).sig.name = normalizeEventName(originalSigName)
+        }
         writePeerMethod(this.library, printer, method, true, this.dumpSerialized, "Attribute", "this.peer.ptr")
+        if (isCJ && originalSigName) {
+            (method as any).sig.name = originalSigName
+        }
         this.library.setCurrentContext(undefined)
     }
 

@@ -710,16 +710,11 @@ export class CJTypeMapper {
             })
             const hasColorRef = memberTypes.some(t => this.getTypeDisplayName(t).toLowerCase().includes('color'))
             const hasFunction = memberTypes.some(t => this.isFunctionType(t))
-            // Case: function-related unions → overloads (function + ResourceStr when combined with string)
-            if (hasFunction && hasString) {
-                console.log(`[CJTypeMapper] Creating overloads for ${paramName} (function|string)`)
-                // 选择首个函数类型作为代表
+            // Case: function-related unions → 直接保留函数签名，避免退化为 CallbackCallback
+            if (hasFunction) {
+                console.log(`[CJTypeMapper] Keeping function signature for ${paramName}`)
                 const fnType = memberTypes.find(t => this.isFunctionType(t))!
-                const overloads = [
-                    { cjType: fnType },
-                    { cjType: 'ResourceStr', defaultValue: DEFAULT_VALUES.RESOURCE_STR }
-                ]
-                return { overloads }
+                return { cjType: fnType }
             }
 
             console.log(`[CJTypeMapper] Union analysis for ${paramName}: hasString=${hasString}, hasNumber=${hasNumber}, hasColorRef=${hasColorRef}`);
@@ -802,13 +797,19 @@ export class CJTypeMapper {
                 }
             }
             
-            // P2 优化: Number | Array<Number> → Array<Int32>(index/count) 或 Array<Int64>
+            // P2 优化: Number | Array<Number>
+            // 对 index/count 语义生成两个重载：Int32 与 Array<Int32>
+            // 对非 index/count 语义生成两个重载：Int64 与 Array<Int64>
             if (hasNumber && hasArray) {
-                const elem = STRING_PATTERNS.INDEX_COUNT.test(paramName) ? 'Int32' : 'Int64'
-                console.log(`[CJTypeMapper] P2 Converging ${paramName} to Array<${elem}> (Number|Array<Number>)`);
+                const isIndexCount = STRING_PATTERNS.INDEX_COUNT.test(paramName)
+                const scalar = isIndexCount ? 'Int32' : 'Int64'
+                const array = idl.createReferenceType('Array', [idl.createReferenceType(scalar)])
+                console.log(`[CJTypeMapper] P2 Overloads for ${paramName}: ${scalar} | Array<${scalar}> (Number|Array<Number>)`);
                 return {
-                    cjType: idl.createReferenceType('Array', [idl.createReferenceType(elem)]),
-                    defaultValue: '[]'
+                    overloads: [
+                        { cjType: scalar, defaultValue: DEFAULT_VALUES[scalar as 'INT32' | 'INT64'] },
+                        { cjType: array, defaultValue: '[]' }
+                    ]
                 }
             }
 

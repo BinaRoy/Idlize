@@ -158,13 +158,15 @@ export class CJCallbackTypeManager {
             const sanitized = componentName.replace(/(Attribute|Component)$/,'')
             baseName = `On${this.toPascalCase(sanitized)}${this.toPascalCase(suffix)}Callback`
         }
+        // 处理内部事件：_onChangeEvent_foo → On{Component}FooCallback
+        else if (/^_onChangeEvent_/.test(methodName) && componentName && componentName.length > 0) {
+            const tail = methodName.replace(/^_onChangeEvent_/, '')
+            const sanitized = componentName.replace(/(Attribute|Component)$/,'')
+            baseName = `On${this.toPascalCase(sanitized)}${this.toPascalCase(tail)}Callback`
+        }
         // 其次使用“参数名 onXxx”规则
         else if (paramName.startsWith('on') && paramName.length > 2) {
             baseName = this.toPascalCase(paramName) + 'Callback'
-        }
-        // 再次使用“参数名包含 callback”规则：callback_ → CallbackCallback（保持历史行为）
-        else if (paramName.toLowerCase().includes('callback')) {
-            baseName = this.toPascalCase(paramName.replace(/[_\-]/g, '')) + 'Callback'
         }
         // 退化为“方法名 onXxx”规则
         else if (methodName.startsWith('on') && methodName.length > 2) {
@@ -173,6 +175,20 @@ export class CJCallbackTypeManager {
         // 最后默认：参数名 + Callback
         else {
             baseName = this.toPascalCase(paramName) + 'Callback'
+        }
+
+        // 避免生成 CallbackCallback 这类无信息量别名，回退到组件+方法名策略
+        if (/^CallbackCallback$/.test(baseName) && componentName && componentName.length > 0) {
+            const sanitized = componentName.replace(/(Attribute|Component)$/,'')
+            if (methodName.startsWith('on') && methodName.length > 2) {
+                const suffix = methodName.slice(2)
+                baseName = `On${this.toPascalCase(sanitized)}${this.toPascalCase(suffix)}Callback`
+            } else if (/^_onChangeEvent_/.test(methodName)) {
+                const tail = methodName.replace(/^_onChangeEvent_/, '')
+                baseName = `On${this.toPascalCase(sanitized)}${this.toPascalCase(tail)}Callback`
+            } else {
+                baseName = `On${this.toPascalCase(sanitized)}EventCallback`
+            }
         }
 
         return this.ensureUniqueName(baseName)
@@ -257,7 +273,10 @@ export class CJCallbackTypeManager {
         // 2) Option<OnXxxCallback>
         if (/^Option<\s*\w+Callback\s*>$/.test(s)) return true
         // 3) 内联函数类型
-        return CJCallbackTypeManager.isFunctionType(s)
+        if (CJCallbackTypeManager.isFunctionType(s)) return true
+        // 4) 历史遗留 CallbackCallback 也视为回调，便于替换
+        if (/\bCallbackCallback\b$/.test(s)) return true
+        return false
     }
     
     /**

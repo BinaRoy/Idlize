@@ -687,6 +687,19 @@ class CJComponentFileVisitor implements ComponentFileVisitor {
     }
 
     /**
+     * 事件方法命名规范化：
+     * 将内部事件前缀 `_onChangeEvent_foo` 统一重命名为 `onFoo`
+     * 仅影响对外暴露的方法名；peer 调用仍使用原始方法名。
+     */
+    private normalizeEventMethodName(originalName: string): string {
+        const m = originalName.match(/^_onChangeEvent_(.+)$/)
+        if (!m) return originalName
+        const tail = m[1]
+        // foo -> onFoo
+        return 'on' + tail.replace(/^(.)/, (c) => c.toUpperCase())
+    }
+
+    /**
      * 统一的参数转换和格式化逻辑，用于属性方法、重载方法和构建函数
      */
     private processAndFormatParameter(
@@ -730,6 +743,14 @@ class CJComponentFileVisitor implements ComponentFileVisitor {
                 }
             }
             
+            // 若原始 IDL 参数为函数签名，而映射后类型未被识别为回调，则回退使用原始函数签名，保证后续命名回调生成
+            try {
+                const originalTypeName = writer.getNodeName(paramType)
+                if (!CJCallbackTypeManager.isCallbackType(tName) && CJCallbackTypeManager.isFunctionType(originalTypeName)) {
+                    tName = originalTypeName
+                }
+            } catch { /* ignore */ }
+
             // 统一处理类型名：高频收敛 + 回调命名化
             const processedTypeName = this.processTypeName(tName, paramName, method.name, componentName)
             
@@ -758,13 +779,18 @@ class CJComponentFileVisitor implements ComponentFileVisitor {
         const paramsStr = params.join(', ');
         // 统一组件方法返回类型为 This，避免出现声明为 Unit 却返回 this 的不一致
         const effectiveReturnTypeName = 'This';
-        writer.print(`public func ${method.name}(${paramsStr}): ${effectiveReturnTypeName} {`);
+        // 对外暴露的方法名（事件重命名）
+        const originalMethodName = method.name as string
+        const exposedMethodName = this.normalizeEventMethodName(originalMethodName)
+        writer.print(`public func ${exposedMethodName}(${paramsStr}): ${effectiveReturnTypeName} {`);
         writer.pushIndent();
         
         const argList = argNames.join(', ');
-        writer.print(`if (this.checkPriority("${method.name}")) {`);
+        // 使用规范化后的事件名作为优先级键，保持与对外 API 一致
+        writer.print(`if (this.checkPriority("${exposedMethodName}")) {`);
         writer.pushIndent();
-        writer.print(`(this.getPeer() as ${peerClassName}).${method.name}Attribute(${argList})`);
+        // peer 调用使用规范化后的 Attribute 名称
+        writer.print(`(this.getPeer() as ${peerClassName}).${exposedMethodName}Attribute(${argList})`);
         writer.popIndent();
         writer.print('}');
         writer.print('return this');
