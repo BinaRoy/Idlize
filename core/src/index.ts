@@ -77,3 +77,4 @@ export { idlToDtsString, CustomPrintVisitor }  from "./from-idl/DtsPrinter"
 export { toIDLFile, addSyntheticType, resolveSyntheticType, IDLTokenInfoMap } from "./from-idl/deserialize"
 
 export { D, ConfigTypeInfer, ConfigSchema, inspectSchema } from './configDescriber'
+export * from "./union/UnionTypeProcessor"

@@ -76,7 +76,16 @@ export function writePeerMethod(library: PeerLibrary, printer: LanguageWriter, m
         }
         return name
     }
-    const normalizedName = printer.language === Language.CJ ? normalizeEventName(method.sig.name) : method.sig.name
+    // Setter 命名收敛：对 CJ 输出移除 set 前缀，以与组件层 xxxAttribute 调用保持一致
+    const normalizeSetterName = (name: string): string => {
+        // 仅处理以 set 后跟大写字母开头的典型 setter，如 setFontSize → fontSize
+        return name.replace(/^set([A-Z])(.*)$/,( _all, first: string, rest: string) => first.toLowerCase() + rest)
+    }
+    // 去除数字重载后缀（如 name0/name1 → name），以启用同名多重载
+    const stripOverloadIndex = (name: string): string => name.replace(/\d+$/, '')
+    const normalizedName = printer.language === Language.CJ
+        ? stripOverloadIndex(normalizeSetterName(normalizeEventName(method.sig.name)))
+        : method.sig.name
     let peerMethod = new Method(
         `${normalizedName}${methodPostfix}`,
         new NamedMethodSignature(returnType, signature.args, signature.argsNames, signature.defaults, signature.argsModifiers),

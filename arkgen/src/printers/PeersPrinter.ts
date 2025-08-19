@@ -261,8 +261,11 @@ class PeerFileVisitor {
         }
         const isCJ = printer.language === Language.CJ
         const originalSigName = (method as any).sig?.name
+        // 在 CJ 下统一化事件与 setter 的方法名，并去除编号重载后缀以生成同名重载
+        const normalizeSetterName = (name: string): string => name.replace(/^set([A-Z])(.*)$/,( _all, first: string, rest: string) => first.toLowerCase() + rest)
+        const stripOverloadIndex = (name: string): string => name.replace(/\d+$/, '')
         if (isCJ && originalSigName) {
-            (method as any).sig.name = normalizeEventName(originalSigName)
+            ;(method as any).sig.name = stripOverloadIndex(normalizeSetterName(normalizeEventName(originalSigName)))
         }
         writePeerMethod(this.library, printer, method, true, this.dumpSerialized, "Attribute", "this.peer.ptr")
         if (isCJ && originalSigName) {

@@ -165,7 +165,8 @@ export function allowsOverloads(language: Language): boolean {
     switch (language) {
         case Language.TS:
         case Language.CJ:
-            return false
+            // 允许 CJ 下的同名重载，由 OverloadsPrinter 生成同名方法并在方法体内做运行时类型分派
+            return true
         default:
             return true
     }
@@ -273,16 +274,11 @@ export class OverloadsPrinter {
                 return cardinalityA - cardinalityB
             })
 
-        if (!allowsOverloads(this.language)) {
-            this.printCollapsedOverloads(peer, orderedMethods)
-        } else {
-            // Handle special case for same name AND same signature methods.
-            // Collapse same signature methods
-            let copy = Array.from([...orderedMethods])
-            const groups = groupSameSignatureMethods([...copy])
-            for (let group of groups) {
-                this.printCollapsedOverloads(peer, group)
-            }
+        // 始终打印重载选择器：同名不同签名 → 生成一个聚合方法，内部做运行时分派；
+        // 同名同签名 → 仍折叠为一个实现
+        const groups = groupSameSignatureMethods([...orderedMethods])
+        for (let group of groups) {
+            this.printCollapsedOverloads(peer, group)
         }
     }
 

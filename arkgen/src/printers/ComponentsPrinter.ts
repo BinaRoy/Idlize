@@ -23,7 +23,8 @@ import {
     MethodModifier,
     NamedMethodSignature,
     LayoutNodeRole,
-    getSuper
+    getSuper,
+    unionTypeProcessor
 } from '@idlizer/core'
 import {
     ARKOALA_PACKAGE,
