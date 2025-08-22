@@ -790,7 +790,7 @@ class CJComponentFileVisitor implements ComponentFileVisitor {
         writer.print(`if (this.checkPriority("${exposedMethodName}")) {`);
         writer.pushIndent();
         // peer 调用使用规范化后的 Attribute 名称
-        writer.print(`(this.getPeer() as ${peerClassName}).${exposedMethodName}Attribute(${argList})`);
+        writer.print(`this.getPeer().${exposedMethodName}Attribute(${argList})`);
         writer.popIndent();
         writer.print('}');
         writer.print('return this');
