@@ -630,8 +630,8 @@ export class CJTypeMapper {
             };
         } catch (error) {
             return {
-                cjType: 'Int64',
-                defaultValue: DEFAULT_VALUES.INT64,
+                cjType: 'Float64',
+                defaultValue: DEFAULT_VALUES.FLOAT64,
                 error: `Number conversion failed: ${error}`
             };
         }
@@ -1151,7 +1151,7 @@ export class CJTypeMapper {
             'Int64': DEFAULT_VALUES.INT64,
             'Bool': DEFAULT_VALUES.BOOLEAN
         };
-        return defaults[typeName] || DEFAULT_VALUES.INT64;
+        return defaults[typeName] || DEFAULT_VALUES.FLOAT64;
     }
 
     private getSemanticResourceDefault(typeName: string): string {
