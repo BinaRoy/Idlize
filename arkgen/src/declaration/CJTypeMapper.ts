@@ -630,8 +630,8 @@ export class CJTypeMapper {
             };
         } catch (error) {
             return {
-                cjType: 'Float64',
-                defaultValue: DEFAULT_VALUES.FLOAT64,
+                cjType: 'Int64',
+                defaultValue: DEFAULT_VALUES.INT64,
                 error: `Number conversion failed: ${error}`
             };
         }
