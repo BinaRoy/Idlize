@@ -1638,77 +1638,115 @@ class CJDeclarationConvertor implements DeclarationConvertor<void> {
     }
 
     private makeInterface(writer: LanguageWriter, type: idl.IDLInterface): void {
-        const isComponent = isComponentDeclaration(this.peerLibrary, type);
+        const isComponent = isComponentDeclaration(this.peerLibrary, type)
 
         const superNames = type.inheritance
         let parentProperties: idl.IDLProperty[] = []
-        if (superNames) {
-            const superDecls = superNames ? superNames.map(t => this.peerLibrary.resolveTypeReference(t as idl.IDLReferenceType)) : undefined
-            parentProperties = superDecls!.filter(decl => decl !== undefined).map(decl => collectAllProperties(decl as idl.IDLInterface, this.peerLibrary)).flat()
-        }
-        let ownProperties: idl.IDLProperty[] = isComponent? [] : type.properties.filter(it => !parentProperties.map(prop => prop.name).includes(it.name))
+        if (superNames && superNames.length > 0) {
+            const superDecls = superNames
+            .map(t => this.peerLibrary.resolveTypeReference(t as idl.IDLReferenceType))
+            .filter((decl): decl is idl.IDLInterface => !!decl) as idl.IDLInterface[]
 
+            parentProperties = superDecls
+            .map(decl => collectAllProperties(decl, this.peerLibrary))
+            .flat()
+        }
+
+        // 只保留“自有属性”，避免在子类里重复声明父类字段
+        const parentNames = new Set(parentProperties.map(p => p.name))
+        let ownProperties: idl.IDLProperty[] = isComponent
+            ? []
+            : type.properties.filter(p => !parentNames.has(p.name))
+
+        // 处理类名/FQN与类型参数（沿用你原先的逻辑）
         let FQInterfaceName = removePoints(idl.getNamespaceName(type)).concat(type.name)
-        let typeParams = type.typeParameters && type.typeParameters?.length != 0 ? `<${type.typeParameters.map(it => it.split('extends')[0].split('=')[0]).join(', ')}>` : ''
-        if (['CommonMethod', 'CommonShapeMethod', 'BaseSpan',
-            'ScrollableCommonMethod', 'LazyGridLayoutAttribute',
-            'LazyVGridLayoutAttributeInterfaces', 'SecurityComponentMethod',
-            'GestureHandler', 'GestureInterface'].includes(type.name) || (superNames && superNames.length > 0 ? writer.getNodeName(superNames[0]) == "CommonMethod" : false)) {
+        let typeParams =
+            type.typeParameters && type.typeParameters.length !== 0
+            ? `<${type.typeParameters.map(it => it.split('extends')[0].split('=')[0]).join(', ')}>`
+            : ''
+
+        if (
+            [
+            'CommonMethod',
+            'CommonShapeMethod',
+            'BaseSpan',
+            'ScrollableCommonMethod',
+            'LazyGridLayoutAttribute',
+            'LazyVGridLayoutAttributeInterfaces',
+            'SecurityComponentMethod',
+            'GestureHandler',
+            'GestureInterface',
+            ].includes(type.name) ||
+            (superNames && superNames.length > 0
+            ? writer.getNodeName(superNames[0]) == 'CommonMethod'
+            : false)
+        ) {
             typeParams = ''
         }
 
         if (isComponent) {
-            return;
-        } else {
-            generateClassOnly();
+            // 组件类跳过
+            return
         }
-        function generateClassOnly() {
-            writer.writeClass(`${FQInterfaceName}${typeParams}`,
-                () => {
-                    ownProperties.concat(parentProperties).forEach(it => {
-                        let modifiers: FieldModifier[] = []
-                        if (it.isReadonly) modifiers.push(FieldModifier.READONLY)
-                        if (it.isStatic) modifiers.push(FieldModifier.STATIC)
-                        writer.writeFieldDeclaration(it.name, idl.maybeOptional(it.type, it.isOptional), modifiers, idl.isOptionalType(it.type))
-                    })
-                    writer.writeConstructorImplementation(`${FQInterfaceName}`,
-                        new NamedMethodSignature(idl.IDLVoidType,
-                            ownProperties.concat(parentProperties).map(it => idl.maybeOptional(it.type, it.isOptional)),
-                            ownProperties.concat(parentProperties).map(it => writer.escapeKeyword(it.name))), () => {
-                                for (let i of ownProperties.concat(parentProperties)) {
-                                    writer.print(`this.${i.name}_container = ${writer.escapeKeyword(i.name)}`)
-                                }
-                            })
-                },
-                superNames && superNames.length > 0 ? `${removePoints(idl.getNamespaceName(superNames[0] as unknown as idl.IDLEntry))}${superNames[0].name}${typeParams}` : undefined,
-                undefined)
-        }
-        // writer.writeInterface(`${FQInterfaceName}${isMaterialized(type, this.peerLibrary) ? '' : 'Interfaces'}${typeParams}`, (writer) => {
-        //     for (const p of ownProperties) {
-        //         const modifiers: FieldModifier[] = []
-        //         if (p.isReadonly) modifiers.push(FieldModifier.READONLY)
-        //         if (p.isStatic) modifiers.push(FieldModifier.STATIC)
-        //         writer.writeProperty(p.name, idl.maybeOptional(p.type, p.isOptional), modifiers)
-        //     }
-        // }, superNames && superNames.length > 0 ? superNames.map(it => `${removePoints(idl.getNamespaceName(it as unknown as idl.IDLEntry))}${it.name}Interfaces${typeParams}`) : undefined) // make proper inheritance
 
-        // writer.writeClass(`${FQInterfaceName}${typeParams}`, () => {
-        //     ownProperties.concat(parentProperties).forEach(it => {
-        //         let modifiers: FieldModifier[] = []
-        //         if (it.isReadonly) modifiers.push(FieldModifier.READONLY)
-        //         if (it.isStatic) modifiers.push(FieldModifier.STATIC)
-        //         writer.writeProperty(it.name, idl.maybeOptional(it.type, it.isOptional), modifiers, { method: new Method(it.name, new NamedMethodSignature(it.type, [it.type], [it.name])) })
-        //     })
-        //     writer.writeConstructorImplementation(`${FQInterfaceName}`,
-        //         new NamedMethodSignature(idl.IDLVoidType,
-        //             ownProperties.concat(parentProperties).map(it => idl.maybeOptional(it.type, it.isOptional)),
-        //             ownProperties.concat(parentProperties).map(it => writer.escapeKeyword(it.name))), () => {
-        //                 for (let i of ownProperties.concat(parentProperties)) {
-        //                     writer.print(`this.${i.name}_container = ${writer.escapeKeyword(i.name)}`)
-        //                 }
-        //             })
-        // }, undefined, [`${FQInterfaceName}Interfaces${typeParams}`])
+        // —— 仅生成 Class（不生成接口）——
+        writer.writeClass(
+            `${FQInterfaceName}${typeParams}`,
+            () => {
+            // 1) 只声明“自有属性”
+            ownProperties.forEach(it => {
+                const modifiers: FieldModifier[] = []
+                // CJ 不支持 readonly；仅保留 static
+                if (it.isStatic) modifiers.push(FieldModifier.STATIC)
+
+                writer.writeFieldDeclaration(
+                it.name,
+                idl.maybeOptional(it.type, it.isOptional),
+                modifiers,
+                idl.isOptionalType(it.type)
+                )
+            })
+
+            // 2) 构造函数：参数 = 自有 + 父类；赋值到 this.<name>
+            const ctorProps = [...ownProperties, ...parentProperties]
+
+            writer.writeConstructorImplementation(
+                `${FQInterfaceName}`,
+                new NamedMethodSignature(
+                idl.IDLVoidType,
+                ctorProps.map(it => idl.maybeOptional(it.type, it.isOptional)),
+                ctorProps.map(it => writer.escapeKeyword(it.name))
+                ),
+                () => {
+                // 给“自有字段”赋值
+                for (const p of ownProperties) {
+                    writer.print(
+                    `this.${writer.escapeKeyword(p.name)} = ${writer.escapeKeyword(p.name)}`
+                    )
+                    // 如需 *_container，请改为：
+                    // writer.print(`this.${p.name}_container = ${writer.escapeKeyword(p.name)}`)
+                }
+                // 初始化“父类字段”（这里只是对父类成员赋值，不会 shadow）
+                for (const p of parentProperties) {
+                    writer.print(
+                    `this.${writer.escapeKeyword(p.name)} = ${writer.escapeKeyword(p.name)}`
+                    )
+                    // 如需 *_container，请改为：
+                    // writer.print(`this.${p.name}_container = ${writer.escapeKeyword(p.name)}`)
+                }
+                }
+            )
+            },
+            // 继承父类
+            superNames && superNames.length > 0
+            ? `${removePoints(
+                idl.getNamespaceName(superNames[0] as unknown as idl.IDLEntry)
+                )}${superNames[0].name}${typeParams}`
+            : undefined,
+            undefined
+        )
     }
+
 
     // 新增：字面量枚举检测方法
     private detectLiteralEnumFromUnion(type: idl.IDLUnionType): { enumName: string, members: string[] } | null {

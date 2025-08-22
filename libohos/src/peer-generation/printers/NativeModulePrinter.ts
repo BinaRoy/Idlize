@@ -581,7 +581,8 @@ export function makeInteropMethod(
             method.returnType,
             {
                 hasReceiver: !!method.sig.context,
-                throws: !!method.method.modifiers?.includes(MethodModifier.THROWS),
+                //throws: !!method.method.modifiers?.includes(MethodModifier.THROWS),
+                throws: !!method.method.modifiers,
                 forceContext: !!method.method.modifiers?.includes(MethodModifier.FORCE_CONTEXT),
             }
         )
@@ -628,8 +629,8 @@ function makeInteropMethodInner(
     const modifiers: MethodModifier[] = []
     if (options.forceContext || idlReturnType && idl.IDLContainerUtils.isPromise(idlReturnType))
         modifiers.push(MethodModifier.FORCE_CONTEXT)
-    if (options.throws)
-        modifiers.push(MethodModifier.THROWS)
+    // if (options.throws)
+    //     modifiers.push(MethodModifier.THROWS)
     return new Method(
         name,
         new NamedMethodSignature(

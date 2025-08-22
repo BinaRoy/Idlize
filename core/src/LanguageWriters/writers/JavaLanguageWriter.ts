@@ -181,7 +181,7 @@ export class JavaLanguageWriter extends CLikeLanguageWriter {
     } 
     writeProperty(propName: string, propType: idl.IDLType, modifiers: FieldModifier[], getter?: { method: Method, op: () => void }, setter?: { method: Method, op: () => void }, initExpr?: LanguageExpression): void {
         let isStatic = modifiers.includes(FieldModifier.STATIC)
-        let isMutable = !modifiers.includes(FieldModifier.READONLY)
+        
         let containerName = propName.concat("_container")
         if (getter) {
             if(!getter!.op) {
@@ -194,7 +194,7 @@ export class JavaLanguageWriter extends CLikeLanguageWriter {
                     writer.print(`return ${containerName}`)
                 } 
             )
-            if (isMutable) {
+            
                 const setSignature = new NamedMethodSignature(idl.IDLVoidType, [propType], [propName])
                 this.writeSetterImplementation(
                     new Method(propName, setSignature, isStatic ? [MethodModifier.STATIC, MethodModifier.PUBLIC] : [MethodModifier.PUBLIC]), 
@@ -203,7 +203,7 @@ export class JavaLanguageWriter extends CLikeLanguageWriter {
                         writer.print(`${containerName} = ${propName};`)
                     }
                 )
-            }
+            
         }
         else {
             // TBD: use initExpr

@@ -537,14 +537,15 @@ export class CJLanguageWriter extends LanguageWriter {
             }
         }
         let isStatic = modifiers.includes(FieldModifier.STATIC)
-        let isMutable = !modifiers.includes(FieldModifier.READONLY)
+        //let isMutable = !modifiers.includes(FieldModifier.READONLY)
         let initializer = initExpr ? ` = ${initExpr.asString()}` : ""
-        this.print(`public ${isMutable ? "mut " : ""}${isStatic ? "static " : "open "}prop ${truePropName}: ${this.getNodeName(propType)}${initializer}`)
+        this.print(`public ${isStatic ? "static " : "open "}prop ${truePropName}: ${this.getNodeName(propType)}${initializer}`)
+        //this.print(`public ${isMutable ? "mut " : ""}${isStatic ? "static " : "open "}prop ${truePropName}: ${this.getNodeName(propType)}${initializer}`)
         if (getter) {
             this.print('{')
             this.pushIndent()
             this.writeGetterImplementation(getter.method, getter.op)
-            if (isMutable) {
+            //if (isMutable) {
                 if (setter) {
                     this.writeSetterImplementation(setter.method, setter ? setter.op : (writer) => {this.print(`${containerName} = ${truePropName}`)})
                 } else {
@@ -554,7 +555,7 @@ export class CJLanguageWriter extends LanguageWriter {
                     this.popIndent()
                     this.print(`}`)
                 }
-            }
+            //}
             this.popIndent()
             this.print('}')
         }
@@ -746,7 +747,7 @@ export class CJLanguageWriter extends LanguageWriter {
         return [MethodModifier.PUBLIC, MethodModifier.PRIVATE, MethodModifier.STATIC]
     }
     get supportedFieldModifiers(): FieldModifier[] {
-        return [FieldModifier.PUBLIC, FieldModifier.PRIVATE, FieldModifier.PROTECTED, FieldModifier.READONLY, FieldModifier.STATIC]
+        return [FieldModifier.PUBLIC, FieldModifier.PRIVATE, FieldModifier.PROTECTED, FieldModifier.STATIC]
     }
     makeUnionSelector(value: string, valueType: string): LanguageStatement {
         return this.makeAssign(valueType, undefined, this.makeMethodCall(value, "getSelector", []), false)

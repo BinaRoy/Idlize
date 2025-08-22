@@ -287,7 +287,7 @@ export class TSLanguageWriter extends LanguageWriter {
     }
     writeProperty(propName: string, propType: idl.IDLType, modifiers: FieldModifier[], getter?: { method: Method, op: () => void }, setter?: { method: Method, op: () => void }, initExpr?: LanguageExpression): void {
         let isStatic = modifiers.includes(FieldModifier.STATIC)
-        let isMutable = !modifiers.includes(FieldModifier.READONLY)
+        //let isMutable = !modifiers.includes(FieldModifier.READONLY)
         let containerName = propName.concat("_container")
         if (getter) {
             if(!getter!.op) {
@@ -300,7 +300,7 @@ export class TSLanguageWriter extends LanguageWriter {
                     writer.print(`return ${containerName}`)
                 }
             )
-            if (isMutable) {
+            //if (isMutable) {
                 const setSignature = new NamedMethodSignature(idl.IDLVoidType, [propType], [propName])
                 this.writeSetterImplementation(
                     new Method(propName, setSignature, isStatic ? [MethodModifier.STATIC] : []),
@@ -309,7 +309,7 @@ export class TSLanguageWriter extends LanguageWriter {
                         writer.print(`${containerName} = ${propName}`)
                     }
                 )
-            }
+            //}
         }
         else {
             this.writeFieldDeclaration(propName, propType, modifiers, idl.isOptionalType(propType), initExpr)
@@ -438,7 +438,7 @@ export class TSLanguageWriter extends LanguageWriter {
         return [MethodModifier.PUBLIC, MethodModifier.PRIVATE, MethodModifier.PROTECTED, MethodModifier.STATIC]
     }
     get supportedFieldModifiers(): FieldModifier[] {
-        return [FieldModifier.PUBLIC, FieldModifier.PRIVATE, FieldModifier.PROTECTED, FieldModifier.READONLY, FieldModifier.STATIC]
+        return [FieldModifier.PUBLIC, FieldModifier.PRIVATE, FieldModifier.PROTECTED, FieldModifier.STATIC]
     }
     enumFromI32(value: LanguageExpression, enumEntry: idl.IDLEnum): LanguageExpression {
         const enumName = enumEntry.name

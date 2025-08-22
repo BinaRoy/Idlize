@@ -345,7 +345,6 @@ export enum MethodModifier {
     INLINE,
     GETTER,
     SETTER,
-    THROWS,
     FREE, // not a member of interface/class
     FORCE_CONTEXT, // If method implementation will need VM context, synthetic
     OVERRIDE
@@ -722,8 +721,18 @@ export abstract class LanguageWriter {
     mapFieldModifier(modifier: FieldModifier): string {
         return `${FieldModifier[modifier].toLowerCase()}`
     }
-    mapMethodModifier(modifier: MethodModifier): string {
-        return `${MethodModifier[modifier].toLowerCase()}`
+    // mapMethodModifier(modifier: MethodModifier): string {
+    //     //return `${MethodModifier[modifier].toLowerCase()}`  
+    //     return `${modifier.toLowerCase()}` 
+    // }
+    mapMethodModifier(modifier: MethodModifier | null | undefined): string {
+        switch (modifier) {
+            case MethodModifier.PUBLIC:    return "public ";
+            case MethodModifier.PRIVATE:   return "private ";
+            case MethodModifier.PROTECTED: return "protected ";
+            case MethodModifier.STATIC:    return "static ";
+            default: return ""; // or throw to catch unexpected values early
+        }
     }
     /**
      * TODO: replace me with {@link makeUnsafeCast_}

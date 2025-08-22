@@ -334,8 +334,8 @@ export class KotlinLanguageWriter extends LanguageWriter {
     }
     writeFieldDeclaration(name: string, type: idl.IDLType, modifiers: FieldModifier[]|undefined, optional: boolean, initExpr?: LanguageExpression): void {
         const init = initExpr != undefined ? ` = ${initExpr.asString()}` : ``
-        let prefix = this.makeFieldModifiersList(modifiers?.filter(m => m != FieldModifier.READONLY && m != FieldModifier.STATIC))
-        this.printer.print(`${prefix ? prefix.concat(" ") : ""}${modifiers?.includes(FieldModifier.READONLY) ? 'val' : 'var'} ${name}: ${this.getNodeName(idl.maybeOptional(type, optional))}${init}`)
+        let prefix = this.makeFieldModifiersList(modifiers?.filter(m => m != FieldModifier.STATIC))
+        this.printer.print(`${prefix ? prefix.concat(" ") : ""} ${name}: ${this.getNodeName(idl.maybeOptional(type, optional))}${init}`)
     }
     writeNativeMethodDeclaration(method: Method): void {
         let name = method.name
@@ -427,14 +427,14 @@ export class KotlinLanguageWriter extends LanguageWriter {
                 this.print(`private var ${containerName}: ${this.getNodeName(propType)}`)
             }
         }
-        let isMutable = !modifiers.includes(FieldModifier.READONLY)
+ 
         let isOverride = modifiers.includes(FieldModifier.OVERRIDE)
         let initializer = initExpr ? ` = ${initExpr.asString()}` : ""
-        this.print(`${isOverride ? 'override ' : ''}public ${isMutable ? "var " : "val "}${truePropName}: ${this.getNodeName(propType)}${initializer}`)
+        this.print(`${isOverride ? 'override ' : ''}public ${truePropName}: ${this.getNodeName(propType)}${initializer}`)
         if (getter) {
             this.pushIndent()
             this.writeGetterImplementation(getter.method, getter.op)
-            if (isMutable) {
+            
                 if (setter) {
                     this.writeSetterImplementation(setter.method, setter ? setter.op : (writer) => {this.print(`${containerName} = ${truePropName}`)})
                 } else {
@@ -444,7 +444,7 @@ export class KotlinLanguageWriter extends LanguageWriter {
                     this.popIndent()
                     this.print(`}`)
                 }
-            }
+
             this.popIndent()
         }
     }
@@ -578,7 +578,7 @@ export class KotlinLanguageWriter extends LanguageWriter {
         return [MethodModifier.PUBLIC, MethodModifier.PRIVATE, MethodModifier.OVERRIDE]
     }
     get supportedFieldModifiers(): FieldModifier[] {
-        return [FieldModifier.PUBLIC, FieldModifier.PRIVATE, FieldModifier.PROTECTED, FieldModifier.READONLY, FieldModifier.OVERRIDE]
+        return [FieldModifier.PUBLIC, FieldModifier.PRIVATE, FieldModifier.PROTECTED, FieldModifier.OVERRIDE]
     }
     enumFromI32(value: LanguageExpression, enumEntry: idl.IDLEnum): LanguageExpression {
         return this.makeString(`${this.getNodeName(enumEntry)}(${value.asString()})`)

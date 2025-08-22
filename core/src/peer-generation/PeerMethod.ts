@@ -36,7 +36,8 @@ export class PeerMethodSignature {
         public readonly returnType: idl.IDLType,
         public readonly context: idl.IDLEntry | undefined = undefined,
         // only modifiers affecting signature. Private, public, static and others - does not belong here
-        public readonly modifiers: (MethodModifier.FORCE_CONTEXT | MethodModifier.THROWS)[] = [],
+        //public readonly modifiers: (MethodModifier.FORCE_CONTEXT | MethodModifier.THROWS)[] = [],
+        public readonly modifiers: (MethodModifier.FORCE_CONTEXT)[] = [],
     ) { }
 
     static generateOverloadPostfix(decl: idl.IDLConstructor | idl.IDLMethod | idl.IDLCallable | idl.IDLProperty): string {
@@ -78,8 +79,8 @@ export class PeerMethod {
         // todo remove me
         if (method.modifiers?.includes(MethodModifier.FORCE_CONTEXT))
             sig.modifiers.push(MethodModifier.FORCE_CONTEXT)
-        if (method.modifiers?.includes(MethodModifier.THROWS))
-            sig.modifiers.push(MethodModifier.THROWS)
+        // if (method.modifiers?.includes(MethodModifier.THROWS))
+        //     sig.modifiers.push(MethodModifier.THROWS)
     }
 
     argConvertors(library: PeerLibrary): ArgConvertor[] {
