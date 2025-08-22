@@ -29,6 +29,7 @@ import { ReferenceResolver, UnionRuntimeTypeChecker, zipMany } from "@idlizer/co
 import { peerGeneratorConfiguration } from '../../DefaultConfiguration';
 import { injectPatch } from '../common';
 
+
 function collapseReturnTypes(types: idl.IDLType[], language?: Language) {
     let returnType: idl.IDLType = collapseTypes(types)
     if (idl.isUnionType(returnType) && language && (language == Language.ARKTS || language == Language.TS)) {
@@ -246,10 +247,13 @@ export function collapseSameMethodsIDL(methods:idl.IDLMethod[], language?: Langu
             returnType: returnType
         }
 }
+type MethodPrefixEmitter =
+  ((peer: string, method: Method, printer: LanguageWriter) => void) | undefined;
 
 export class OverloadsPrinter {
     private static undefinedConvertor: UndefinedConvertor | undefined
     private posfix: string = ""
+    private prefixEmitter: MethodPrefixEmitter;
 
     constructor(private library: PeerLibrary, private printer: LanguageWriter, private language: Language, private isComponent: boolean, private useMemoM3: boolean) {
         // TODO: UndefinedConvertor is not known during static initialization because of cyclic dependencies
@@ -261,7 +265,9 @@ export class OverloadsPrinter {
     setPostfix(postfix?: string) {
         this.posfix = postfix ?? ""
     }
-
+    setMethodPrefixEmitter(fn?: (peer: string, method: Method, printer: LanguageWriter) => void) {
+        this.prefixEmitter = fn;
+      }
     printGroupedComponentOverloads(peer: string, peerMethods: (PeerMethod)[]) {
         const orderedMethods = Array.from(peerMethods)
             .sort((a, b) => b.sig.args.length - a.sig.args.length)
@@ -281,13 +287,16 @@ export class OverloadsPrinter {
             this.printCollapsedOverloads(peer, group)
         }
     }
-
+    
     private printCollapsedOverloads(peer: string, methods: PeerMethod[]) {
         const collapsedMethod = collapseSameNamedMethods(methods.map(it => it.method), undefined, this.language, this.posfix)
         if (collapsedMethod.signature.returnType == idl.IDLThisType && this.printer.language == Language.CJ) {
             collapsedMethod.signature.returnType = idl.IDLVoidType
         }
         const key = peer + '.' + collapsedMethod.name
+        if (this.prefixEmitter) {
+            this.prefixEmitter(peer, collapsedMethod, this.printer);
+          }
         this.printer.writeMethodImplementation(collapsedMethod, (writer) => {
             injectPatch(this.printer, key, peerGeneratorConfiguration().patchMaterialized)
             if (this.isComponent) {
