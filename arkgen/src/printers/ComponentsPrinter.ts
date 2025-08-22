@@ -874,10 +874,10 @@ class CJComponentFileVisitor implements ComponentFileVisitor {
      * P2 数组类型收敛规则
      */
     private applyP2Convergence(s: string): string {
-        // String | Array<String> → Array<ResourceStr>
-        s = s.replace(/Union_String_Array_String/g, 'Array<ResourceStr>');
-        s = s.replace(/[Ss]tring\s*\|\s*Array<\s*[Ss]tring\s*>/g, 'Array<ResourceStr>');
-        s = s.replace(/Array<\s*[Ss]tring\s*>\s*\|\s*[Ss]tring/g, 'Array<ResourceStr>');
+        // String | Array<String> → Array<String>（根据需求修改）
+        s = s.replace(/Union_String_Array_String/g, 'Array<String>');
+        s = s.replace(/[Ss]tring\s*\|\s*Array<\s*[Ss]tring\s*>/g, 'Array<String>');
+        s = s.replace(/Array<\s*[Ss]tring\s*>\s*\|\s*[Ss]tring/g, 'Array<String>');
         
         // Number | Array<Number> → Array<Int32>（索引/计数优先整型）
         s = s.replace(/Union_Number_Array_Number/g, 'Array<Int32>');

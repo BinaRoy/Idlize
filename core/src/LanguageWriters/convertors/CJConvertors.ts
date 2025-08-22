@@ -39,6 +39,18 @@ export class CJTypeNameConvertor implements NodeConvertor<string>, IdlNameConver
         return `Option<${this.convert(type.type)}>`
     }
     convertUnion(type: idl.IDLUnionType): string {
+        // 特殊处理：T | T[] 联合类型转换为 Array<T>
+        if (type.types.length === 2) {
+            const [type1, type2] = type.types
+            
+            // 检查是否为 T | T[] 模式
+            const simplifiedType = this.detectSingleTypeWithArrayUnion(type1, type2)
+            if (simplifiedType) {
+                console.log(`[CJTypeNameConvertor] Converting union ${this.convert(type1)} | ${this.convert(type2)} to Array<${simplifiedType}>`)
+                return `Array<${simplifiedType}>`
+            }
+        }
+        
         return type.name
     }
     convertContainer(type: idl.IDLContainerType): string {
@@ -162,6 +174,54 @@ export class CJTypeNameConvertor implements NodeConvertor<string>, IdlNameConver
 
     private productType(decl: idl.IDLInterface, isTuple: boolean, includeFieldNames: boolean): string {
         return decl.name
+    }
+
+    /**
+     * 检测是否为 T | T[] 联合类型模式
+     * @param type1 第一个类型
+     * @param type2 第二个类型
+     * @returns 如果匹配模式则返回基础类型的Cangjie表示，否则返回null
+     */
+    private detectSingleTypeWithArrayUnion(type1: idl.IDLType, type2: idl.IDLType): string | null {
+        // 检查 string | string[] 模式
+        if (this.isStringType(type1) && this.isStringArrayType(type2)) {
+            return 'String'
+        }
+        if (this.isStringArrayType(type1) && this.isStringType(type2)) {
+            return 'String'
+        }
+        
+        // 检查 number | number[] 模式
+        if (this.isNumberType(type1) && this.isNumberArrayType(type2)) {
+            return 'Int32'  // 根据需求，number[] 转换为 Array<Int32>
+        }
+        if (this.isNumberArrayType(type1) && this.isNumberType(type2)) {
+            return 'Int32'
+        }
+        
+        return null
+    }
+
+    private isStringType(type: idl.IDLType): boolean {
+        return idl.isPrimitiveType(type) && type === idl.IDLStringType
+    }
+
+    private isNumberType(type: idl.IDLType): boolean {
+        return idl.isPrimitiveType(type) && type === idl.IDLNumberType
+    }
+
+    private isStringArrayType(type: idl.IDLType): boolean {
+        if (idl.isContainerType(type) && idl.IDLContainerUtils.isSequence(type)) {
+            return type.elementType.length > 0 && this.isStringType(type.elementType[0])
+        }
+        return false
+    }
+
+    private isNumberArrayType(type: idl.IDLType): boolean {
+        if (idl.isContainerType(type) && idl.IDLContainerUtils.isSequence(type)) {
+            return type.elementType.length > 0 && this.isNumberType(type.elementType[0])
+        }
+        return false
     }
 }
 

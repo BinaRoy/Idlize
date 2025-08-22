@@ -428,10 +428,10 @@ export class CJTypeMapper {
             return { cjType: 'ResourceStr', defaultValue: DEFAULT_VALUES.RESOURCE_STR };
         }
 
-        // 优先级 4: String | Array<String> → Array<ResourceStr>
+        // 优先级 4: String | Array<String> → Array<String>（根据需求修改）
         if (flags.hasString && flags.hasArray && !flags.hasNumber) {
             console.log(`[CJTypeMapper] Rule: String array convergence`);
-            return { cjType: idl.createReferenceType('Array', [idl.createReferenceType('ResourceStr')]), defaultValue: '[]' };
+            return { cjType: idl.createReferenceType('Array', [idl.createReferenceType('String')]), defaultValue: '[]' };
         }
 
         // 优先级 5: Number | Array<Number> → Array<Int32/Int64>
