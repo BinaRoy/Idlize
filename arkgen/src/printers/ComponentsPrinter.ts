@@ -1183,13 +1183,16 @@ class CJComponentFileVisitor implements ComponentFileVisitor {
     private generateBuildFunctionCallbackDefinitions(componentName: string): string[] {
         const definitions: string[] = []
         
+        // 使用与回调类型管理器相同的组件名清理逻辑
+        const sanitizedComponentName = componentName.replace(/(Attribute|Component)$/,'')
+        
         // Style 回调类型定义
-        const styleCallbackName = `On${componentName}StyleCallback`
+        const styleCallbackName = `On${sanitizedComponentName}StyleCallback`
         const styleCallbackDef = `public type ${styleCallbackName} = (attributes: ${componentName}AttributeInterfaces) -> Unit`
         definitions.push(styleCallbackDef)
         
         // Content 回调类型定义
-        const contentCallbackName = `On${componentName}ContentCallback`
+        const contentCallbackName = `On${sanitizedComponentName}ContentCallback`
         const contentCallbackDef = `public type ${contentCallbackName} = () -> Unit`
         definitions.push(contentCallbackDef)
         
