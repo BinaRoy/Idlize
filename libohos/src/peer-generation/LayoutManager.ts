@@ -121,7 +121,22 @@ export function install(
                 ""
             ]
 
-            content = pkgLine.concat(cjImports).concat(content)
+            // 根据文件夹路径添加特定导入语句
+            const layoutPath = layout.resolve(results[0].over)
+            const folder = path.dirname(layoutPath)
+            if (folder === 'interfaces') {
+                cjImports.push('import idlize.cores.*')
+                cjImports.push('')
+            } else if (folder === 'components') {
+                cjImports.push('import idlize.peers.*')
+                cjImports.push('import idlize.cores.*')
+                cjImports.push('')
+            } else if (folder === 'peers') {
+                // peers目录下的文件需要导入idlize.cores.*
+                cjImports.push('import idlize.interfaces.*')
+                cjImports.push('import idlize.cores.*')
+                cjImports.push('')
+            }
         }
 
         if (library.language === Language.JAVA) {

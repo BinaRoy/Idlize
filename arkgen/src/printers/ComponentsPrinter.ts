@@ -992,10 +992,6 @@ class CJComponentFileVisitor implements ComponentFileVisitor {
         writer.pushIndent();
         
         const argList = argNames.join(', ');
-        // 使用规范化后的事件名作为优先级键，保持与对外 API 一致
-        writer.print(`if (this.checkPriority("${exposedMethodName}")) {`);
-        writer.pushIndent();
-        // peer 调用使用规范化后的 Attribute 名称
         writer.print(`this.getPeer().${exposedMethodName}Attribute(${argList})`);
         writer.popIndent();
         writer.print('}');
@@ -1501,10 +1497,6 @@ class CJComponentFileVisitor implements ComponentFileVisitor {
 
         const imports = this.printImports(peer, component)
         const printer = this.library.createLanguageWriter()
-
-        // 为 Cangjie 组件添加 cores 包导入以使用命名回调类型
-        printer.print('import idlize.cores.*')
-        printer.print('') // 空行分隔
 
         const componentClassName = generateArkComponentName(peer.componentName)
         const parentComponentClassName = peer.parentComponentName ? generateArkComponentName(peer.parentComponentName!) : `ComponentBase`

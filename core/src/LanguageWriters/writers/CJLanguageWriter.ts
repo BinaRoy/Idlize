@@ -421,13 +421,19 @@ export class CJLanguageWriter extends LanguageWriter {
         interfaces?: string[],
         generics?: string[]
     ): void {
+        // 特殊处理CommonMethod类，添加open关键字
+        let classModifiers = "public ";
+        if (name === "CommonMethod") {
+            classModifiers = "public open ";
+        }
+        
         let extendsClause = superClass ? `${superClass}` : undefined
         let implementsClause = interfaces ? `${interfaces.join(' & ')}` : undefined
         let inheritancePart = [extendsClause, implementsClause]
             .filter(isDefined)
             .join(' & ')
         inheritancePart = inheritancePart.length != 0 ? ' <: '.concat(inheritancePart) : ''
-        this.printer.print(`public class ${name}${inheritancePart} {`)
+        this.printer.print(`${classModifiers}class ${name}${inheritancePart} {`)
         this.pushIndent()
         op(this)
         this.popIndent()
