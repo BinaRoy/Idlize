@@ -993,8 +993,6 @@ class CJComponentFileVisitor implements ComponentFileVisitor {
         
         const argList = argNames.join(', ');
         writer.print(`this.getPeer().${exposedMethodName}Attribute(${argList})`);
-        writer.popIndent();
-        writer.print('}');
         writer.print('return this');
         
         writer.popIndent();
