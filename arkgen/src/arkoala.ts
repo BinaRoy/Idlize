@@ -118,19 +118,69 @@ function copyArkoalaFiles(config: {
     const subsetJson = path.join(fs.existsSync(Subset) ? Subset : ExternalStubs, 'subset.json')
     const subsetData = JSON.parse(fs.readFileSync(subsetJson).toString())
     if (!subsetData) throw new Error(`Cannot parse ${subsetJson}`)
-    const copyFiles = (files: string, ...fromFallbacks: string[]) => {
+    // const copyFiles = (files: string, ...fromFallbacks: string[]) => {
+    //     for (const file of files) {
+    //         let found = false
+    //         for (const from of fromFallbacks) {
+    //             const fromPath = path.join(from, file)
+    //             if (fs.existsSync(fromPath)) {
+    //                 found = true
+    //                 copyFile(fromPath, path.join(arkoala.root, file))
+    //                 break
+    //             }
+    //         }
+    //         if (!found) {
+    //             throw new Error(`Template for file ${file} was not found in paths ${fromFallbacks.join(':')}`)
+    //         }
+    //     }
+    //     return
+    // }
+    const copyFiles = (files: string[], ...fromFallbacks: string[]) => {
         for (const file of files) {
             let found = false
             for (const from of fromFallbacks) {
-                const fromPath = path.join(from, file)
-                if (fs.existsSync(fromPath)) {
-                    found = true
-                    copyFile(fromPath, path.join(arkoala.root, file))
+            const fromPath = path.join(from, file)
+            if (fs.existsSync(fromPath)) {
+                found = true
+                let destPath: string
+                const hasPeerDir = (arkoala as any).peerDir !== undefined
+                if (hasPeerDir) {
+                const baseName = path.basename(file)
+                switch (baseName) {
+                    // 放入 peers 目录的文件
+                    case 'CallbackKind.cj':
+                    case 'ArkUINativeModule.cj':
+                    case 'ComponentBase.cj':
+                    case 'NativePeerNode.cj':
+                    case 'PeerNode.cj':
+                    case 'TestNativeModule.cj':
+                    destPath = path.join((arkoala as any).peerDir, baseName)
+                    break
+                    // 放入 interfaces 目录的文件
+                    case 'CallbacksChecker.cj':
+                    case 'CallbackTransformer.cj':
+                    destPath = path.join((arkoala as any).interfaceDir, baseName)
+                    break
+                    // Handwritten.cj 仍然保持在 framework/cangjie/src 下
+                    case 'Handwritten.cj':
+                    destPath = path.join(arkoala.root, file)
+                    break
+                    default:
+                    destPath = path.join(arkoala.root, file)
                     break
                 }
+                } else {
+                // 非 Cangjie 安装保持原有路径
+                destPath = path.join(arkoala.root, file)
+                }
+                // 确保目标目录存在
+                fs.mkdirSync(path.dirname(destPath), { recursive: true })
+                copyFile(fromPath, destPath)
+                break
+            }
             }
             if (!found) {
-                throw new Error(`Template for file ${file} was not found in paths ${fromFallbacks.join(':')}`)
+            throw new Error(`Template for file ${file} was not found in paths ${fromFallbacks.join(':')}`)
             }
         }
         return

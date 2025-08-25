@@ -107,7 +107,14 @@ export function install(
             let pkgLine: string[] = []
             if (!hasCustomPackage) {
                 const layoutPath = layout.resolve(results[0].over)
-                const pkg = 'idlize.' + path.dirname(layoutPath).replace(/\//g, '.')
+                // 根据实际的生成目录结构调整package路径生成逻辑
+                // 现在文件会被生成到 arkoala-cj/cjv2/src 下的相应目录中
+                const folder = path.dirname(layoutPath)
+                let pkg = 'idlize'
+                if (folder !== '.' && folder !== 'arkoala-cj/cjv2/src') {
+                    // 如果文件在特定子目录中，添加该子目录到package路径
+                    pkg = 'idlize.' + folder.replace(/\//g, '.').replace(/^arkoala-cj\.cjv2\.src\.?/, '')
+                }
                 pkgLine = [`package ${pkg}`]
             }
 
@@ -124,18 +131,43 @@ export function install(
             // 根据文件夹路径添加特定导入语句
             const layoutPath = layout.resolve(results[0].over)
             const folder = path.dirname(layoutPath)
-            if (folder === 'interfaces') {
-                cjImports.push('import idlize.cores.*')
+            
+            // 根据实际的生成目录结构调整导入逻辑
+            if (folder === 'arkoala-cj/cjv2/src/cores') {
+                cjImports.push('import idlize.interfaces.*')
                 cjImports.push('')
-            } else if (folder === 'components') {
+            } else if (folder === 'arkoala-cj/cjv2/src/components') {
                 cjImports.push('import idlize.peers.*')
                 cjImports.push('import idlize.cores.*')
                 cjImports.push('')
-            } else if (folder === 'peers') {
-                // peers目录下的文件需要导入idlize.cores.*
+            } else if (folder === 'arkoala-cj/cjv2/src/peers') {
+                // peers目录下的文件需要导入idlize.interfaces.*和idlize.cores.*
                 cjImports.push('import idlize.interfaces.*')
                 cjImports.push('import idlize.cores.*')
                 cjImports.push('')
+            } else if (folder === 'arkoala-cj/cjv2/src/interfaces') {
+                cjImports.push('import idlize.cores.*')
+                cjImports.push('')
+            } else if (folder === 'arkoala-cj/cjv2/src') {
+                // 根目录下的文件需要导入idlize.cores.*
+                cjImports.push('import idlize.cores.*')
+                cjImports.push('')
+            }
+
+            // 特殊处理 Main.cj 文件
+            const fileName = path.basename(filePath, '.cj')
+            if (fileName === 'Main') {
+                // 重新定义安装路径为 demo 目录
+                const demoInstallPath = path.join(path.dirname(installPath), 'demo', 'Main.cj')
+                content = pkgLine.concat(cjImports).concat(content)
+                const text = tsCopyrightAndWarning(
+                    imports.printToLines(filePath, outDir)
+                        .concat(content)
+                        .join('\n')
+                )
+                writeIntegratedFile(demoInstallPath, text, 'producing')
+            } else {
+                content = pkgLine.concat(cjImports).concat(content)
             }
         }
 
