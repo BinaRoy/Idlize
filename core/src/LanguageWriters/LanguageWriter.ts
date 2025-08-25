@@ -721,10 +721,7 @@ export abstract class LanguageWriter {
     mapFieldModifier(modifier: FieldModifier): string {
         return `${FieldModifier[modifier].toLowerCase()}`
     }
-    // mapMethodModifier(modifier: MethodModifier): string {
-    //     //return `${MethodModifier[modifier].toLowerCase()}`  
-    //     return `${modifier.toLowerCase()}` 
-    // }
+
     mapMethodModifier(modifier: MethodModifier | null | undefined): string {
         switch (modifier) {
             case MethodModifier.PUBLIC:    return "public ";

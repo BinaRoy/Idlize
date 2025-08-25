@@ -483,7 +483,5 @@ export function getMethodModifiers(method: idl.IDLMethod | idl.IDLConstructor | 
     const modifiers = []
     if (idl.isConstructor(method) || (idl.isMethod(method) && (method.isStatic || method.isFree)))
         modifiers.push(MethodModifier.STATIC)
-    //if (idl.hasExtAttribute(method, idl.IDLExtendedAttributes.Throws))
-        //modifiers.push(MethodModifier.THROWS)
     return modifiers
 }
