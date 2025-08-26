@@ -162,6 +162,11 @@ class PeerFileVisitor {
             imports.addFeature('GestureComponent', './framework/shared/generated-utils')
         }
 
+        // 为 CJ 语言补充通用导入：cores 与 interfaces
+        if (this.library.language === Language.CJ) {
+            imports.addFeatures(['*'], 'idlize.commonPara')
+        }
+
         if (this.library.language === Language.TS || this.library.language === Language.ARKTS) {
             collectDeclItself(this.library, idl.createReferenceType("CallbackKind"), imports)
             imports.addFeature('CallbackTransformer', './CallbackTransformer')
@@ -400,6 +405,8 @@ class CJPeerFileVisitor extends PeerFileVisitor {
         return collectPeersForFile(this.library, this.file).map(peer => {
             const component = findComponentByName(this.library, peer.componentName)
             const printer = this.library.createLanguageWriter()
+            const imports = new ImportsCollector()
+            this.printImports(peer, imports)
             this.printPeer(peer, printer)
             return {
                 over: {
@@ -407,7 +414,7 @@ class CJPeerFileVisitor extends PeerFileVisitor {
                     role: LayoutNodeRole.PEER,
                 },
                 content: printer,
-                collector: new ImportsCollector()
+                collector: imports
             }
         })
     }

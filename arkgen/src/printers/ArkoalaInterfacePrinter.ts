@@ -210,6 +210,8 @@ function getVisitor(peerLibrary: PeerLibrary, isDeclarations: boolean): Interfac
                         }
                     })
                 }
+                // 为 CJ 语言输出的 interfaces 文件补充 cores 导入
+                // 接口(commonPara)文件不应导入自身包，避免包级自循环依赖
                 return inner.printInterfaces()
             }
         } as InterfacesVisitor

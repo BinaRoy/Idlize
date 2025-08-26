@@ -127,11 +127,9 @@ class CJArkoalaInstall extends BaseArkoalaInstall {
     get componentDir(): string {
         return path.join(this.managedDir, "components")
     }
-    get interfaceDir(): string {
-        return path.join(this.managedDir, "interfaces")
-    }
-    get coreDir(): string {
-        return path.join(this.managedDir, "cores")
+    // interfaces/ 与 cores/ 已合并为 commonPara/
+    get commonParaDir(): string {
+        return path.join(this.managedDir, "commonPara")
     }
     get testDir(): string {
         return path.join(this.managedDir, "test")

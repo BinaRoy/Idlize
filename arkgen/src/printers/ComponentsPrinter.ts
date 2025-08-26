@@ -655,8 +655,8 @@ class CJComponentFileVisitor implements ComponentFileVisitor {
 
     private printImports(peer: PeerClass, component:IdlComponentDeclaration): ImportsCollector {
         const imports = new ImportsCollector()
-        // 添加 cores 包导入以使用命名回调类型
-        imports.addFeatures(['*'], 'idlize.cores')
+        // 合并后统一导入 commonPara
+        imports.addFeatures(['*'], 'idlize.commonPara')
         return imports
     }
 

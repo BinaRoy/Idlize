@@ -4,7 +4,7 @@
   idlize = { path = "out/cangjie/generated/sig/arkoala-cj/cjv2" }
 [package]
   cjc-version = "0.59.6"
-  compile-option = "--error-count-limit all --warn-off all -L ./native/build-cangjie-native-dummy -l NativeBridgeCJ -L ./../external/incremental-cj/runtime/callsitekey -l CallsiteKey"
+  compile-option = "--error-count-limit all --warn-off all -L ./native/build-cangjie-native-dummy -l NativeBridgeCJ -L ./../external/incremental-cj/runtime/callsitekey -l"
   description = "config file for cj build"
   link-option = ""
   name = "demo"

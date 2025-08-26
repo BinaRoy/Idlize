@@ -261,7 +261,7 @@ export class CJLayout extends CommonLayoutBase {
                 if (idl.isEntry(node)) {
                     const ns = idl.getNamespaceName(node)
                     if (ns !== '') {
-                        return this.getPath(`${this.prefix}${ns.split('.').map(it => idl.capitalize(it)).join('')}Namespace`, 'interfaces')
+                        return this.getPath(`${this.prefix}${ns.split('.').map(it => idl.capitalize(it)).join('')}Namespace`, 'commonPara')
                     }
                 }
                 if (idl.isInterface(node)) {
@@ -273,13 +273,13 @@ export class CJLayout extends CommonLayoutBase {
                     }
                     if (isMaterialized(node, this.library)) {
                         if (idl.isInterfaceSubkind(node)) {
-                            return this.getPath(toFileName(node.name) + 'Internal', 'interfaces')
+                            return this.getPath(toFileName(node.name) + 'Internal', 'commonPara')
                         }
-                        return this.getPath(toFileName(node.name), 'interfaces')
+                        return this.getPath(toFileName(node.name), 'commonPara')
                     }
-                    return this.getPath(`${this.prefix}${toFileName(node.name)}`, 'interfaces')
+                    return this.getPath(`${this.prefix}${toFileName(node.name)}`, 'commonPara')
                 }
-                return this.getPath(`Common`, 'cores')
+                return this.getPath(`Common`, 'commonPara')
             }
             case LayoutNodeRole.PEER: {
                 if (idl.isInterface(node)) {
@@ -287,10 +287,10 @@ export class CJLayout extends CommonLayoutBase {
                         return this.getPath(`${this.prefix}${toFileName(node.name)}Peer`, 'peers')
                     }
                 }
-                return this.getPath(`CommonPeer`, 'peers')
+                return this.getPath(`CommonPeer`, 'commonPara')
             }
             case LayoutNodeRole.GLOBAL: {
-                return this.getPath('GlobalScope', 'cores')
+                return this.getPath('GlobalScope', 'commonPara')
             }
             case LayoutNodeRole.COMPONENT: {
                 let componentName = node.name

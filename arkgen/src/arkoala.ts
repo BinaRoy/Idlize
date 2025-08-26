@@ -159,7 +159,7 @@ function copyArkoalaFiles(config: {
                     // 放入 interfaces 目录的文件
                     case 'CallbacksChecker.cj':
                     case 'CallbackTransformer.cj':
-                    destPath = path.join((arkoala as any).interfaceDir, baseName)
+                    destPath = path.join((arkoala as any).commonParaDir, baseName)
                     break
                     // Handwritten.cj 仍然保持在 framework/cangjie/src 下
                     case 'Handwritten.cj':
@@ -176,6 +176,36 @@ function copyArkoalaFiles(config: {
                 // 确保目标目录存在
                 fs.mkdirSync(path.dirname(destPath), { recursive: true })
                 copyFile(fromPath, destPath)
+                // 如果是 CJ framework 的 Main/Handwritten 或 interfaces 模板文件，修正包名与导入
+                try {
+                    const isFrameworkSrc = destPath.endsWith('/framework/cangjie/src/Main.cj') || destPath.endsWith('/framework/cangjie/src/Handwritten.cj')
+                    const isInterfacesHelper = /\/cjv2\/src\/(interfaces|commonPara)\/(CallbackTransformer|CallbacksChecker)\.cj$/.test(destPath)
+                    if (isFrameworkSrc || isInterfacesHelper) {
+                        let content = fs.readFileSync(destPath, 'utf-8')
+                        // 修正包名
+                        if (isFrameworkSrc) {
+                            content = content.replace(/^package\s+\w+/m, 'package demo')
+                        } else if (isInterfacesHelper) {
+                            content = content.replace(/^package\s+\S+/m, 'package idlize.commonPara')
+                        }
+                        // 为 Main.cj 添加必要 imports（幂等处理）
+                        if (destPath.endsWith('/Main.cj')) {
+                            const ensure = (line: string) => (content.includes(line) ? '' : line + '\n')
+                            const insertAt = content.indexOf('\n', content.indexOf('package')) + 1
+                            const extra = [
+                                ensure('import idlize.components.*'),
+                                ensure('import idlize.peers.*'),
+                                ensure('import idlize.commonPara.*'),
+                            ].join('')
+                            content = content.slice(0, insertAt) + extra + content.slice(insertAt)
+                        }
+                        // interfaces/commonPara 帮助类不应导入自身包，移除旧导入
+                        if (isInterfacesHelper) {
+                            content = content.replace(/^import\s+idlize\.(cores|interfaces|commonPara)\.\*\s*$/gm, '')
+                        }
+                        fs.writeFileSync(destPath, content)
+                    }
+                } catch {}
                 break
             }
             }
@@ -448,6 +478,61 @@ export function generateArkoalaFromIdl(config: {
                 integrated: true
             }
         )
+
+        // Generate cjpm.toml for cjv2 (idlize package)
+        const cjv2Dir = path.join(arkoala.root, 'arkoala-cj/cjv2')
+        const frameworkDir = path.join(arkoala.root, 'arkoala-cj/framework/cangjie')
+        const externalRoot = path.join(__dirname, '../../external')
+        const interopPath = path.join(externalRoot, 'interop/src/cangjie')
+        const runtimePath = path.join(externalRoot, 'incremental-cj/runtime')
+
+        const cjv2Toml = [
+            '[package]',
+            '  name = "idlize"',
+            '  version = "1.0.0"',
+            '  description = "Generated Cangjie v2 module"',
+            '  cjc-version = "0.59.6"',
+            '  src-dir = "./src"',
+            '  target-dir = "./build"',
+            '  output-type = "static"',
+            '  compile-option = "--error-count-limit all"',
+            '  link-option = ""',
+            '  package-configuration = {}',
+            '',
+            '[dependencies]',
+            `  Interop = { path = "${interopPath}" }`,
+            `  KoalaRuntime = { path = "${runtimePath}" }`,
+            ''
+        ].join('\n')
+        writeFile(path.join(cjv2Dir, 'cjpm.toml'), cjv2Toml, {
+            onlyIntegrated: config.onlyIntegrated,
+            integrated: true,
+        })
+
+        // Generate cjpm.toml for framework demo package and depend on idlize
+        const frameworkToml = [
+            '[package]',
+            '  name = "demo"',
+            '  version = "1.0.0"',
+            '  description = "Cangjie framework demo module"',
+            '  cjc-version = "0.59.6"',
+            '  src-dir = "./src"',
+            '  target-dir = "./build"',
+            '  output-type = "static"',
+            '  compile-option = "--error-count-limit all"',
+            '  link-option = ""',
+            '  package-configuration = {}',
+            '',
+            '[dependencies]',
+            `  Interop = { path = "${interopPath}" }`,
+            `  KoalaRuntime = { path = "${runtimePath}" }`,
+            `  idlize = { path = "${cjv2Dir}" }`,
+            ''
+        ].join('\n')
+        writeFile(path.join(frameworkDir, 'cjpm.toml'), frameworkToml, {
+            onlyIntegrated: config.onlyIntegrated,
+            integrated: true,
+        })
     }
 
     if (peerLibrary.language == Language.KOTLIN) {
@@ -558,11 +643,109 @@ export function generateArkoalaFromIdl(config: {
         })
 
     copyArkoalaFiles({ onlyIntegrated: config.onlyIntegrated }, arkoala)
+    // 生成完成后执行包名一致性检查与修正（仅 CJ）
+    if (peerLibrary.language == Language.CJ) {
+        enforceCJPackageConventions({ root: arkoala.root })
+    }
 }
 
 function copyToLibace(from: string, libace: LibaceInstall) {
     const macros = path.join(from, 'arkoala-arkts/framework/native/src/arkoala-macros.h')
     fs.copyFileSync(macros, libace.arkoalaMacros)
+}
+
+// 最终包名一致性检查（CJ）：按目录修正 package 行
+function enforceCJPackageConventions(options: { root: string }) {
+    const cjv2Src = path.join(options.root, 'arkoala-cj/cjv2/src')
+    const frameworkSrc = path.join(options.root, 'arkoala-cj/framework/cangjie/src')
+    const interfacesDir = path.join(cjv2Src, 'interfaces')
+    const coresDir = path.join(cjv2Src, 'cores')
+    const commonParaDir = path.join(cjv2Src, 'commonPara')
+
+    const tryFixFilePackage = (filePath: string, expected: string) => {
+        if (!filePath.endsWith('.cj')) return
+        try {
+            let content = fs.readFileSync(filePath, 'utf-8')
+            const pkgRe = /^package\s+\S+/m
+            const current = content.match(pkgRe)?.[0] ?? ''
+            if (!current || current !== `package ${expected}`) {
+                if (pkgRe.test(content)) {
+                    content = content.replace(pkgRe, `package ${expected}`)
+                } else {
+                    content = `package ${expected}\n\n` + content
+                }
+                fs.writeFileSync(filePath, content)
+            }
+        } catch {}
+    }
+
+    const ensureImports = (filePath: string, imports: string[]) => {
+        if (!filePath.endsWith('.cj')) return
+        try {
+            let content = fs.readFileSync(filePath, 'utf-8')
+            const afterPackageIdx = content.indexOf('\n', content.indexOf('package')) + 1
+            const missing: string[] = []
+            for (const imp of imports) {
+                const re = new RegExp(`^${imp.replace('.', '\\.').replace('*', '\\*')}$`, 'm')
+                if (!re.test(content)) missing.push(imp)
+            }
+            if (missing.length > 0 && afterPackageIdx > 0) {
+                content = content.slice(0, afterPackageIdx) + missing.join('\n') + '\n' + content.slice(afterPackageIdx)
+                fs.writeFileSync(filePath, content)
+            }
+        } catch {}
+    }
+
+    const walk = (dir: string, onFile: (p: string) => void) => {
+        if (!fs.existsSync(dir)) return
+        for (const entry of fs.readdirSync(dir)) {
+            const p = path.join(dir, entry)
+            const st = fs.statSync(p)
+            if (st.isDirectory()) walk(p, onFile)
+            else onFile(p)
+        }
+    }
+
+    // cjv2: 根据子目录决定包名（统一到 commonPara）
+    walk(cjv2Src, (p) => {
+        if (!p.endsWith('.cj')) return
+        if (p.includes(path.sep + 'components' + path.sep)) {
+            tryFixFilePackage(p, 'idlize.components')
+            ensureImports(p, ['import idlize.commonPara.*'])
+        } else if (p.includes(path.sep + 'peers' + path.sep)) {
+            tryFixFilePackage(p, 'idlize.peers')
+            ensureImports(p, ['import idlize.commonPara.*'])
+        } else if (p.includes(path.sep + 'interfaces' + path.sep) || p.includes(path.sep + 'cores' + path.sep)) {
+            tryFixFilePackage(p, 'idlize.commonPara')
+            // 注意：commonPara 内不插入对自身包的导入，避免自循环
+        }
+    })
+
+    // framework: 所有文件都应为 demo 包
+    walk(frameworkSrc, (p) => {
+        if (!p.endsWith('.cj')) return
+        tryFixFilePackage(p, 'demo')
+    })
+
+    // 物理迁移：将 interfaces/ 与 cores/ 下的文件搬到 commonPara/
+    try {
+        fs.mkdirSync(commonParaDir, { recursive: true })
+        const moveAll = (fromDir: string) => {
+            if (!fs.existsSync(fromDir)) return
+            for (const entry of fs.readdirSync(fromDir)) {
+                const src = path.join(fromDir, entry)
+                const dst = path.join(commonParaDir, entry)
+                if (fs.statSync(src).isFile() && src.endsWith('.cj')) {
+                    // 若目标已存在，覆盖写入（按照 commonPara 包名已修正）
+                    fs.renameSync(src, dst)
+                }
+            }
+            // 尝试清空空目录
+            try { fs.rmdirSync(fromDir) } catch {}
+        }
+        moveAll(interfacesDir)
+        moveAll(coresDir)
+    } catch {}
 }
 
 class ArkoalaMultiFileModifiersVisitor extends MultiFileModifiersVisitor {
