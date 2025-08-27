@@ -492,7 +492,7 @@ export function generateArkoalaFromIdl(config: {
             '  src-dir = "./src"',
             '  target-dir = "./build"',
             '  output-type = "static"',
-            '  compile-option = "--error-count-limit all"',
+            '  compile-option = "--error-count-limit all --warn-off parser"',
             '  link-option = ""',
             '  package-configuration = {}',
             '',
@@ -516,7 +516,7 @@ export function generateArkoalaFromIdl(config: {
             '  src-dir = "./src"',
             '  target-dir = "./build"',
             '  output-type = "static"',
-            '  compile-option = "--error-count-limit all"',
+            '  compile-option = "--error-count-limit all --warn-off parser"',
             '  link-option = ""',
             '  package-configuration = {}',
             '',
@@ -703,6 +703,30 @@ function enforceCJPackageConventions(options: { root: string }) {
         }
     }
 
+    // 枚举序列化/反序列化修正：写入端使用 get()，读取端使用 parse()
+    const applyEnumGetParseFixes = (filePath: string) => {
+        if (!filePath.endsWith('.cj')) return
+        try {
+            let content = fs.readFileSync(filePath, 'utf-8')
+            let updated = content
+
+            // 1) 将表达式中的 ".value" 改为 ".get()"（在参数或表达式结尾位置，避免误伤中缀字段）
+            // 覆盖示例：foo(value), foo(value); foo[value]; foo.value); foo.value, 以及行末
+            updated = updated.replace(/([A-Za-z_][A-Za-z0-9_\.]*)\.value(?=\s*([,);}\]\|]|$))/g, '$1.get()')
+
+            // 2) 读取端构造：EnumName(valueDeserializer.readInt32()/readString()) -> EnumName.parse(read...)
+            // 也覆盖 Color(...), ThemeColorMode(...), 等所有大写开头的枚举类型
+            updated = updated.replace(/\b([A-Z][A-Za-z0-9_]*)\(\s*(valueDeserializer\.read(?:Int32|String)\(\))\s*\)/g, '$1.parse($2)')
+
+            // 3) return EnumName(retval) -> return EnumName.parse(retval)
+            updated = updated.replace(/return\s+([A-Z][A-Za-z0-9_]*)\(\s*retval\s*\)/g, 'return $1.parse(retval)')
+
+            if (updated !== content) {
+                fs.writeFileSync(filePath, updated)
+            }
+        } catch {}
+    }
+
     // cjv2: 根据子目录决定包名（统一到 commonPara）
     walk(cjv2Src, (p) => {
         if (!p.endsWith('.cj')) return
@@ -715,6 +739,30 @@ function enforceCJPackageConventions(options: { root: string }) {
         } else if (p.includes(path.sep + 'interfaces' + path.sep) || p.includes(path.sep + 'cores' + path.sep)) {
             tryFixFilePackage(p, 'idlize.commonPara')
             // 注意：commonPara 内不插入对自身包的导入，避免自循环
+        }
+        // 应用枚举 get/parse 修正
+        applyEnumGetParseFixes(p)
+
+        // 特例（精简版）：ArkUINativeModule.cj 仅需插入一行 import idlize.commonPara.*（若不存在）
+        if (p.endsWith(path.sep + 'ArkUINativeModule.cj')) {
+            try {
+                let content = fs.readFileSync(p, 'utf-8')
+                if (!/^import\s+idlize\.commonPara\.\*\s*$/m.test(content)) {
+                    // 优先插入在 import Interop.* 之后；若未找到，则插在 package 行之后
+                    const interopMatch = content.match(/^import\s+Interop\.\*\s*$/m)
+                    if (interopMatch) {
+                        content = content.replace(/^import\s+Interop\.\*\s*$/m, (m) => `${m}\nimport idlize.commonPara.*`)
+                    } else {
+                        const pkgIdx = content.indexOf('\n', content.indexOf('package')) + 1
+                        if (pkgIdx > 0) {
+                            content = content.slice(0, pkgIdx) + 'import idlize.commonPara.*\n' + content.slice(pkgIdx)
+                        } else {
+                            content = 'import idlize.commonPara.*\n' + content
+                        }
+                    }
+                }
+                fs.writeFileSync(p, content)
+            } catch {}
         }
     })
 
@@ -743,6 +791,11 @@ function enforceCJPackageConventions(options: { root: string }) {
         moveAll(interfacesDir)
         moveAll(coresDir)
     } catch {}
+
+    // 迁移完成后，再次全量扫描 commonPara/components/peers 目录，确保枚举修正生效（避免重命名后遗漏）
+    ;[commonParaDir, path.join(cjv2Src, 'components'), path.join(cjv2Src, 'peers')].forEach(dir => {
+        walk(dir, (p) => applyEnumGetParseFixes(p))
+    })
 }
 
 class ArkoalaMultiFileModifiersVisitor extends MultiFileModifiersVisitor {
