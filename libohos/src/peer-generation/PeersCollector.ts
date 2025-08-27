@@ -286,10 +286,12 @@ function fillClass(library: PeerLibrary, peer: PeerClass, clazz: idl.IDLInterfac
         peer.originalParentFilename = parentDecl?.fileName
         peer.parentComponentName = parentComponent.name
     }
-    const peerMethods = [
+    let peerMethods = [
         ...clazz.properties.flatMap(it => processProperty(library, it, peer) ?? []),
         ...clazz.methods.flatMap(it => processMethodOrCallable(library, it, peer) ?? []),
-        ].filter(isDefined)
+    ].filter(isDefined)
+
+    peerMethods = deduplicatePeerMethods(peerMethods)
     peer.methods.push(...peerMethods)
 
     createComponentAttributesDeclaration(clazz, peer)
@@ -297,9 +299,11 @@ function fillClass(library: PeerLibrary, peer: PeerClass, clazz: idl.IDLInterfac
 
 function fillInterface(library: PeerLibrary, peer: PeerClass, iface: idl.IDLInterface) {
 	peer.originalInterfaceName = iface.name
-	const peerMethods = iface.callables
-		.flatMap(it => processMethodOrCallable(library, it, peer, iface?.name) ?? [])
-		.filter(isDefined)
+    let peerMethods = iface.callables
+        .flatMap(it => processMethodOrCallable(library, it, peer, iface?.name) ?? [])
+        .filter(isDefined)
+
+    peerMethods = deduplicatePeerMethods(peerMethods)
 	peer.methods.push(...peerMethods)
 }
 
@@ -331,4 +335,25 @@ function generatePeer(library: PeerLibrary, component: IdlComponentDeclaration):
     // accurate methods merging algorithm?
     // collapseIdlEventsOverloads(this.library, peer)
     return peer
+}
+
+function deduplicatePeerMethods(methods: PeerMethod[]): PeerMethod[] {
+    const seen = new Set<string>()
+    const result: PeerMethod[] = []
+    for (const m of methods) {
+        const sig = m.sig
+        const key =
+            sig.name + ":" +
+            sig.args.map((a: PeerMethodArg) =>
+                (a.type ? (a.type as any).name ?? a.type.toString() : "unknown")
+            ).join(",") +
+            "->" +
+            (sig.returnType ? (sig.returnType as any).name ?? sig.returnType.toString() : "void")
+
+        if (!seen.has(key)) {
+            seen.add(key)
+            result.push(m)
+        }
+    }
+    return result
 }
