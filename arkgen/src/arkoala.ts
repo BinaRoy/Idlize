@@ -154,16 +154,13 @@ function copyArkoalaFiles(config: {
                     case 'NativePeerNode.cj':
                     case 'PeerNode.cj':
                     case 'TestNativeModule.cj':
+                    case 'Handwritten.cj':
                     destPath = path.join((arkoala as any).peerDir, baseName)
                     break
                     // 放入 interfaces 目录的文件
                     case 'CallbacksChecker.cj':
                     case 'CallbackTransformer.cj':
                     destPath = path.join((arkoala as any).commonParaDir, baseName)
-                    break
-                    // Handwritten.cj 仍然保持在 framework/cangjie/src 下
-                    case 'Handwritten.cj':
-                    destPath = path.join(arkoala.root, file)
                     break
                     default:
                     destPath = path.join(arkoala.root, file)
