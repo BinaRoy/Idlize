@@ -78,3 +78,5 @@ export { toIDLFile, addSyntheticType, resolveSyntheticType, IDLTokenInfoMap } fr
 
 export { D, ConfigTypeInfer, ConfigSchema, inspectSchema } from './configDescriber'
 export * from "./union/UnionTypeProcessor"
+export * from './LanguageWriters';
+
