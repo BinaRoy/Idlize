@@ -1135,52 +1135,10 @@ export class CJInterfacesVisitor implements InterfacesVisitor {
         return idl.isInterface(entry) && (isMaterialized(entry, this.peerLibrary) || isBuilderClass(entry) || isComponentDeclaration(this.peerLibrary, entry))
             || idl.isMethod(entry)
     }
-    // 在 CJInterfacesVisitor 类体里新增：
-    private emitArkUiNativeModulePerModule(
-        result: PrinterResult[],
-        module: string,
-        entries: idl.IDLEntry[]
-        ) {
-        // 收集本模块内需要的 native 方法
-        const nativeNames = new Set<string>()
-        for (const entry of entries) {
-            if (idl.isInterface(entry)) {
-            const iface = entry as idl.IDLInterface
-            for (const fn of iface.callables ?? []) {
-                nativeNames.add(`_${iface.name}_${fn.name}`)
-            }
-            }
-        }
-        if (nativeNames.size === 0) return
-
-        // 从模块路径推导包名，比如 ".../src/interfaces" -> "idlize.interfaces"
-        const lastSeg = module.split(/[\\/]/).filter(Boolean).pop() ?? 'interfaces'
-        const pkg = `idlize.${lastSeg}`
-
-        const writer = createLanguageWriter(this.peerLibrary.language, this.peerLibrary)
-        writer.print(`package ${pkg}\n`)
-        writer.print(`import Interop.*\nimport KoalaRuntime.*\n`)
-        writer.print(`public class ArkUIGeneratedNativeModule {\n`)
-        for (const name of nativeNames) {
-            writer.print(
-            `    public static extern func ${name}(node: UInt64, buffer: NativeBuffer, length: Int32): UInt64`
-            )
-        }
-        writer.print(`}\n`)
-
-        result.push({
-            collector: new ImportsCollector(),
-            content: writer,
-            over: {
-            node: entries[0],
-            role: LayoutNodeRole.INTERFACE
-            }
-        })
-    }
-
 
     printInterfaces(): PrinterResult[] {
-        const moduleToEntries = new Map<string, idl.IDLEntry[]>()        
+        const moduleToEntries = new Map<string, idl.IDLEntry[]>()
+
         const registerEntry = (entry: idl.IDLEntry) => {
             if (this.shouldNotPrint(entry)) {
                 return
@@ -1230,9 +1188,6 @@ export class CJInterfacesVisitor implements InterfacesVisitor {
                     }
                 })
             }
-        }
-        for (const [module, entries] of moduleToEntries.entries()) {
-            this.emitArkUiNativeModulePerModule(result, module, entries)
         }
         return result
     }
@@ -1447,11 +1402,6 @@ class CJSyntheticGenerator extends DependenciesCollector {
         if (decl) this.onSyntheticDeclaration(decl)
         return super.convertTypeReferenceAsImport(type, importClause)
     }
-    
-    convertCallback(decl: idl.IDLCallback): idl.IDLEntry[] {
-        this.onSyntheticDeclaration(decl)
-        return super.convertCallback(decl)
-    }
 }
 
 class CJDeclarationConvertor implements DeclarationConvertor<void> {
@@ -1464,7 +1414,8 @@ class CJDeclarationConvertor implements DeclarationConvertor<void> {
     ) { }
 
     convertCallback(node: idl.IDLCallback): void {
-        this.writer.print(this.printCallback(node, node.parameters, node.returnType))
+        if (!idl.hasExtAttribute(node, idl.IDLExtendedAttributes.Synthetic))
+            this.writer.print(this.printCallback(node, node.parameters, node.returnType))
     }
     convertMethod(node: idl.IDLMethod): void {
         // TODO: namespace-related-to-rework
@@ -1749,10 +1700,10 @@ class CJDeclarationConvertor implements DeclarationConvertor<void> {
                 if (it.isStatic) modifiers.push(FieldModifier.STATIC)
 
                 writer.writeFieldDeclaration(
-                    it.name,
-                    idl.maybeOptional(it.type, it.isOptional),
-                    modifiers,
-                    it.isOptional                 // ✅ 用 IDL 的可选性元数据
+                it.name,
+                idl.maybeOptional(it.type, it.isOptional),
+                modifiers,
+                idl.isOptionalType(it.type)
                 )
 
                 // 2. 额外生成 serialize 方法
