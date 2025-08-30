@@ -86,9 +86,38 @@ export function writePeerMethod(library: PeerLibrary, printer: LanguageWriter, m
     const normalizedName = printer.language === Language.CJ
         ? stripOverloadIndex(normalizeSetterName(normalizeEventName(method.sig.name)))
         : method.sig.name
+    // 对 CJ 语言应用元组类型转换
+    let finalArgs = signature.args
+    if (printer.language === Language.CJ) {
+        finalArgs = signature.args.map((argType, index) => {
+            // 检查是否是 Tuple_* 类型
+            const typeName = (argType as any).name || ''
+            if (typeName.includes('Tuple_')) {
+                const match = typeName.match(/^Tuple_(.+)$/)
+                if (match) {
+                    const tokens = match[1].split('_').filter(Boolean)
+                    const elementTypes = tokens.map((tok: string) => {
+                        const t = tok.toLowerCase()
+                        if (t === 'number' || t === 'float64') return 'Float64'
+                        if (t === 'int32') return 'Int32'
+                        if (t === 'int64') return 'Int64'
+                        if (t === 'boolean' || t === 'bool') return 'Bool'
+                        if (t === 'string') return 'String'
+                        return tok // 枚举或自定义类型
+                    })
+                    // 创建原生元组类型引用
+                    const nativeTupleType = `(${elementTypes.join(', ')})`
+                    const tupleRefType = createReferenceType(nativeTupleType)
+                    ;(tupleRefType as any).__isTupleReference = true
+                    return tupleRefType
+                }
+            }
+            return argType
+        })
+    }
     let peerMethod = new Method(
         `${normalizedName}${methodPostfix}`,
-        new NamedMethodSignature(returnType, signature.args, signature.argsNames, signature.defaults, signature.argsModifiers),
+        new NamedMethodSignature(returnType, finalArgs, signature.argsNames, signature.defaults, signature.argsModifiers),
         method.method.modifiers, method.method.generics
     )
     const argConvertors = method.argAndOutConvertors(library)
