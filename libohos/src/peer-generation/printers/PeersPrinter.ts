@@ -115,13 +115,8 @@ export function writePeerMethod(library: PeerLibrary, printer: LanguageWriter, m
             return argType
         })
     }
-
-    // 拼接最终的方法名
-    const baseNameForSerialize =
-        methodPostfix === "_serialize" ? method.sig.name : normalizedName
-
     let peerMethod = new Method(
-        `${baseNameForSerialize}${methodPostfix}`,
+        `${normalizedName}${methodPostfix}`,
         new NamedMethodSignature(returnType, finalArgs, signature.argsNames, signature.defaults, signature.argsModifiers),
         method.method.modifiers, method.method.generics
     )
