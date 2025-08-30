@@ -1103,12 +1103,7 @@ class CJComponentFileVisitor implements ComponentFileVisitor {
      * 基础类型映射：Float64→Float32, Any→CustomObject
      */
     private applyBasicTypeMapping(s: string): string {
-        // Float64 → Float32（仅组件层）
-        s = s.replace(/\bFloat64\b/g, 'Float32');
-        
-        // Any → CustomObject（仅组件层）
-        s = s.replace(/\bAny\b/g, 'CustomObject');
-        
+        // 基础类型不再后置改写，直接返回
         return s;
     }
 

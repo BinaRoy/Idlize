@@ -54,7 +54,7 @@ export function mapNumberType(context: NumberMappingContext): 'Length' | 'Float6
   // 场景1: 可选尺寸场景 - 使用 Length 默认值（基于仓颉语言实际使用）
   if (context.semanticHint === 'optionalSize' ||
       (context.propertyName === 'width' || context.propertyName === 'height')) {
-    return 'Length';
+    return 'Float64';
   }
   
   // 场景2: 比例和角度场景 - 使用 Float64 类型（优先级高于尺寸场景）
@@ -75,8 +75,8 @@ export function mapNumberType(context: NumberMappingContext): 'Length' | 'Float6
         'width', 'height', 'size', 'margin', 'padding', 'border', 'radius', 
         'gap', 'offset', 'fontSize', 'lineHeight', 'letterSpacing'
       ])) {
-    // 注意：只有 number 类型才能映射为 Length，string 类型不能转换
-    return 'Length';
+    // 注意：仅 number 类型；收敛为 Float64
+    return 'Float64';
   }
   
   // 场景4: 计数和索引场景 - 使用 Int32 类型（优先级高于尺寸场景）

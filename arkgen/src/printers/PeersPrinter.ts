@@ -112,7 +112,16 @@ class PeerFileVisitor {
                         const conv: TypeConversionResult = mapper.convertParameterType(p.type, p.name ?? `param${index}`, !!p.optional)
                         const addType = (t: idl.IDLType | string | undefined) => {
                             if (!t) return
-                            mappedTypes.push(typeof t === 'string' ? idl.createReferenceType(t) : t)
+                            // 检查是否是原生元组语法 (T1, T2, ...)
+                            if (typeof t === 'string' && /^\(.+\)$/.test(t)) {
+                                // 原生元组语法：创建特殊的引用类型，名称就是元组语法
+                                const tupleRefType = idl.createReferenceType(t)
+                                // 标记这是一个元组类型，供类型转换器识别
+                                ;(tupleRefType as any).__isTupleReference = true
+                                mappedTypes.push(tupleRefType)
+                            } else {
+                                mappedTypes.push(typeof t === 'string' ? idl.createReferenceType(t) : t)
+                            }
                         }
                         if (conv.overloads && conv.overloads.length > 0) {
                             conv.overloads.forEach(o => addType(o.cjType))
@@ -126,10 +135,19 @@ class PeerFileVisitor {
                 // 返回类型
                 try {
                     const convRet: TypeConversionResult = mapper.convertParameterType(method.returnType, `${method.name}_return`, false)
-                    const addType = (t: idl.IDLType | string | undefined) => {
-                        if (!t) return
-                        mappedTypes.push(typeof t === 'string' ? idl.createReferenceType(t) : t)
-                    }
+                                            const addType = (t: idl.IDLType | string | undefined) => {
+                            if (!t) return
+                            // 检查是否是原生元组语法 (T1, T2, ...)
+                            if (typeof t === 'string' && /^\(.+\)$/.test(t)) {
+                                // 原生元组语法：创建特殊的引用类型，名称就是元组语法
+                                const tupleRefType = idl.createReferenceType(t)
+                                // 标记这是一个元组类型，供类型转换器识别
+                                ;(tupleRefType as any).__isTupleReference = true
+                                mappedTypes.push(tupleRefType)
+                            } else {
+                                mappedTypes.push(typeof t === 'string' ? idl.createReferenceType(t) : t)
+                            }
+                        }
                     if (convRet.overloads && convRet.overloads.length > 0) {
                         convRet.overloads.forEach(o => addType(o.cjType))
                     } else {

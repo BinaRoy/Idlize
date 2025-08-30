@@ -323,8 +323,14 @@ export class CJTypeMapper {
                 return result
             }
 
+            // Handle tuple types first (before union types)
+            if (this.isTupleType(baseType)) {
+                console.log(`[CJTypeMapper] Detected tuple type for ${paramName}: ${this.getTypeDisplayName(baseType)}`);
+                const tupleConv = this.convertTupleType(baseType, paramName, isOptional);
+                result = this.applyOptionalHandling(tupleConv, isOptional, baseType);
+            }
             // Handle union types first
-            if (idl.isUnionType(baseType)) {
+            else if (idl.isUnionType(baseType)) {
                 console.log(`[CJTypeMapper] Detected union type for ${paramName}: ${baseType.types.map(t => this.getTypeDisplayName(t)).join(' | ')}`);
                 const unionConv = this.convertUnionType(baseType.types, paramName, isOptional)
                 // Optional handling for overloads is encoded inside convertUnionType
@@ -443,8 +449,8 @@ export class CJTypeMapper {
 
         // 优先级 6: string | Resource → ResourceStr
         if (flags.hasString && flags.hasResource && !flags.hasNumber) {
-            console.log(`[CJTypeMapper] Rule: String+Resource convergence`);
-            return { cjType: 'ResourceStr', defaultValue: DEFAULT_VALUES.RESOURCE_STR };
+            console.log(`[CJTypeMapper] Rule: String+Resource convergence -> String`);
+            return { cjType: 'String', defaultValue: DEFAULT_VALUES.RESOURCE_STR };
         }
 
         // 优先级 7: string | number → 重载（数字语义 vs 文本语义）
@@ -471,8 +477,8 @@ export class CJTypeMapper {
 
         // 优先级 9: 兜底：若包含 Resource → ResourceStr
         if (flags.hasResource && !flags.hasNumber) {
-            console.log(`[CJTypeMapper] Rule: Resource fallback`);
-            return { cjType: 'ResourceStr', defaultValue: DEFAULT_VALUES.RESOURCE_STR };
+            console.log(`[CJTypeMapper] Rule: Resource fallback -> String`);
+            return { cjType: 'String', defaultValue: DEFAULT_VALUES.RESOURCE_STR };
         }
 
         // 优先级 10: 保留原始（记录未处理类型用于后续规则补充）
@@ -745,21 +751,21 @@ export class CJTypeMapper {
                 }
             }
 
-            // Case: string | Resource → ResourceStr (direct pattern match)
+            // Case: string | Resource → String (direct pattern match)
             const hasResource = memberTypes.some(t => this.getTypeDisplayName(t).toLowerCase().includes('resource'))
             if (hasString && hasResource && !hasNumber) {
-                console.log(`[CJTypeMapper] P0 Converging ${paramName} to ResourceStr (string|Resource)`);
+                console.log(`[CJTypeMapper] P0 Converging ${paramName} to String (string|Resource)`);
                 return {
-                    cjType: 'ResourceStr',
+                    cjType: 'String',
                     defaultValue: DEFAULT_VALUES.RESOURCE_STR
                 }
             }
 
-            // Case: string | Resource → ResourceStr (fallback by name semantics)
+            // Case: string | Resource → String (fallback by name semantics)
             if (hasString && !hasNumber && STRING_PATTERNS.RESOURCE.test(paramName)) {
-                console.log(`[CJTypeMapper] Converging ${paramName} to ResourceStr (by name semantics)`);
+                console.log(`[CJTypeMapper] Converging ${paramName} to String (by name semantics)`);
                 return {
-                    cjType: 'ResourceStr',
+                    cjType: 'String',
                     defaultValue: DEFAULT_VALUES.RESOURCE_STR
                 }
             }
@@ -783,16 +789,16 @@ export class CJTypeMapper {
                 }
             }
             
-            // P2 优化: String | Array<String> → Array<ResourceStr>
+            // P2 优化: String | Array<String> → Array<String>
             const hasArray = memberTypes.some(t => {
                 const typeName = this.getTypeDisplayName(t).toLowerCase();
                 return typeName.includes('array');
             });
             
             if (hasString && hasArray && STRING_PATTERNS.RESOURCE.test(paramName)) {
-                console.log(`[CJTypeMapper] P2 Converging ${paramName} to Array<ResourceStr> (String|Array<String>)`);
+                console.log(`[CJTypeMapper] P2 Converging ${paramName} to Array<String> (String|Array<String>)`);
                 return {
-                    cjType: idl.createReferenceType('Array', [idl.createReferenceType('ResourceStr')]),
+                    cjType: idl.createReferenceType('Array', [idl.createReferenceType('String')]),
                     defaultValue: '[]'
                 }
             }
@@ -956,6 +962,26 @@ export class CJTypeMapper {
         return this.getCachedTypeCheck('basic', type);
     }
 
+    public isTupleType(type: idl.IDLType): boolean {
+        try {
+            // 检查是否是数组类型且长度固定
+            if ((type as any).kind === 'arrayType' && (type as any).length !== undefined) {
+                console.log(`[CJTypeMapper] Detected array tuple type: ${this.getTypeDisplayName(type)}`);
+                return true;
+            }
+            // 检查类型名是否包含 Tuple
+            const typeName = this.getTypeDisplayName(type);
+            const isTuple = typeName.includes('Tuple_') || /^\[.*\]$/.test(typeName);
+            if (isTuple) {
+                console.log(`[CJTypeMapper] Detected reference tuple type: ${typeName}`);
+            }
+            return isTuple;
+        } catch (e) {
+            console.log(`[CJTypeMapper] isTupleType error for ${this.getTypeDisplayName(type)}: ${e}`);
+            return false;
+        }
+    }
+
     private getCachedTypeCheck(checkType: string, type: idl.IDLType): boolean {
         const cacheKey = `${checkType}:${this.getTypeDisplayName(type)}`;
         
@@ -1037,27 +1063,27 @@ export class CJTypeMapper {
         
         // 优先级2: 回调函数相关（名称像回调但类型为字符串）→ ResourceStr
         if (STRING_PATTERNS.CALLBACK.test(name)) {
-            console.log(`[CJTypeMapper] String ${name} mapped to ResourceStr (callback-like string)`);
+            console.log(`[CJTypeMapper] String ${name} mapped to String (callback-like string)`);
             return {
-                targetType: idl.createReferenceType('ResourceStr'),
+                targetType: idl.IDLStringType,
                 defaultValue: DEFAULT_VALUES.RESOURCE_STR
             };
         }
         
         // 优先级3: 尺寸相关但是字符串类型 → ResourceStr（不能映射为Length）
         if (STRING_PATTERNS.DIMENSIONAL.test(name)) {
-            console.log(`[CJTypeMapper] String ${name} mapped to ResourceStr (dimensional but string)`);
+            console.log(`[CJTypeMapper] String ${name} mapped to String (dimensional but string)`);
             return {
-                targetType: idl.createReferenceType('ResourceStr'),
+                targetType: idl.IDLStringType,
                 defaultValue: DEFAULT_VALUES.RESOURCE_STR
             };
         }
         
         // 优先级4: 资源相关 → ResourceStr
         if (STRING_PATTERNS.RESOURCE.test(name)) {
-            console.log(`[CJTypeMapper] String ${name} mapped to ResourceStr (resource pattern)`);
+            console.log(`[CJTypeMapper] String ${name} mapped to String (resource pattern)`);
             return {
-                targetType: idl.createReferenceType('ResourceStr'),
+                targetType: idl.IDLStringType,
                 defaultValue: DEFAULT_VALUES.RESOURCE_STR
             };
         }
@@ -1071,10 +1097,10 @@ export class CJTypeMapper {
             };
         }
         
-        // 默认策略: ResourceStr（最常用的字符串语义类型）
-        console.log(`[CJTypeMapper] String ${name} mapped to ResourceStr (default)`);
+        // 默认策略: 直接映射为 String
+        console.log(`[CJTypeMapper] String ${name} mapped to String (default)`);
         return {
-            targetType: idl.createReferenceType('ResourceStr'),
+            targetType: idl.IDLStringType,
             defaultValue: DEFAULT_VALUES.RESOURCE_STR
         };
     }
@@ -1100,6 +1126,59 @@ export class CJTypeMapper {
         } catch {
             return false
         }
+    }
+
+    private convertTupleType(baseType: idl.IDLType, paramName: string, isOptional: boolean): TypeConversionResult {
+        try {
+            const typeName = this.getTypeDisplayName(baseType);
+            console.log(`[CJTypeMapper] Converting tuple type: ${typeName}`);
+            
+            // 如果是 Tuple_* 引用类型，提取元素类型
+            if (typeName.includes('Tuple_')) {
+                const match = typeName.match(/^Tuple_(.+)$/);
+                if (match) {
+                    const tokens = match[1].split('_').filter(Boolean);
+                    const elementTypes = tokens.map(tok => {
+                        const t = tok.toLowerCase();
+                        if (t === 'number' || t === 'float64') return 'Float64';
+                        if (t === 'int32') return 'Int32';
+                        if (t === 'int64') return 'Int64';
+                        if (t === 'boolean' || t === 'bool') return 'Bool';
+                        if (t === 'string') return 'String';
+                        return tok; // 枚举或自定义类型
+                    });
+                    
+                    // 构建原生元组类型语法 (T1, T2, ...)
+                    const nativeTupleType = `(${elementTypes.join(', ')})`;
+                    console.log(`[CJTypeMapper] Tuple ${typeName} -> native tuple ${nativeTupleType}`);
+                    
+                    return {
+                        cjType: nativeTupleType,
+                        defaultValue: this.getTupleDefaultValue(elementTypes)
+                    };
+                }
+            }
+            
+            // 兜底：保持原类型
+            return { cjType: baseType, defaultValue: undefined };
+        } catch (error) {
+            this.logError('Tuple conversion failed', error);
+            return { cjType: baseType, error: String(error) };
+        }
+    }
+
+    private getTupleDefaultValue(elementTypes: string[]): string {
+        const defaults = elementTypes.map(type => {
+            switch (type) {
+                case 'Float64': return '1.0';
+                case 'Int32': return '0';
+                case 'Int64': return '0';
+                case 'Bool': return 'false';
+                case 'String': return '""';
+                default: return `${type}()`;
+            }
+        });
+        return `(${defaults.join(', ')})`;
     }
 
     private convertFunctionType(baseType: idl.IDLType): TypeConversionResult {

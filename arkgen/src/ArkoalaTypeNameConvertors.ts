@@ -45,6 +45,15 @@ export class ArkoalaCJTypeNameConvertor extends CJTypeNameConvertor {
         }
     }
     
+    override convert(type: idl.IDLType): string {
+        // 检查是否是我们标记的元组引用类型
+        if ((type as any).__isTupleReference && idl.isReferenceType(type)) {
+            // 直接返回元组语法，不进行进一步转换
+            return type.name;
+        }
+        return super.convert(type);
+    }
+    
     /**
      * 获取回调类型管理器实例
      */

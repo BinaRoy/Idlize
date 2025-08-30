@@ -153,8 +153,23 @@ function getVisitor(peerLibrary: PeerLibrary, isDeclarations: boolean): Interfac
         const mapper = new CJTypeMapper()
         return {
             printInterfaces(): PrinterResult[] {
+                // 在调用inner.printInterfaces()之前，直接修改peerLibrary.files来过滤掉Tuple_*接口
                 for (const file of peerLibrary.files.values()) {
-                    // IDLFile: entries 列出所有顶层声明
+                    const originalEntries = [...file.entries] // 备份原始entries
+                    
+                    // 过滤掉Tuple_*接口
+                    file.entries = file.entries.filter((node: idl.IDLEntry) => {
+                        if (idl.isInterface(node)) {
+                            const ifaceName = (node as any).name as string | undefined
+                            if (ifaceName && /^Tuple_(.+)$/.test(ifaceName)) {
+                                console.log(`[ArkoalaInterfacePrinter] Filtering out tuple interface: ${ifaceName}`)
+                                return false // 过滤掉Tuple_*接口
+                            }
+                        }
+                        return true // 保留其他所有接口
+                    })
+                    
+                    // 对保留的接口进行类型转换处理
                     file.entries.forEach((node: idl.IDLEntry) => {
                         if (idl.isInterface(node)) {
                             node.properties.forEach(prop => {
@@ -164,11 +179,13 @@ function getVisitor(peerLibrary: PeerLibrary, isDeclarations: boolean): Interfac
                                         const t = conv.overloads[0].cjType
                                         if (t) {
                                             const assigned = typeof t === 'string' ? idl.createReferenceType(t) : t
-                                            prop.type = (assigned as any).kind === 'optionalType' ? (assigned as any).type : assigned
+                                            // 保留 Option<T>，不拆包
+                                            prop.type = assigned
                                         }
                                     } else if (conv.cjType) {
                                         const assigned = typeof conv.cjType === 'string' ? idl.createReferenceType(conv.cjType) : conv.cjType
-                                        prop.type = (assigned as any).kind === 'optionalType' ? (assigned as any).type : assigned
+                                        // 保留 Option<T>，不拆包
+                                        prop.type = assigned
                                     }
                                 } catch {}
                             })
@@ -183,11 +200,15 @@ function getVisitor(peerLibrary: PeerLibrary, isDeclarations: boolean): Interfac
                                             const t = conv.overloads[0].cjType
                                             if (t) {
                                                 const assigned = typeof t === 'string' ? idl.createReferenceType(t) : t
-                                                param.type = (assigned as any).kind === 'optionalType' ? (assigned as any).type : assigned
+                                                // 方法参数遵循统一规则：
+                                                // 基础类型已由 mapper 产出默认值形参（非 OptionalType）；
+                                                // 非基础类型保留 Option<T>（不拆包）。
+                                                param.type = assigned
                                             }
                                         } else if (conv.cjType) {
                                             const assigned = typeof conv.cjType === 'string' ? idl.createReferenceType(conv.cjType) : conv.cjType
-                                            param.type = (assigned as any).kind === 'optionalType' ? (assigned as any).type : assigned
+                                            // 同上，保留 OptionalType（若有），不拆包
+                                            param.type = assigned
                                         }
                                     } catch {
                                         // keep original
@@ -210,8 +231,8 @@ function getVisitor(peerLibrary: PeerLibrary, isDeclarations: boolean): Interfac
                         }
                     })
                 }
-                // 为 CJ 语言输出的 interfaces 文件补充 cores 导入
-                // 接口(commonPara)文件不应导入自身包，避免包级自循环依赖
+                
+                // 现在调用inner.printInterfaces()，它将使用过滤后的entries
                 return inner.printInterfaces()
             }
         } as InterfacesVisitor
