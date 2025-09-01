@@ -428,10 +428,10 @@ export class CJTypeMapper {
             return { cjType: 'FontWeight', defaultValue: DEFAULT_VALUES.FONT_WEIGHT };
         }
 
-        // 优先级 3: 函数相关（命名联合无法还原函数签名）→ 退化为 ResourceStr，避免生成无效类型
+        // 优先级 3: 函数相关（命名联合无法还原函数签名）→ 退化为 String，避免生成无效类型
         if (flags.hasFunction && flags.hasString) {
-            this.debugLog(`Rule: Function-like named union -> ResourceStr (safe fallback)`);
-            return { cjType: 'ResourceStr', defaultValue: DEFAULT_VALUES.RESOURCE_STR };
+            this.debugLog(`Rule: Function-like named union -> String (safe fallback)`);
+            return { cjType: 'String', defaultValue: DEFAULT_VALUES.RESOURCE_STR };
         }
 
         // 优先级 4: String | Array<String> → Array<String>（根据需求修改）
@@ -447,7 +447,7 @@ export class CJTypeMapper {
             return { cjType: idl.createReferenceType('Array', [idl.createReferenceType(elem)]), defaultValue: '[]' };
         }
 
-        // 优先级 6: string | Resource → ResourceStr
+        // 优先级 6: string | Resource → String
         if (flags.hasString && flags.hasResource && !flags.hasNumber) {
             console.log(`[CJTypeMapper] Rule: String+Resource convergence -> String`);
             return { cjType: 'String', defaultValue: DEFAULT_VALUES.RESOURCE_STR };
@@ -465,7 +465,7 @@ export class CJTypeMapper {
                     { cjType: stringCjType, defaultValue: strMapping.defaultValue }
                 ]};
             } catch {
-                return { cjType: 'ResourceStr', defaultValue: DEFAULT_VALUES.RESOURCE_STR };
+                return { cjType: 'String', defaultValue: DEFAULT_VALUES.RESOURCE_STR };
             }
         }
 
@@ -475,16 +475,49 @@ export class CJTypeMapper {
             return { cjType: 'Date', defaultValue: 'Date()' };
         }
 
-        // 优先级 9: 兜底：若包含 Resource → ResourceStr
+        // 优先级 9: 兜底：若包含 Resource → String
         if (flags.hasResource && !flags.hasNumber) {
             console.log(`[CJTypeMapper] Rule: Resource fallback -> String`);
             return { cjType: 'String', defaultValue: DEFAULT_VALUES.RESOURCE_STR };
         }
 
-        // 优先级 10: 保留原始（记录未处理类型用于后续规则补充）
-        this.debugLog(`Rule: No convergence, keeping original: ${flags.tokens.join('_')}`);
+        // 优先级 10: 最终兜底 —— 不再返回 Union_*，选择“最合适的单一类型”
+        this.debugLog(`Rule: No convergence, selecting best-effort single type for ${paramName}: ${flags.tokens.join('_')}`);
         this.trackUnhandledUnion(flags.tokens, paramName);
-        return { cjType: idl.createReferenceType(`Union_${flags.tokens.join('_')}`) };
+
+        // 1) 纯字符串场景
+        if (flags.hasString && !flags.hasNumber) {
+            return { cjType: 'String', defaultValue: DEFAULT_VALUES.RESOURCE_STR };
+        }
+
+        // 2) 数字场景 —— 使用 number 语义推断（无法判定时默认 Float64）
+        if (flags.hasNumber) {
+            try {
+                const numMapping: NumberConversionResult = convertNumberProperty({ propertyName: paramName, isOptional: true });
+                return { cjType: numMapping.cjType, defaultValue: numMapping.defaultValue };
+            } catch {
+                return { cjType: 'Float64', defaultValue: DEFAULT_VALUES.FLOAT64 };
+            }
+        }
+
+        // 3) 颜色相关
+        if (flags.hasColor) {
+            return { cjType: 'ResourceColor', defaultValue: this.generateResourceColorDefault(paramName) };
+        }
+
+        // 4) 资源相关（非数字）→ 字符串
+        if (flags.hasResource) {
+            return { cjType: 'String', defaultValue: DEFAULT_VALUES.RESOURCE_STR };
+        }
+
+        // 5) 布尔（通过 token 粗略识别）
+        const hasBooleanToken = flags.tokens.some(t => /^(bool|boolean)$/i.test(t));
+        if (hasBooleanToken) {
+            return { cjType: 'Bool', defaultValue: DEFAULT_VALUES.BOOLEAN };
+        }
+
+        // 6) 兜底：使用 String
+        return { cjType: 'String', defaultValue: DEFAULT_VALUES.RESOURCE_STR };
     }
     
     /**
@@ -672,7 +705,7 @@ export class CJTypeMapper {
         try {
             if (!memberTypes || memberTypes.length === 0) {
                 // 避免返回 Any，默认按资源字符串处理
-                return { cjType: 'ResourceStr', defaultValue: DEFAULT_VALUES.RESOURCE_STR, error: 'Empty union types' }
+                return { cjType: 'String', defaultValue: DEFAULT_VALUES.RESOURCE_STR, error: 'Empty union types' }
             }
 
             // 增强的类型检测，包含调试信息
@@ -715,6 +748,12 @@ export class CJTypeMapper {
                 return isNum;
             })
             const hasColorRef = memberTypes.some(t => this.getTypeDisplayName(t).toLowerCase().includes('color'))
+            const hasBoolean = memberTypes.some(t => {
+                const n = this.getTypeDisplayName(t).toLowerCase();
+                return n === 'boolean' || n === 'bool' || n.includes('boolean') || n.includes('bool');
+            })
+            const hasResource = memberTypes.some(t => this.getTypeDisplayName(t).toLowerCase().includes('resource'))
+            const hasResourceStr = memberTypes.some(t => this.getTypeDisplayName(t).toLowerCase().includes('resourcestr'))
             const hasFunction = memberTypes.some(t => this.isFunctionType(t))
             // Case: function-related unions → 直接保留函数签名，避免退化为 CallbackCallback
             if (hasFunction) {
@@ -752,21 +791,25 @@ export class CJTypeMapper {
             }
 
             // Case: string | Resource → String (direct pattern match)
-            const hasResource = memberTypes.some(t => this.getTypeDisplayName(t).toLowerCase().includes('resource'))
+            // New rule: string | Resource → 重载 [String, Resource]
             if (hasString && hasResource && !hasNumber) {
-                console.log(`[CJTypeMapper] P0 Converging ${paramName} to String (string|Resource)`);
+                console.log(`[CJTypeMapper] Overloads for ${paramName}: String | Resource`);
                 return {
-                    cjType: 'String',
-                    defaultValue: DEFAULT_VALUES.RESOURCE_STR
+                    overloads: [
+                        { cjType: 'String', defaultValue: DEFAULT_VALUES.RESOURCE_STR },
+                        { cjType: 'Resource' }
+                    ]
                 }
             }
 
             // Case: string | Resource → String (fallback by name semantics)
             if (hasString && !hasNumber && STRING_PATTERNS.RESOURCE.test(paramName)) {
-                console.log(`[CJTypeMapper] Converging ${paramName} to String (by name semantics)`);
+                console.log(`[CJTypeMapper] Overloads for ${paramName} by name semantics: String | Resource`);
                 return {
-                    cjType: 'String',
-                    defaultValue: DEFAULT_VALUES.RESOURCE_STR
+                    overloads: [
+                        { cjType: 'String', defaultValue: DEFAULT_VALUES.RESOURCE_STR },
+                        { cjType: 'Resource' }
+                    ]
                 }
             }
             
@@ -819,7 +862,36 @@ export class CJTypeMapper {
                 }
             }
 
-            // Case: string | number → overloads (numeric semantic + ResourceStr)
+            // New rule: boolean | string → 重载 [Bool, String] (按文档要求)
+            if (hasBoolean && hasString && !hasNumber) {
+                console.log(`[CJTypeMapper] Overloads for ${paramName}: Bool | String (boolean|string)`);
+                return {
+                    overloads: [
+                        { cjType: 'Bool', defaultValue: DEFAULT_VALUES.BOOLEAN },
+                        { cjType: 'String', defaultValue: DEFAULT_VALUES.RESOURCE_STR }
+                    ]
+                }
+            }
+
+            // New rule: number | Resource/ResourceStr → 重载 [Float64/Int32/Int64, Resource or ResourceStr]
+            if (hasNumber && hasResource) {
+                try {
+                    const numMapping: NumberConversionResult = convertNumberProperty({ propertyName: paramName, isOptional: true })
+                    const resBranch = hasResourceStr ? 'ResourceStr' : 'Resource'
+                    console.log(`[CJTypeMapper] Overloads for ${paramName}: ${numMapping.cjType} | ${resBranch} (number|resource)`)
+                    return {
+                        overloads: [
+                            { cjType: numMapping.cjType, defaultValue: numMapping.defaultValue },
+                            { cjType: resBranch as any }
+                        ]
+                    }
+                } catch {
+                    const resBranch = hasResourceStr ? 'ResourceStr' : 'Resource'
+                    return { overloads: [ { cjType: 'Float64', defaultValue: DEFAULT_VALUES.FLOAT64 }, { cjType: resBranch as any } ] }
+                }
+            }
+
+            // Case: string | number → overloads (numeric semantic + String)
             // 严格遵守：TS string 不能映射为 Length，必须通过重载承接两类用法
             if (hasString && hasNumber) {
                 console.log(`[CJTypeMapper] Creating overloads for ${paramName} (string|number)`);
@@ -831,20 +903,20 @@ export class CJTypeMapper {
                     const stringCjType = this.getSemanticTypeName(strMapping.targetType)
                     if (stringCjType === 'Length') {
                         this.logError(`Invalid string to Length mapping for ${paramName}`, 'String type cannot be mapped to Length')
-                        // 回退为 ResourceStr，避免产生 Any
-                        return { cjType: 'ResourceStr', defaultValue: DEFAULT_VALUES.RESOURCE_STR, error: 'String cannot map to Length' }
+                        // 回退为 String，避免产生 Any
+                        return { cjType: 'String', defaultValue: DEFAULT_VALUES.RESOURCE_STR, error: 'String cannot map to Length' }
                     }
                     
                     const overloads = [
                         { cjType: numMapping.cjType, defaultValue: numMapping.defaultValue },        // number → Length/Float64/Int32/Int64
-                        { cjType: stringCjType, defaultValue: strMapping.defaultValue }              // string → ResourceStr/ResourceColor/String (never Length)
+                        { cjType: stringCjType, defaultValue: strMapping.defaultValue }              // string → String/ResourceColor (never Length)
                     ]
                     console.log(`[CJTypeMapper] Generated overloads for ${paramName}: [${overloads.map(o => `${o.cjType}=${o.defaultValue}`).join(', ')}]`);
                     return { overloads }
                 } catch (error) {
                     this.logError(`Failed to create string|number overloads for ${paramName}`, error)
-                    // 回退为 ResourceStr，避免产生 Any
-                    return { cjType: 'ResourceStr', defaultValue: DEFAULT_VALUES.RESOURCE_STR }
+                    // 回退为 String，避免产生 Any
+                    return { cjType: 'String', defaultValue: DEFAULT_VALUES.RESOURCE_STR }
                 }
             }
 
@@ -854,8 +926,8 @@ export class CJTypeMapper {
                 console.log(`[CJTypeMapper] Fallback: Creating string|number overloads for ${paramName}`);
                 try {
                     const overloads = [
-                        { cjType: 'Length', defaultValue: DEFAULT_VALUES.LENGTH },           // 数字路径 → Length
-                        { cjType: 'ResourceStr', defaultValue: DEFAULT_VALUES.RESOURCE_STR }  // 字符串路径 → ResourceStr
+                        { cjType: 'Float64', defaultValue: DEFAULT_VALUES.FLOAT64 },         // 数字路径 → Float64（默认）
+                        { cjType: 'String', defaultValue: DEFAULT_VALUES.RESOURCE_STR }      // 字符串路径 → String
                     ]
                     console.log(`[CJTypeMapper] Fallback generated overloads for ${paramName}: [${overloads.map(o => `${o.cjType}=${o.defaultValue}`).join(', ')}]`);
                     return { overloads }
@@ -1003,34 +1075,52 @@ export class CJTypeMapper {
 
     public getTypeDisplayName(type: idl.IDLType): string {
         try {
+            let name: string | undefined
             // 尝试多种方式获取类型名称
             if (type.toString && typeof type.toString === 'function') {
                 const toStringResult = type.toString();
                 if (toStringResult && toStringResult !== '[object Object]') {
-                    return toStringResult;
+                    name = toStringResult;
                 }
             }
-            
-            if ((type as any).name) {
-                return (type as any).name;
+            if (!name && (type as any).name) {
+                name = (type as any).name;
             }
-            
-            if ((type as any).kind) {
-                return (type as any).kind;
+            if (!name && (type as any).kind) {
+                name = (type as any).kind;
             }
-            
             // 检查是否是 IDL 内置类型
-            if (type === idl.IDLStringType || (type as any) === 'string') {
-                return 'string';
+            if (!name) {
+                if (type === idl.IDLStringType || (type as any) === 'string') {
+                    name = 'string';
+                } else if (type === idl.IDLNumberType || (type as any) === 'number') {
+                    name = 'number';
+                } else if (type === idl.IDLBooleanType || (type as any) === 'boolean') {
+                    name = 'boolean';
+                }
             }
-            if (type === idl.IDLNumberType || (type as any) === 'number') {
-                return 'number';
+            const raw = name || 'unknown'
+            // 统一清理：禁止向外暴露 Union_*/Tuple_* 类型名
+            // 1) Union_* → 使用更安全的字符串类型名
+            if (/^Union_/.test(raw)) {
+                return 'String'
             }
-            if (type === idl.IDLBooleanType || (type as any) === 'boolean') {
-                return 'boolean';
+            // 2) Tuple_* → 转为原生元组语法 (A, B, ...)
+            const m = raw.match(/^Tuple_(.+)$/)
+            if (m) {
+                const tokens = m[1].split('_').filter(Boolean)
+                const mapToken = (tok: string): string => {
+                    const t = tok.toLowerCase()
+                    if (t === 'number' || t === 'float64') return 'Float64'
+                    if (t === 'int32') return 'Int32'
+                    if (t === 'int64') return 'Int64'
+                    if (t === 'boolean' || t === 'bool') return 'Bool'
+                    if (t === 'string') return 'String'
+                    return tok
+                }
+                return `(${tokens.map(mapToken).join(', ')})`
             }
-            
-            return 'unknown';
+            return raw;
         } catch (error) {
             this.logError('Failed to get type display name', error);
             return 'unknown';
@@ -1061,7 +1151,7 @@ export class CJTypeMapper {
             };
         }
         
-        // 优先级2: 回调函数相关（名称像回调但类型为字符串）→ ResourceStr
+        // 优先级2: 回调函数相关（名称像回调但类型为字符串）→ String
         if (STRING_PATTERNS.CALLBACK.test(name)) {
             console.log(`[CJTypeMapper] String ${name} mapped to String (callback-like string)`);
             return {
@@ -1070,7 +1160,7 @@ export class CJTypeMapper {
             };
         }
         
-        // 优先级3: 尺寸相关但是字符串类型 → ResourceStr（不能映射为Length）
+        // 优先级3: 尺寸相关但是字符串类型 → String（不能映射为Length）
         if (STRING_PATTERNS.DIMENSIONAL.test(name)) {
             console.log(`[CJTypeMapper] String ${name} mapped to String (dimensional but string)`);
             return {
@@ -1079,7 +1169,7 @@ export class CJTypeMapper {
             };
         }
         
-        // 优先级4: 资源相关 → ResourceStr
+        // 优先级4: 资源相关 → String
         if (STRING_PATTERNS.RESOURCE.test(name)) {
             console.log(`[CJTypeMapper] String ${name} mapped to String (resource pattern)`);
             return {
@@ -1219,7 +1309,7 @@ export class CJTypeMapper {
     }
 
     private isSemanticResourceType(typeName: string): boolean {
-        return ['ResourceStr', 'ResourceColor', 'String'].includes(typeName);
+        return ['ResourceColor', 'String'].includes(typeName);
     }
 
     private getBasicTypeDefault(typeName: string): string {
@@ -1235,7 +1325,7 @@ export class CJTypeMapper {
 
     private getSemanticResourceDefault(typeName: string): string {
         const defaults: Record<string, string> = {
-            'ResourceStr': DEFAULT_VALUES.RESOURCE_STR,
+            // 保留对 String/ResourceColor 的默认值
             'ResourceColor': DEFAULT_VALUES.RESOURCE_COLOR,
             'String': DEFAULT_VALUES.RESOURCE_STR
         };

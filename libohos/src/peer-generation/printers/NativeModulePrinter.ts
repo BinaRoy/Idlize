@@ -178,6 +178,7 @@ class NativeModuleArkUIGeneratedVisitor extends NativeModulePrinterBase {
             }
             return name
         }
+        
         const normalizedSigName = this.language === Language.CJ ? normalizeEventName(method.sig.name) : method.sig.name
         const name = `_${component}_${normalizedSigName}`
         const interopMethod = makeInteropMethod(this.library, name, method)

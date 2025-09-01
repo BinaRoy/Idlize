@@ -64,6 +64,7 @@ export const DEFAULT_VALUES = {
     RESOURCE_STR: '""',
     RESOURCE_COLOR: 'Color.Black',
     FLOAT32: '0.0',
+    FLOAT64: '0.0',
     INT32: '0',
     INT64: '0L',
     BOOLEAN: 'false',
@@ -111,6 +112,7 @@ export class UnionTypeProcessor {
         const hasString = memberTypes.some(t => this.isStringType(t));
         const hasNumber = memberTypes.some(t => this.isNumberType(t));
         const hasResource = memberTypes.some(t => this.isResourceType(t));
+        const hasBoolean = memberTypes.some(t => this.isBooleanType?.(t) ?? this.getTypeDisplayName(t).toLowerCase().includes('boolean'));
         const hasColor = memberTypes.some(t => this.isColorType(t));
         const hasArray = memberTypes.some(t => this.isArrayType(t));
         
@@ -123,20 +125,33 @@ export class UnionTypeProcessor {
             };
         }
 
-        // P1: 字符串+资源 → ResourceStr
+        // P1: 字符串+资源 → 重载 [String, Resource]
         if (hasString && hasResource && !hasNumber) {
-            console.log(`[UnionTypeProcessor] Converging ${paramName} to ResourceStr (string+resource)`);
+            console.log(`[UnionTypeProcessor] Creating String/Resource overloads for ${paramName} (string|resource)`);
             return {
-                cjType: 'ResourceStr',
-                defaultValue: DEFAULT_VALUES.RESOURCE_STR
+                overloads: [
+                    { cjType: idl.IDLStringType, defaultValue: DEFAULT_VALUES.RESOURCE_STR },
+                    { cjType: idl.createReferenceType('Resource'), defaultValue: 'null' }
+                ]
             };
         }
 
-        // P2: 数字+数组 → 标量/向量重载
+        // P1.5: 布尔+字符串 → 重载 [Bool, String]
+        if (hasBoolean && hasString && !hasNumber && !hasResource) {
+            console.log(`[UnionTypeProcessor] Creating Bool/String overloads for ${paramName} (boolean|string)`);
+            return {
+                overloads: [
+                    { cjType: idl.IDLBooleanType, defaultValue: DEFAULT_VALUES.BOOLEAN },
+                    { cjType: idl.IDLStringType, defaultValue: DEFAULT_VALUES.STRING }
+                ]
+            };
+        }
+
+        // P2: 数字+数组 → 标量/向量重载（index/count 用 Int32，其余用 Int64）
         if (hasNumber && hasArray && !hasString) {
             const isIndexCount = SEMANTIC_PATTERNS.INDEX_COUNT.test(paramName);
-            const scalarType = isIndexCount ? 'Int32' : 'Float32';
-            const arrayType = isIndexCount ? 'Array<Int32>' : 'Array<Float32>';
+            const scalarType = isIndexCount ? 'Int32' : 'Int64';
+            const arrayType = isIndexCount ? 'Array<Int32>' : 'Array<Int64>';
             
             console.log(`[UnionTypeProcessor] Creating scalar/vector overloads for ${paramName}: ${scalarType} | ${arrayType}`);
             return {
@@ -147,24 +162,24 @@ export class UnionTypeProcessor {
             };
         }
 
-        // P3: 数字+字符串 → 长度语义重载
+        // P3: 数字+字符串 → 数值/文本重载 [Number, String]
         if (hasString && hasNumber) {
-            console.log(`[UnionTypeProcessor] Creating Length/ResourceStr overloads for ${paramName}`);
+            console.log(`[UnionTypeProcessor] Creating Number/String overloads for ${paramName}`);
             return {
                 overloads: [
-                    { cjType: 'Length', defaultValue: DEFAULT_VALUES.LENGTH },
-                    { cjType: 'ResourceStr', defaultValue: DEFAULT_VALUES.RESOURCE_STR }
+                    { cjType: idl.IDLNumberType, defaultValue: DEFAULT_VALUES.FLOAT64 },
+                    { cjType: idl.IDLStringType, defaultValue: DEFAULT_VALUES.STRING }
                 ]
             };
         }
 
-        // P4: 数字+资源 → 比例语义重载
+        // P4: 数字+资源 → 数值/资源重载 [Number, Resource]
         if (hasNumber && hasResource && !hasString) {
-            console.log(`[UnionTypeProcessor] Creating Float32/Resource overloads for ${paramName}`);
+            console.log(`[UnionTypeProcessor] Creating Number/Resource overloads for ${paramName}`);
             return {
                 overloads: [
-                    { cjType: 'Float32', defaultValue: DEFAULT_VALUES.FLOAT32 },
-                    { cjType: 'Resource', defaultValue: 'null' }
+                    { cjType: idl.IDLNumberType, defaultValue: DEFAULT_VALUES.FLOAT64 },
+                    { cjType: idl.createReferenceType('Resource'), defaultValue: 'null' }
                 ]
             };
         }
@@ -238,6 +253,11 @@ export class UnionTypeProcessor {
     private isArrayType(type: idl.IDLType): boolean {
         return idl.isReferenceType(type) && 
                (type.name.toLowerCase().includes('array') || type.name.startsWith('Array_'));
+    }
+
+    private isBooleanType(type: idl.IDLType): boolean {
+        return (idl.isPrimitiveType(type) && type.name === 'boolean') || 
+               (idl.isReferenceType(type) && type.name.toLowerCase().includes('boolean'));
     }
 
     private extractNamedTypes(memberTypes: idl.IDLType[]): string[] {

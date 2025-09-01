@@ -51,6 +51,12 @@ export class CJTypeNameConvertor implements NodeConvertor<string>, IdlNameConver
             }
         }
         
+        // 屏蔽 Union_* 类型名，返回 String 作为安全的兜底类型
+        if (type.name && type.name.startsWith('Union_')) {
+            console.log(`[CJTypeNameConvertor] Shielding Union type ${type.name}, returning String`)
+            return 'String'
+        }
+        
         return type.name
     }
     convertContainer(type: idl.IDLContainerType): string {
@@ -109,6 +115,37 @@ export class CJTypeNameConvertor implements NodeConvertor<string>, IdlNameConver
     convertTypeReference(type: idl.IDLReferenceType): string {
         if (type.name === idl.IDLObjectType.name)
             return "KPointer"
+            
+        // 屏蔽 Union_* 类型名，返回 String 作为安全兜底
+        if (type.name.startsWith('Union_')) {
+            console.log(`[CJTypeNameConvertor] Shielding Union type reference ${type.name}, returning String`)
+            return 'String'
+        }
+        
+        // 屏蔽 Tuple_* 类型名，转换为原生元组语法
+        if (type.name.startsWith('Tuple_')) {
+            // 尝试从类型名解析元组元素
+            const match = type.name.match(/^Tuple_(.+)$/)
+            if (match) {
+                const tokens = match[1].split('_').filter(Boolean)
+                const elementTypes = tokens.map((tok: string) => {
+                    const t = tok.toLowerCase()
+                    if (t === 'number' || t === 'float64') return 'Float64'
+                    if (t === 'int32') return 'Int32'
+                    if (t === 'int64') return 'Int64'
+                    if (t === 'boolean' || t === 'bool') return 'Bool'
+                    if (t === 'string') return 'String'
+                    return tok // 枚举或自定义类型，保持原样
+                })
+                const nativeTupleSyntax = `(${elementTypes.join(', ')})`
+                console.log(`[CJTypeNameConvertor] Converting Tuple type reference ${type.name} to native syntax: ${nativeTupleSyntax}`)
+                return nativeTupleSyntax
+            }
+            // 如果解析失败，返回兜底类型
+            console.log(`[CJTypeNameConvertor] Failed to parse Tuple type ${type.name}, returning String`)
+            return 'String'
+        }
+        
         // resolve synthetic types
         const decl = this.resolver.resolveTypeReference(type)!
         if (decl && idl.isSyntheticEntry(decl)) {
@@ -173,6 +210,14 @@ export class CJTypeNameConvertor implements NodeConvertor<string>, IdlNameConver
     }
 
     private productType(decl: idl.IDLInterface, isTuple: boolean, includeFieldNames: boolean): string {
+        // 处理 Tuple_* 类型：转换为原生元组语法
+        if (isTuple && decl.name.startsWith('Tuple_')) {
+            const fieldTypes = decl.properties.map(prop => this.convert(prop.type))
+            const nativeTupleSyntax = `(${fieldTypes.join(', ')})`
+            console.log(`[CJTypeNameConvertor] Converting Tuple type ${decl.name} to native syntax: ${nativeTupleSyntax}`)
+            return nativeTupleSyntax
+        }
+        
         return decl.name
     }
 

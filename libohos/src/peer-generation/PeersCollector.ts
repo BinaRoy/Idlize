@@ -81,52 +81,57 @@ function expandCJArgTypes(argType: idl.IDLType, argName?: string): idl.IDLType[]
 	return [argType]
 }
 
-// 硬编码的 Union 规则作为后备
+// 硬编码的 Union 规则作为后备 - 已更新为与文档一致的新规则
 function applyHardcodedUnionRules(unionName: string, paramName: string): idl.IDLType[] {
     
-    // 长度语义：Number + String + Resource → Length & ResourceStr
-    if (unionName === 'Union_Number_String_Resource') {
-        return [idl.createReferenceType('Length'), idl.createReferenceType('ResourceStr')]
+    // 布尔+字符串：Boolean + String → Bool & String 重载
+    if (unionName === 'Union_Boolean_String') {
+        return [idl.IDLBooleanType, idl.IDLStringType]
     }
     
-    // 比例语义：Number + Resource → Float32 & Resource  
-    if (unionName === 'Union_Number_Resource') {
-        return [idl.IDLF32Type, idl.createReferenceType('Resource')]
+    // 字符串+数字：String + Number → Number & String 重载（不收敛为Length）
+    if (unionName === 'Union_String_Number' || unionName === 'Union_Number_String') {
+        return [idl.IDLNumberType, idl.IDLStringType]
     }
     
-    // 字符串+资源：String + Resource → ResourceStr
+    // 字符串+资源：String + Resource → String & Resource 重载
     if (unionName === 'Union_String_Resource') {
-        return [idl.createReferenceType('ResourceStr')]
+        return [idl.IDLStringType, idl.createReferenceType('Resource')]
     }
     
-    // 数字+字符串：Number + String → Float32 & ResourceStr
-    if (unionName === 'Union_Number_String') {
-        return [idl.createReferenceType('Length'), idl.createReferenceType('ResourceStr')]
+    // 数字+资源：Number + Resource → Number & Resource 重载
+    if (unionName === 'Union_Number_Resource') {
+        return [idl.IDLNumberType, idl.createReferenceType('Resource')]
     }
     
-    // 数字+资源字符串：Number + ResourceStr → Float32 & ResourceStr
+    // 数字+资源字符串：Number + ResourceStr → Number & ResourceStr 重载
     if (unionName === 'Union_Number_ResourceStr') {
-        return [idl.IDLF32Type, idl.createReferenceType('ResourceStr')]
+        return [idl.IDLNumberType, idl.createReferenceType('ResourceStr')]
     }
     
-    // 标量/向量：Number + Array_Number → Int32 & Array<Int32>
+    // 长度语义（三元联合）：Number + String + Resource → Number & String & Resource
+    if (unionName === 'Union_Number_String_Resource') {
+        return [idl.IDLNumberType, idl.IDLStringType, idl.createReferenceType('Resource')]
+    }
+    
+    // 标量/向量：Number + Array_Number → Int32/Int64 & Array<Int32/Int64>（默认用Int64，除非index/count语义）
     if (unionName === 'Union_Number_Array_Number') {
-        return [
-            idl.IDLI32Type,
-            idl.createContainerType('sequence' as any, [idl.IDLI32Type])
-        ]
+        const isIndexCount = /^(index|count|selected|current|active|position|level|depth|page|step|tab)$/i.test(paramName)
+        const scalarType = isIndexCount ? idl.IDLI32Type : idl.IDLI64Type
+        const arrayType = isIndexCount ? 
+            idl.createContainerType('sequence' as any, [idl.IDLI32Type]) :
+            idl.createContainerType('sequence' as any, [idl.IDLI64Type])
+        return [scalarType, arrayType]
     }
     
     // 具名二选一：检查是否为 Union_TypeA_TypeB 模式
     const parts = unionName.replace(/^Union_/, '').split('_').filter(p => !!p)
     if (parts.length === 2 && parts.every(p => p[0] === p[0].toUpperCase())) {
-
         return parts.map(p => idl.createReferenceType(p))
     }
     
     // 多元具名联合：Union_A_B_C_... → 拆分为各个具名类型（限制最多3个）
     if (parts.length >= 3 && parts.every(p => p[0] === p[0].toUpperCase())) {
-
         return parts.slice(0, 3).map(p => idl.createReferenceType(p))
     }
     

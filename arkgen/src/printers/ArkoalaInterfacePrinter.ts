@@ -174,17 +174,21 @@ function getVisitor(peerLibrary: PeerLibrary, isDeclarations: boolean): Interfac
                         if (idl.isInterface(node)) {
                             node.properties.forEach(prop => {
                                 try {
-                                    const conv = mapper.convertParameterType(prop.type, prop.name, true)
-                                    if (conv.overloads && conv.overloads.length > 0) {
-                                        const t = conv.overloads[0].cjType
-                                        if (t) {
-                                            const assigned = typeof t === 'string' ? idl.createReferenceType(t) : t
-                                            // 保留 Option<T>，不拆包
-                                            prop.type = assigned
+                                    // 字段：不发生重载，若为联合类型则取第一个成员类型
+                                    const rawType = prop.type
+                                    let chosenType: idl.IDLType = rawType
+                                    if (idl.isUnionType(rawType)) {
+                                        const unionMembers = (rawType as any).types as idl.IDLType[]
+                                        if (unionMembers && unionMembers.length > 0) {
+                                            chosenType = unionMembers[0]
                                         }
-                                    } else if (conv.cjType) {
-                                        const assigned = typeof conv.cjType === 'string' ? idl.createReferenceType(conv.cjType) : conv.cjType
-                                        // 保留 Option<T>，不拆包
+                                    }
+                                    // 使用 CJTypeMapper 对选中的类型做一次转换（可选为 true）
+                                    const conv = mapper.convertParameterType(chosenType, prop.name, true)
+                                    const cj = conv.cjType ?? conv.overloads?.[0]?.cjType
+                                    if (cj) {
+                                        const assigned = typeof cj === 'string' ? idl.createReferenceType(cj) : cj
+                                        // 字段层面：保持 Option 承载由上游 Optional 决定，这里不强制拆包
                                         prop.type = assigned
                                     }
                                 } catch {}

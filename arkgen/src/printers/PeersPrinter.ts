@@ -408,15 +408,162 @@ class JavaPeerFileVisitor extends PeerFileVisitor {
 }
 
 class CJPeerFileVisitor extends PeerFileVisitor {
+    private readonly typeMapper: CJTypeMapper
+
     constructor(
         protected readonly library: PeerLibrary,
         protected readonly file: idl.IDLFile,
         dumpSerialized: boolean,
     ) {
         super(library, file, dumpSerialized)
+        this.typeMapper = new CJTypeMapper()
     }
 
     protected printApplyMethod(peer: PeerClass, printer: LanguageWriter) {
+    }
+
+    /**
+     * 重写 printPeerMethod 以支持联合类型重载
+     * 与 ComponentsPrinter 保持一致的重载策略
+     */
+    protected printPeerMethod(method: PeerMethod, printer: LanguageWriter) {
+        this.library.setCurrentContext(`${method.originalParentName}.${method.sig.name}`)
+        
+        const signature = method.method.signature as NamedMethodSignature
+        
+        // 检查是否有参数需要重载
+        const paramConversions: TypeConversionResult[] = signature.args.map((paramType: idl.IDLType, index: number) => {
+            const paramName = signature.argName(index)
+            const isOptional = signature.isArgOptional(index)
+            return this.typeMapper.convertParameterType(paramType, paramName, isOptional)
+        })
+
+        const hasOverloads = paramConversions.some(c => c.overloads && c.overloads.length > 0)
+
+        if (hasOverloads) {
+            // 生成重载方法
+            this.generatePeerOverloads(method, paramConversions, printer)
+        } else {
+            // 生成单个方法
+            this.generateSinglePeerMethod(method, paramConversions, printer)
+        }
+        
+        this.library.setCurrentContext(undefined)
+    }
+
+    /**
+     * 生成 Peer 重载方法
+     */
+    private generatePeerOverloads(method: PeerMethod, paramConversions: TypeConversionResult[], printer: LanguageWriter) {
+        const overloadParam = paramConversions.find(c => c.overloads && c.overloads.length > 0)
+        const overloadIndex = paramConversions.findIndex(c => c.overloads && c.overloads.length > 0)
+        
+        if (overloadParam && overloadParam.overloads) {
+            for (const alt of overloadParam.overloads) {
+                this.generateSinglePeerMethodWithOverride(method, paramConversions, overloadIndex, alt, printer)
+            }
+        }
+    }
+
+    /**
+     * 生成单个 Peer 方法（无重载）
+     */
+    private generateSinglePeerMethod(method: PeerMethod, paramConversions: TypeConversionResult[], printer: LanguageWriter) {
+        // 直接调用原始方法，因为 writePeerMethod 期望原始的 IDL 方法对象
+        this.callOriginalWritePeerMethod(method, printer)
+    }
+
+    /**
+     * 生成单个 Peer 方法（带重载参数）
+     */
+    private generateSinglePeerMethodWithOverride(
+        method: PeerMethod, 
+        paramConversions: TypeConversionResult[], 
+        overloadIndex: number, 
+        overloadAlt: { cjType: idl.IDLType | string; defaultValue?: string }, 
+        printer: LanguageWriter
+    ) {
+        // 对于重载，我们需要创建一个新的方法对象
+        const modifiedMethod = this.createOverloadedMethod(method, overloadIndex, overloadAlt)
+        this.callOriginalWritePeerMethod(modifiedMethod, printer)
+    }
+
+    /**
+
+    * 创建重载方法对象
+     */
+    private createOverloadedMethod(
+        method: PeerMethod, 
+        overloadIndex: number, 
+        overloadAlt: { cjType: idl.IDLType | string; defaultValue?: string }
+    ): PeerMethod {
+        const signature = method.method.signature as NamedMethodSignature
+        
+        // 创建新的参数类型数组
+        const newArgs = [...signature.args]
+        if (overloadAlt.cjType) {
+            newArgs[overloadIndex] = typeof overloadAlt.cjType === 'string' 
+                ? idl.createReferenceType(overloadAlt.cjType) 
+                : overloadAlt.cjType
+        }
+
+        // 创建新的方法签名
+        const newSignature = new NamedMethodSignature(
+            signature.returnType,
+            newArgs,
+            signature.argsNames,
+            signature.defaults,
+            signature.argsModifiers
+        )
+
+        // 创建新的方法对象
+        const newMethod = new Method(
+            method.method.name,
+            newSignature,
+            method.method.modifiers,
+            method.method.generics
+        )
+
+        // 创建新的 PeerMethod
+        return {
+            ...method,
+            method: newMethod
+        } as PeerMethod
+    }
+
+    /**
+     * 调用原始的 writePeerMethod 函数
+     */
+    private callOriginalWritePeerMethod(method: PeerMethod, printer: LanguageWriter) {
+        // 事件命名规范化
+        const normalizeEventName = (name: string): string => {
+            let n = name
+            let m: RegExpMatchArray | null
+            if ((m = n.match(/^set_onChangeEvent_(.+)$/))) {
+                const tail = m[1]
+                return 'on' + tail.replace(/^(.)/, (c) => c.toUpperCase())
+            }
+            if ((m = n.match(/^_onChangeEvent_(.+)$/))) {
+                const tail = m[1]
+                return 'on' + tail.replace(/^(.)/, (c) => c.toUpperCase())
+            }
+            return name
+        }
+        
+        const normalizeSetterName = (name: string): string => 
+            name.replace(/^set([A-Z])(.*)$/,( _all, first: string, rest: string) => first.toLowerCase() + rest)
+        const stripOverloadIndex = (name: string): string => name.replace(/\d+$/, '')
+        
+        const originalSigName = (method as any).sig?.name
+        if (originalSigName) {
+            ;(method as any).sig.name = stripOverloadIndex(normalizeSetterName(normalizeEventName(originalSigName)))
+        }
+        
+        writePeerMethod(this.library, printer, method, true, this.dumpSerialized, "Attribute", "this.peer.ptr")
+        
+        if (originalSigName) {
+            (method as any).sig.name = originalSigName
+        }
     }
     
     printFile(): PrinterResult[] {
@@ -431,8 +578,8 @@ class CJPeerFileVisitor extends PeerFileVisitor {
                     node: component!.attributeDeclaration,
                     role: LayoutNodeRole.PEER,
                 },
-                content: printer,
-                collector: imports
+                collector: imports,
+                content: printer
             }
         })
     }

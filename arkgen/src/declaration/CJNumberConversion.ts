@@ -100,8 +100,8 @@ export function mapNumberType(context: NumberMappingContext): 'Length' | 'Float6
     return 'Int64';
   }
   
-  // 默认场景: 使用 Int64 类型
-  return 'Int64';
+  // 默认场景: 使用 Float64 类型（无法判定语义时统一使用 Float64）
+  return 'Float64';
 }
 
 /**
