@@ -154,14 +154,16 @@ function copyArkoalaFiles(config: {
                     case 'NativePeerNode.cj':
                     case 'PeerNode.cj':
                     case 'TestNativeModule.cj':
-                    case 'Handwritten.cj':
                     destPath = path.join((arkoala as any).peerDir, baseName)
                     break
-                    // 放入 interfaces 目录的文件
+                    // 放入 commonPara 目录的文件
                     case 'CallbacksChecker.cj':
                     case 'CallbackTransformer.cj':
                     destPath = path.join((arkoala as any).commonParaDir, baseName)
                     break
+                    // 放入componentPara 目录的文件
+                    case 'Handwritten.cj': 
+                    destPath = path.join((arkoala as any).componentDir, baseName)
                     default:
                     destPath = path.join(arkoala.root, file)
                     break
@@ -173,24 +175,36 @@ function copyArkoalaFiles(config: {
                 // 确保目标目录存在
                 fs.mkdirSync(path.dirname(destPath), { recursive: true })
                 copyFile(fromPath, destPath)
-                // 如果是 CJ framework 的 Main/Handwritten 或 interfaces 模板文件，修正包名与导入
+                // 如果是 CJ framework 的 Main 或 interfaces 模板文件，修正包名与导入
                 try {
-                    const isFrameworkSrc = destPath.endsWith('/framework/cangjie/src/Main.cj') || destPath.endsWith('/framework/cangjie/src/Handwritten.cj')
+                    const isFrameworkSrc = destPath.endsWith('/framework/cangjie/src/Main.cj')
                     const isInterfacesHelper = /\/cjv2\/src\/(interfaces|commonPara)\/(CallbackTransformer|CallbacksChecker)\.cj$/.test(destPath)
-                    if (isFrameworkSrc || isInterfacesHelper) {
+                    const isComponentsHelper = /\/cjv2\/src\/components\/Handwritten\.cj$/.test(destPath)
+                    if (isFrameworkSrc || isInterfacesHelper || isComponentsHelper) {
                         let content = fs.readFileSync(destPath, 'utf-8')
                         // 修正包名
                         if (isFrameworkSrc) {
                             content = content.replace(/^package\s+\w+/m, 'package demo')
                         } else if (isInterfacesHelper) {
                             content = content.replace(/^package\s+\S+/m, 'package idlize.commonPara')
-                        }
+                        } else if (isComponentsHelper){
+                            content = content.replace(/^package\s+\S+/m, 'package idlize.components')
+                        } 
                         // 为 Main.cj 添加必要 imports（幂等处理）
                         if (destPath.endsWith('/Main.cj')) {
                             const ensure = (line: string) => (content.includes(line) ? '' : line + '\n')
                             const insertAt = content.indexOf('\n', content.indexOf('package')) + 1
                             const extra = [
                                 ensure('import idlize.components.*'),
+                                ensure('import idlize.peers.*'),
+                                ensure('import idlize.commonPara.*'),
+                            ].join('')
+                            content = content.slice(0, insertAt) + extra + content.slice(insertAt)
+                        }
+                        if (isComponentsHelper){
+                            const ensure = (line: string) => (content.includes(line) ? '' : line + '\n')
+                            const insertAt = content.indexOf('\n', content.indexOf('package')) + 1
+                            const extra = [
                                 ensure('import idlize.peers.*'),
                                 ensure('import idlize.commonPara.*'),
                             ].join('')
@@ -762,6 +776,33 @@ function enforceCJPackageConventions(options: { root: string }) {
                     }
                 }
                 fs.writeFileSync(p, content)
+            } catch {}
+        }
+
+        if (p.endsWith(path.sep + 'ContentModifierHelper.cj')) {
+            try {
+                let content = fs.readFileSync(p, 'utf-8')
+
+                // 找到所有 import 语句的结束位置
+                const importRe = /^import\s+.*$/gm
+                let lastImportMatch: RegExpExecArray | null
+                let lastImportIdx = -1
+                while ((lastImportMatch = importRe.exec(content)) !== null) {
+                    lastImportIdx = lastImportMatch.index + lastImportMatch[0].length
+                }
+
+                // 如果有 import，则在最后一个 import 后插入
+                // 如果没有 import，则在 package 声明之后插入
+                let insertAt = lastImportIdx > -1
+                    ? content.indexOf('\n', lastImportIdx) + 1
+                    : content.indexOf('\n', content.indexOf('package')) + 1
+
+                const extra = 'public interface ContentModifier<T> {}\n'
+
+                if (!content.includes('public interface ContentModifier<T>')) {
+                    content = content.slice(0, insertAt) + extra + content.slice(insertAt)
+                    fs.writeFileSync(p, content)
+                }
             } catch {}
         }
     })

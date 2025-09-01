@@ -1705,23 +1705,6 @@ class CJDeclarationConvertor implements DeclarationConvertor<void> {
                 modifiers,
                 idl.isOptionalType(it.type)
                 )
-
-                // 2. 额外生成 serialize 方法
-                writer.writeProperty(
-                    it.name,
-                    it.type,
-                    modifiers,
-                    {
-                        method: new Method(
-                            `${it.name}_serialize`,
-                            new NamedMethodSignature(
-                                it.type,
-                                [it.type],   // 参数类型
-                                [it.name]    // 参数名
-                            )
-                        )
-                    }
-                )
             })
 
             // 2) 构造函数：参数 = 自有 + 父类；赋值到 this.<name>

@@ -29,7 +29,6 @@ import { ReferenceResolver, UnionRuntimeTypeChecker, zipMany } from "@idlizer/co
 import { peerGeneratorConfiguration } from '../../DefaultConfiguration';
 import { injectPatch } from '../common';
 
-
 function collapseReturnTypes(types: idl.IDLType[], language?: Language) {
     let returnType: idl.IDLType = collapseTypes(types)
     if (idl.isUnionType(returnType) && language && (language == Language.ARKTS || language == Language.TS)) {
