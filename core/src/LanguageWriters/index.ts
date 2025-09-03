@@ -17,6 +17,7 @@ import { ETSLanguageWriter } from "./writers/ETSLanguageWriter"
 import { JavaLanguageWriter } from "./writers/JavaLanguageWriter"
 import { KotlinLanguageWriter } from "./writers/KotlinLanguageWriter"
 import { TSLanguageWriter } from "./writers/TsLanguageWriter"
+export { CJ_OPEN_CLASS_WHITELIST } from "./writers/CJLanguageWriter"; 
 
 export * from "./nameConvertor"
 

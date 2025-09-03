@@ -15,7 +15,7 @@
 
 import * as idl from '@idlizer/core/idl'
 import {
-    createLanguageWriter, LanguageWriter,
+    createLanguageWriter, LanguageWriter, CJ_OPEN_CLASS_WHITELIST,
     indentedBy, isBuilderClass, isMaterialized, stringOrNone, throwException, Language, PeerLibrary,
     convertDeclaration, DeclarationConvertor, maybeTransformManagedCallback,
     MethodModifier,
@@ -46,6 +46,8 @@ import { collectJavaImports } from './lang/JavaIdlUtils'
 import { printJavaImports } from './lang/JavaPrinters'
 import { collectAllProperties } from './StructPrinter'
 import { TargetFile } from './TargetFile'
+
+
 export interface InterfacesVisitor {
     printInterfaces(): PrinterResult[]
 }
@@ -1135,10 +1137,49 @@ export class CJInterfacesVisitor implements InterfacesVisitor {
         return idl.isInterface(entry) && (isMaterialized(entry, this.peerLibrary) || isBuilderClass(entry) || isComponentDeclaration(this.peerLibrary, entry))
             || idl.isMethod(entry)
     }
+    // 在 CJInterfacesVisitor 类体里新增：
+    private emitArkUiNativeModulePerModule(
+        result: PrinterResult[],
+        module: string,
+        entries: idl.IDLEntry[]
+        ) {
+        // 收集本模块内需要的 native 方法
+        const nativeNames = new Set<string>()
+        for (const entry of entries) {
+            if (idl.isInterface(entry)) {
+            const iface = entry as idl.IDLInterface
+            for (const fn of iface.callables ?? []) {
+                nativeNames.add(`_${iface.name}_${fn.name}`)
+            }
+            }
+        }
+        if (nativeNames.size === 0) return
+
+        // 从模块路径推导包名，比如 ".../src/interfaces" -> "idlize.interfaces"
+        const lastSeg = module.split(/[\\/]/).filter(Boolean).pop() ?? 'interfaces'
+        const pkg = `idlize.${lastSeg}`
+
+        const writer = createLanguageWriter(this.peerLibrary.language, this.peerLibrary)
+
+        writer.print(`public class ArkUIGeneratedNativeModule {\n`)
+        for (const name of nativeNames) {
+            writer.print(`    public static func ${name}(node: UInt64, buffer: NativeBuffer, length: Int32): UInt64\n`)
+        }
+        writer.print(`}\n`)
+
+        result.push({
+            collector: new ImportsCollector(),
+            content: writer,
+            over: {
+            node: entries[0],
+            role: LayoutNodeRole.INTERFACE
+            }
+        })
+    }
+
 
     printInterfaces(): PrinterResult[] {
-        const moduleToEntries = new Map<string, idl.IDLEntry[]>()
-
+        const moduleToEntries = new Map<string, idl.IDLEntry[]>()        
         const registerEntry = (entry: idl.IDLEntry) => {
             if (this.shouldNotPrint(entry)) {
                 return
@@ -1166,6 +1207,20 @@ export class CJInterfacesVisitor implements InterfacesVisitor {
                 registerEntry(entry)
             }
         }
+        const nameConv = this.peerLibrary.createTypeNameConvertor(Language.CJ)
+        CJ_OPEN_CLASS_WHITELIST.clear()
+        for (const entries of moduleToEntries.values()) {
+            for (const entry of entries) {
+                if (idl.isInterface(entry)) {
+                    const iface = entry as idl.IDLInterface
+                    iface.inheritance?.forEach(sup => {
+                    // 把 “父类打印时的类名” 转成 CJ 打印名，放到白名单里
+                    const printedSuper = nameConv.convert(sup)   // 确保与 writeClass(name) 的 name 一致
+                    CJ_OPEN_CLASS_WHITELIST.add(printedSuper)
+                    })
+                }
+            }
+        }
 
         const result: PrinterResult[] = []
         for (const entries of moduleToEntries.values()) {
@@ -1188,6 +1243,9 @@ export class CJInterfacesVisitor implements InterfacesVisitor {
                     }
                 })
             }
+        }
+        for (const [module, entries] of moduleToEntries.entries()) {
+            this.emitArkUiNativeModulePerModule(result, module, entries)
         }
         return result
     }
@@ -1402,6 +1460,11 @@ class CJSyntheticGenerator extends DependenciesCollector {
         if (decl) this.onSyntheticDeclaration(decl)
         return super.convertTypeReferenceAsImport(type, importClause)
     }
+    
+    convertCallback(decl: idl.IDLCallback): idl.IDLEntry[] {
+        this.onSyntheticDeclaration(decl)
+        return super.convertCallback(decl)
+    }
 }
 
 class CJDeclarationConvertor implements DeclarationConvertor<void> {
@@ -1414,8 +1477,7 @@ class CJDeclarationConvertor implements DeclarationConvertor<void> {
     ) { }
 
     convertCallback(node: idl.IDLCallback): void {
-        if (!idl.hasExtAttribute(node, idl.IDLExtendedAttributes.Synthetic))
-            this.writer.print(this.printCallback(node, node.parameters, node.returnType))
+        this.writer.print(this.printCallback(node, node.parameters, node.returnType))
     }
     convertMethod(node: idl.IDLMethod): void {
         // TODO: namespace-related-to-rework
@@ -1534,7 +1596,12 @@ class CJDeclarationConvertor implements DeclarationConvertor<void> {
             const param = 'param'
             for (const [index, memberType] of members.entries()) {
                 const memberName = `value${index}`
-                writer.writeFieldDeclaration(memberName, idl.maybeOptional(memberType, true), [FieldModifier.PRIVATE], true, writer.makeString(`None<${writer.getNodeName(memberType)}>`))
+                writer.writeFieldDeclaration(
+                    memberName,
+                    idl.maybeOptional(memberType, true),    // Option<memberType>
+                    [FieldModifier.PRIVATE],
+                    /* isOptionalField */ false,            // ✅
+                    writer.makeString(`None<${writer.getNodeName(memberType)}>`))
 
                 writer.writeConstructorImplementation(
                     'init',
@@ -1575,7 +1642,19 @@ class CJDeclarationConvertor implements DeclarationConvertor<void> {
         const typeParams = type.typeParameters && type.typeParameters?.length != 0 ? `<${type.typeParameters.map(it => it.split('extends')[0].split('=')[0]).join(', ')}>` : ''
         writer.writeClass(type.name.concat(typeParams), () => {
             for (let i = 0; i < memberNames.length; i++) {
-                writer.writeFieldDeclaration(memberNames[i], members[i], [FieldModifier.PUBLIC], idl.isOptionalType(members[i]) ?? false)
+                const isOpt = idl.isOptionalType(members[i]) ?? false
+                const baseType = type.properties[i].type // 原始基类型
+                const initExpr = isOpt
+                    ? writer.makeString(`None<${writer.getNodeName(baseType)}>` )
+                    : undefined
+
+                writer.writeFieldDeclaration(
+                    memberNames[i],
+                    members[i],                  // 已是 Option<...> 或基类型
+                    [FieldModifier.PUBLIC],
+                    /* isOptionalField */ false, // ✅ 永远 false
+                    initExpr
+                )            
             }
 
             const signature = new MethodSignature(idl.IDLVoidType, members)
@@ -1699,11 +1778,17 @@ class CJDeclarationConvertor implements DeclarationConvertor<void> {
                 // CJ 不支持 readonly；仅保留 static
                 if (it.isStatic) modifiers.push(FieldModifier.STATIC)
 
+                const fieldType = idl.maybeOptional(it.type, it.isOptional) // 可选则变 Option<T>
+                const initExpr = it.isOptional
+                    ? writer.makeString(`None<${writer.getNodeName(it.type)}>` )
+                    : undefined
+
                 writer.writeFieldDeclaration(
-                it.name,
-                idl.maybeOptional(it.type, it.isOptional),
-                modifiers,
-                idl.isOptionalType(it.type)
+                    writer.escapeKeyword(it.name),
+                    fieldType,
+                    modifiers,
+                    /* isOptionalField */ false,   // ✅ 永远 false
+                    initExpr                       
                 )
             })
 

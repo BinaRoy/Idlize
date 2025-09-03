@@ -67,7 +67,7 @@ class CJLambdaExpression extends LambdaExpression {
 export class CJCheckDefinedExpression implements LanguageExpression {
     constructor(private value: string) { }
     asString(): string {
-        return `let Some(${this.value}) <- ${this.value}`
+         return `match (${this.value}) { case Some(_) => true; case None => false }`
     }
 }
 
@@ -81,7 +81,7 @@ export class CJCastExpression implements LanguageExpression {
 export class CJUnionCastExpression implements LanguageExpression {
     constructor(public value: LanguageExpression, public type: string, private unsafe = false) {}
     asString(): string {
-        return `${this.type}(${this.value.asString})`
+        return `${this.type}(${this.value.asString()})`
     }
 }
 
@@ -380,9 +380,22 @@ class CJThrowErrorStatement implements LanguageStatement {
 }
 
 class CJArrayResizeStatement implements LanguageStatement {
-    constructor(private array: string, private arrayType: string, private length: string, private deserializer: string) {}
-    write(writer: LanguageWriter) {
-        writer.print(`${this.array} = ${this.arrayType}(Int64(${this.length}))`)
+    constructor(
+        private array: string,
+        private arrayType: string,   // "Array<T>" 或 "ArrayList<T>"
+        private length: string,
+        private elemInitExpr: string // 只在 Array<T> 用到
+    ) {}
+    write(writer: LanguageWriter): void {
+        const m = this.arrayType.match(/^Array(List)?<(.+)>$/);
+        const isList = !!m && !!m[1];
+        const elem   = m ? m[2] : 'Any';
+
+        if (isList) {
+        writer.print(`${this.array} = ArrayList<${elem}>(Int64(${this.length}))`);
+        } else {
+        writer.print(`${this.array} = Array<${elem}>(Int64(${this.length}), { i: Int64 => ${this.elemInitExpr} })`);
+        }
     }
 }
 
@@ -390,6 +403,18 @@ class CJArrayResizeStatement implements LanguageStatement {
 ////////////////////////////////////////////////////////////////
 //                           WRITER                           //
 ////////////////////////////////////////////////////////////////
+export const CJ_OPEN_CLASS_WHITELIST = new Set<string>();
+// 放在 CJ_OPEN_CLASS_WHITELIST 定义的旁边或上方均可
+export const CJ_ENUM_LIKE_SET = new Set<string>();
+
+export function registerEnumLike(...names: string[]) {
+  names.forEach(n => CJ_ENUM_LIKE_SET.add(n));
+}
+
+// Foo.Bar.Baz -> Baz
+function baseNameOf(t: string): string {
+  return t.replace(/^.*\./, '');
+}
 
 export class CJLanguageWriter extends LanguageWriter {
     protected typeConvertor: IdlNameConvertor
@@ -403,7 +428,19 @@ export class CJLanguageWriter extends LanguageWriter {
         this.typeConvertor = typeConvertor
         this.typeForeignConvertor = typeForeignConvertor
     }
-    
+    private defaultFor(t: string): string {
+        t = t.trim();
+        if (t === 'String') return '""';
+        if (t === 'Bool' || t === 'Boolean') return 'false';
+        if (/^Int(8|16|32|64)$/.test(t)) return `${t}(0)`;
+        if (/^Float(32|64)$/.test(t)) return `${t}(0)`;
+        if (t === 'Any') return 'Option.None';
+        if (CJ_ENUM_LIKE_SET.has(t)) return `${t}.parse(Int32(0))`;
+        if (t.startsWith('?')) return 'Option.None';
+        return `${t}()`; // 其它引用类型：尝试无参构造
+    }
+
+
     maybeSemicolon() { return "" }
     
     fork(options?: { resolver?: ReferenceResolver }): LanguageWriter {
@@ -423,7 +460,7 @@ export class CJLanguageWriter extends LanguageWriter {
     ): void {
         // 特殊处理CommonMethod类，添加open关键字
         let classModifiers = "public ";
-        if (name === "CommonMethod") {
+        if (name === "CommonMethod" || CJ_OPEN_CLASS_WHITELIST.has(name)) {
             classModifiers = "public open ";
         }
         
@@ -647,17 +684,25 @@ export class CJLanguageWriter extends LanguageWriter {
     makeClassInit(type: idl.IDLType, parameters: LanguageExpression[]): LanguageExpression {
         throw new Error(`makeClassInit`)
     }
-    makeArrayInit(type: idl.IDLContainerType, size?:number): LanguageExpression {
-        return this.makeString(`ArrayList<${this.getNodeName(type.elementType[0])}>(Int64(${size ?? ''}))`)
+    
+    makeArrayInit(type: idl.IDLContainerType, size?: number): LanguageExpression {
+        const elem = this.getNodeName(type.elementType[0]);
+        const len = size != null ? `Int64(${size})` : `Int64(0)`;
+        return this.makeString(`ArrayList<${elem}>(${len})`);
     }
+
     makeMapInit(type: idl.IDLType): LanguageExpression {
         return this.makeString(`${this.getNodeName(type)}()`)
     }
     makeArrayLength(array: string, length?: string): LanguageExpression {
         return this.makeString(`${array}.size`)
     }
-    makeArrayResize(array: string, arrayType: string, length: string, deserializer: string): LanguageStatement {
-        return new CJArrayResizeStatement(array, arrayType, length, deserializer)
+    
+    makeArrayResize(array: string, arrayType: string, length: string, _deserializer: string): LanguageStatement {
+        const m = arrayType.match(/^Array(List)?<(.+)>$/);
+        const elem = m ? m[2] : 'Any';
+        const init = this.defaultFor(elem);   // 这里返回“元素默认值”，不是数组
+        return new CJArrayResizeStatement(array, arrayType, length, init);
     }
     override makeArrayAccess(value: string, indexVar: string) {
         return this.makeString(`${value}[Int64(${indexVar})]`)
@@ -787,9 +832,14 @@ export class CJLanguageWriter extends LanguageWriter {
             return this.makeString(`${this.getNodeName(enumEntry)}(${value.asString()})`);
         }
     }
+    
     makeEnumEntity(enumEntity: idl.IDLEnum, options: { isExport: boolean, isDeclare?: boolean }): LanguageStatement {
-        return new CJEnumWithGetter(enumEntity, options.isExport)
+  // 生成时顺手登记（全名 + 简名）
+        const fq = idl.getNamespaceName(enumEntity).concat(enumEntity.name);
+        registerEnumLike(enumEntity.name, fq);
+        return new CJEnumWithGetter(enumEntity, options.isExport);
     }
+
     makeEquals(args: LanguageExpression[]): LanguageExpression {
         return this.makeString(`refEq(${args.map(arg => `${arg.asString()}`).join(`, `)})`)
     }
