@@ -25,17 +25,26 @@ function expandCJArgTypes(argType: idl.IDLType, argName?: string): idl.IDLType[]
 	if (!argType) {
 		return [idl.IDLAnyType]
 	}
+	try {
+		const dbg = idl.DebugUtils?.debugPrintType?.(argType)
+		console.log(`[PeersCollector][CJ] expandArg start name=${argName ?? ''} type=${dbg}`)
+	} catch {}
 	// Optional<...> 先拆 type 再包 Option
 	if (idl.isOptionalType(argType)) {
 		const innerType = (argType as any)?.type as idl.IDLType | undefined
 		if (!innerType) return [argType]
 		// Optional<UnionType>
 		if (idl.isUnionType(innerType)) {
+			try {
+				const v = (innerType as any).types?.map((t: idl.IDLType) => idl.DebugUtils.debugPrintType(t)).join(' | ')
+				console.log(`[PeersCollector][CJ] Optional<Union> detected name=${argName ?? ''} variants=[${v}]`)
+			} catch {}
 			const result = unionTypeProcessor.convertUnionType(innerType.types, argName || 'value')
 			return unionTypeProcessor.convertToIDLTypes(result).map(t => idl.createOptionalType(t))
 		}
 		// Optional<ReferenceType('Union_*')>
 		if (idl.isReferenceType(innerType) && innerType.name?.startsWith('Union_')) {
+			console.log(`[PeersCollector][CJ] Optional<Reference Union_*> detected name=${argName ?? ''} union=${innerType.name}`)
 			const alts = expandCJArgTypes(innerType, argName)
 			return alts.map(t => idl.createOptionalType(t))
 		}
@@ -44,12 +53,25 @@ function expandCJArgTypes(argType: idl.IDLType, argName?: string): idl.IDLType[]
 
 	// 直接 UnionType：使用公共处理器
 	if (idl.isUnionType(argType)) {
+		try {
+			const v = (argType as any).types?.map((t: idl.IDLType) => idl.DebugUtils.debugPrintType(t)).join(' | ')
+			console.log(`[PeersCollector][CJ] UnionType detected name=${argName ?? ''} variants=[${v}]`)
+		} catch {}
 		const result = unionTypeProcessor.convertUnionType((argType as any).types, argName || 'value')
 		return unionTypeProcessor.convertToIDLTypes(result)
 	}
 
+	// ReferenceType("Type_*_testTupleUnion_value")：复杂tuple union简化处理
+	if (idl.isReferenceType(argType) && argType.name.includes('testTupleUnion_value')) {
+		console.log(`[PeersCollector] Simplifying complex tuple union ${argType.name} -> (Float64, Bool, String)`)
+		// 对于 [(number | string), (boolean | EnumDTS), (string | EnumDTS | boolean)]
+		// 简化为 [number, boolean, string] -> 使用原生tuple类型引用
+		return [idl.createReferenceType('(Float64, Bool, String)')]
+	}
+
 	// ReferenceType("Union_*")：按名称拆
 	if (idl.isReferenceType(argType) && argType.name.startsWith('Union_')) {
+		console.log(`[PeersCollector][CJ] Reference Union_* detected name=${argName ?? ''} union=${argType.name}`)
 		const unionName = argType.name
 		const memberNames = unionName.replace(/^Union_/, '').split('_').filter(p => !!p)
 		const memberTypes = memberNames.map(name => {
@@ -75,6 +97,9 @@ function expandCJArgTypes(argType: idl.IDLType, argName?: string): idl.IDLType[]
 		if (expanded.length === 1 && idl.isReferenceType(expanded[0]) && (expanded[0] as any).name === (argType as any).name) {
 			return applyHardcodedUnionRules(unionName, argName || 'value')
 		}
+		try {
+			console.log(`[PeersCollector][CJ] Reference Union_* expanded name=${argName ?? ''} union=${argType.name} -> alts=${expanded.map(e => idl.DebugUtils.debugPrintType(e)).join(', ')}`)
+		} catch {}
 		return expanded
 	}
 

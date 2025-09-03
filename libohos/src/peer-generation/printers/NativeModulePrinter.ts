@@ -605,6 +605,11 @@ function makeInteropMethodInner(
 ): Method {
     const interopConvertor = options.interopConvertor ?? createInteropArgConvertor(library.language)
     const interopReturnConvertor = options.interopReturnConvertor ?? new InteropReturnTypeConvertor(library)
+    try {
+        const dbgArgs = idlParameters.map(p => `${p.name}:${idl.DebugUtils.debugPrintType(p.type)}`).join(', ')
+        const dbgRet = idlReturnType ? idl.DebugUtils.debugPrintType(idlReturnType) : 'void'
+        console.log(`[NativeModulePrinter][CJ] makeInteropMethod name=${name} args=[${dbgArgs}] ret=${dbgRet}`)
+    } catch {}
     const interopParameters: ({name: string, type: idl.IDLType})[] = options.hasReceiver
         ? [{ name: 'ptr', type: idl.IDLPointerType }] : []
     const argConvertors = idlParameters.map(it => library.typeConvertor(it.name, it.type, it.isOptional))
@@ -623,6 +628,10 @@ function makeInteropMethodInner(
             })
         }
     })
+    try {
+        const interopDbg = interopParameters.map(p => `${p.name}:${idl.DebugUtils.debugPrintType(p.type)}`).join(', ')
+        console.log(`[NativeModulePrinter][CJ] interopSignature name=${name} params=[${interopDbg}]`)
+    } catch {}
     const interopReturnType = idlReturnType && interopReturnConvertor.isReturnInteropBuffer(idlReturnType)
         ? idl.IDLInteropReturnBufferType
         : toNativeReturnType(idlReturnType, library) ?? idl.IDLVoidType

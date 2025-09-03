@@ -35,6 +35,14 @@ function collapseReturnTypes(types: idl.IDLType[], language?: Language) {
         let newTypes = returnType.types.map(it => idl.isVoidType(it) ? idl.IDLUndefinedType : it)
         returnType = idl.createUnionType(newTypes)
     }
+    // CJ 专属：聚合方法签名不暴露 Union_*，使用 Any 规避
+    if (idl.isUnionType(returnType) && language === Language.CJ) {
+        try {
+            const stacked = returnType.types?.map(t => idl.printType(t)).join(" | ")
+            console.log(`[OverloadsPrinter][CJ] collapseReturnTypes: union return detected [${stacked}] -> Any`)
+        } catch {}
+        returnType = idl.IDLAnyType
+    }
     return returnType
 }
 
@@ -102,9 +110,18 @@ export function collapseSameNamedMethods(methods: Method[], selectMaxMethodArgs?
             }
         })
         argsModifiers.push(optional ? ArgumentModifier.OPTIONAL : undefined)
-        var collapsedType = collapseTypes(types)
+        let collapsedType = collapseTypes(types)
+        const wasOptional = optional
         if (optional && !idl.isOptionalType(collapsedType)) {
             collapsedType = idl.createOptionalType(collapsedType)
+        }
+        // CJ 专属：聚合方法签名不暴露 Union_*，以 Any 兜底（保留可选性）
+        if (idl.isUnionType(wasOptional ? (collapsedType as idl.IDLOptionalType).type : collapsedType) && language === Language.CJ) {
+            try {
+                const printed = types.map(t => idl.printType(t)).join(', ')
+                console.log(`[OverloadsPrinter][CJ] collapseSameNamedMethods: arg#${argIndex} union detected [${printed}] -> ${wasOptional ? 'Optional<Any>' : 'Any'}`)
+            } catch {}
+            return wasOptional ? idl.createOptionalType(idl.IDLAnyType) : idl.IDLAnyType
         }
         return collapsedType //, "%PROXY_BEFORE_PEER%")
     })
@@ -268,7 +285,17 @@ export class OverloadsPrinter {
         this.prefixEmitter = fn;
       }
     printGroupedComponentOverloads(peer: string, peerMethods: (PeerMethod)[]) {
-        const orderedMethods = Array.from(peerMethods)
+        // CJ 专属：在进入打印流程前，将包含 Union 参数的方法展开为多路重载，避免在签名中物化 Union_*
+        const expandedForCJ = this.language === Language.CJ ? this.expandUnionOverloadsForCJ(peerMethods) : peerMethods
+        if (this.language === Language.CJ) {
+            try {
+                const before = peerMethods.length
+                const after = expandedForCJ.length
+                console.log(`[OverloadsPrinter][CJ] Expanded union overloads for peer=${peer}: methods ${before} -> ${after}`)
+            } catch {}
+        }
+
+        const orderedMethods = Array.from(expandedForCJ)
             .sort((a, b) => b.sig.args.length - a.sig.args.length)
             // Methods with a large number of runtime types should have low priority(place below) and we go from specific to general
             .sort((a, b) => {
@@ -282,9 +309,94 @@ export class OverloadsPrinter {
         // 始终打印重载选择器：同名不同签名 → 生成一个聚合方法，内部做运行时分派；
         // 同名同签名 → 仍折叠为一个实现
         const groups = groupSameSignatureMethods([...orderedMethods])
+        if (this.language === Language.CJ) {
+            try {
+                const dbg = orderedMethods.map(m => `${m.method.name}(${(m.method.signature as NamedMethodSignature).args.map(a => idl.printType(a)).join(', ')})`).join('; ')
+                console.log(`[OverloadsPrinter][CJ] orderedMethods before collapse: ${dbg}`)
+            } catch {}
+        }
         for (let group of groups) {
             this.printCollapsedOverloads(peer, group)
         }
+    }
+
+    /**
+     * 将包含 Union 参数的方法在 CJ 语言下展开为多路重载（按文档：除 T|Array<T> 以外一律走重载）。
+     * 注意：此处仅对参数进行展开；返回类型保持不变。
+     */
+    private expandUnionOverloadsForCJ(peerMethods: PeerMethod[]): PeerMethod[] {
+        const result: PeerMethod[] = []
+        for (const pm of peerMethods) {
+            const sig = pm.method.signature as NamedMethodSignature
+            const args = sig.args
+            // 记录每个参数的候选类型集合（非 Union 保持单一）
+            const candidateTypesPerArg: idl.IDLType[][] = args.map((argType) => {
+                // Optional<Union<...>> 处理：保留 Optional 外壳，仅展开内部 Union
+                if (idl.isOptionalType(argType) && idl.isUnionType(argType.type)) {
+                    const members = argType.type.types
+                    return members.map(m => idl.createOptionalType(m))
+                }
+                if (idl.isUnionType(argType)) {
+                    return argType.types
+                }
+                return [argType]
+            })
+
+            // 计算笛卡尔积，生成多路方法
+            const variants: idl.IDLType[][] = this.cartesianProduct(candidateTypesPerArg)
+            try {
+                const argTypesStr = args.map(t => idl.printType(t)).join(', ')
+                console.log(`[OverloadsPrinter][CJ] method=${pm.method.name} args=[${argTypesStr}] variants=${variants.length}`)
+            } catch {}
+            if (variants.length <= 1) {
+                result.push(pm)
+                continue
+            }
+
+            // 克隆 PeerMethod，为每个变体生成一个新方法（同名不同签名）
+            for (const variantArgTypes of variants) {
+                const newMethod = new Method(
+                    pm.method.name,
+                    new NamedMethodSignature(
+                        pm.method.signature.returnType,
+                        variantArgTypes,
+                        sig.argsNames,
+                        undefined,
+                        (pm.method.signature as any).argsModifiers
+                    ),
+                    pm.method.modifiers,
+                    pm.method.generics,
+                )
+                const newSig = new PeerMethodSignature(
+                    pm.sig.name,
+                    pm.sig.fqname,
+                    variantArgTypes.map((t, idx) => ({ name: sig.argName(idx), type: t })),
+                    pm.sig.returnType,
+                )
+                const newPeerMethod = new PeerMethod(
+                    newSig,
+                    pm.originalParentName,
+                    pm.returnType,
+                    pm.isCallSignature,
+                    newMethod,
+                )
+                try {
+                    const vt = variantArgTypes.map(t => idl.printType(t)).join(', ')
+                    console.log(`[OverloadsPrinter][CJ]   + variant ${pm.method.name}(${vt})`)
+                } catch {}
+                result.push(newPeerMethod)
+            }
+        }
+        return result
+    }
+
+    private cartesianProduct<T>(lists: T[][]): T[][] {
+        if (lists.length === 0) return [[]]
+        return lists.reduce<T[][]>((acc, list) => {
+            const res: T[][] = []
+            for (const a of acc) for (const b of list) res.push(a.concat([b]))
+            return res
+        }, [[]])
     }
     
     private printCollapsedOverloads(peer: string, methods: PeerMethod[]) {

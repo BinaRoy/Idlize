@@ -614,7 +614,23 @@ class CJComponentFileVisitor implements ComponentFileVisitor {
 
             const hasOverloads = perParamConversions.some(c => c.overloads && c.overloads.length > 0)
             
-            // 移除过于冗长的调试日志，保留关键信息
+            // 调试日志：输出参数转换与重载信息
+            try {
+                const rawTypes = method.signature.args.map((t: idl.IDLType) => {
+                    try { return writer.getNodeName(t) } catch { return '<unknown>' }
+                })
+                const convSummaries = perParamConversions.map((c, idx) => {
+                    const cjType = c?.cjType
+                    const cjName = typeof cjType === 'string' ? cjType : (cjType ? writer.getNodeName(cjType as idl.IDLType) : 'None')
+                    const ov = c?.overloads?.map(alt => {
+                        const altType = alt?.cjType
+                        return typeof altType === 'string' ? altType : (altType ? writer.getNodeName(altType as idl.IDLType) : 'None')
+                    }) || []
+                    return `#${idx} raw=${rawTypes[idx]} -> cjType=${cjName} overloads=[${ov.join('|')}]`
+                })
+                console.log(`[ComponentsPrinter] perParamConversions for ${method.name}: ${convSummaries.join('; ')}`)
+            } catch {}
+
             if (hasOverloads) {
                 console.log(`[ComponentsPrinter] Method ${method.name} has overloads`);
             }
@@ -906,6 +922,30 @@ class CJComponentFileVisitor implements ComponentFileVisitor {
     }
 
     /**
+     * Setter 命名收敛：对 CJ 输出移除 set 前缀，以与 Peer 层保持一致
+     * 例如：setBlankOptions → blankOptions
+     */
+    private normalizeSetterName(name: string): string {
+        // 仅处理以 set 后跟大写字母开头的典型 setter，如 setFontSize → fontSize
+        return name.replace(/^set([A-Z])(.*)$/, (_all, first: string, rest: string) => first.toLowerCase() + rest)
+    }
+
+    /**
+     * 判断类型是否为基础类型，需要在Component→Peer调用时进行Some()包装
+     * 基础类型：String/Int32/Float64/Bool/枚举
+     */
+    private isBasicTypeForOptionWrapping(type: idl.IDLType): boolean {
+        try {
+            // 使用已有的CJTypeMapper基础类型判断逻辑
+            return this.typeMapper.isBasicType(type) || idl.isEnum(type);
+        } catch (error) {
+            // 兜底：检查常见的基础类型名称
+            const typeName = this.getTypeDisplayName(type);
+            return ['String', 'Int32', 'Int64', 'Float64', 'Bool', 'Boolean'].includes(typeName);
+        }
+    }
+
+    /**
      * 统一的参数转换和格式化逻辑，用于属性方法、重载方法和构建函数
      */
     private processAndFormatParameter(
@@ -931,8 +971,13 @@ class CJComponentFileVisitor implements ComponentFileVisitor {
             } else {
                 const converted = baseConversion ?? this.convertCjParameterType(paramType, paramName, isOptional)
                 
-                // 容错处理：确保 cjType 不为空
-                if (!converted || !converted.cjType) {
+                // 容错处理：优先使用重载的第一个分支，避免回退到 Union_ 原始类型
+                if (converted && !converted.cjType && converted.overloads && converted.overloads.length > 0) {
+                    const first = converted.overloads[0]
+                    const chosen = first?.cjType ?? 'Any'
+                    tName = typeof chosen === 'string' ? chosen : writer.getNodeName(chosen)
+                    defaultValue = first?.defaultValue
+                } else if (!converted || !converted.cjType) {
                     console.warn(`[ComponentsPrinter] No cjType for parameter ${paramName} in method ${method.name}, falling back to paramType`)
                     // 兜底：使用原始 paramType 的 nodeName
                     try {
@@ -988,11 +1033,23 @@ class CJComponentFileVisitor implements ComponentFileVisitor {
         // 对外暴露的方法名（事件重命名）
         const originalMethodName = method.name as string
         const exposedMethodName = this.normalizeEventMethodName(originalMethodName)
+        
+        // Peer层方法名（应用setter规范化，与Peer层保持一致）
+        const peerMethodName = this.normalizeSetterName(exposedMethodName)
+        
         writer.print(`public func ${exposedMethodName}(${paramsStr}): ${effectiveReturnTypeName} {`);
         writer.pushIndent();
         
-        const argList = argNames.join(', ');
-        writer.print(`this.getPeer().${exposedMethodName}Attribute(${argList})`);
+        // 为基础类型参数添加Some()包装，以匹配Peer层的Option<T>期望
+        const wrappedArgs = argNames.map((argName, index) => {
+            const paramType = method.signature?.args?.[index];
+            if (paramType && this.isBasicTypeForOptionWrapping(paramType)) {
+                return `Some(${argName})`;
+            }
+            return argName;
+        });
+        const argList = wrappedArgs.join(', ');
+        writer.print(`this.getPeer().${peerMethodName}Attribute(${argList})`);
         writer.print('return this');
         
         writer.popIndent();
@@ -1016,29 +1073,10 @@ class CJComponentFileVisitor implements ComponentFileVisitor {
      * 其他: string|number|Color → ResourceColor
      */
     public rewriteTypeName(typeName: string): string {
+        // 新策略：仅在上游（UnionTypeProcessor/CJTypeMapper）决定是否重载或收敛。
+        // 组件层不再做除空白规范化之外的类型改写，避免误收敛多分支联合。
         if (!typeName) return typeName;
-        
-        let s = typeName.replace(/\s+/g, ' '); // 规范化空白符
-        
-        // P0 高优先级收敛
-        s = this.applyP0Convergence(s);
-        
-        // P1 特殊类型收敛  
-        s = this.applyP1Convergence(s);
-        
-        // P2 数组类型收敛
-        s = this.applyP2Convergence(s);
-        
-        // 其他高频模式收敛
-        s = this.applyOtherConvergence(s);
-        
-        // 基础类型映射
-        s = this.applyBasicTypeMapping(s);
-        
-        // Union类型清理
-        s = this.applyUnionTypeCleanup(s);
-        
-        return s;
+        return typeName.replace(/\s+/g, ' ');
     }
     
     /**
@@ -1277,12 +1315,29 @@ class CJComponentFileVisitor implements ComponentFileVisitor {
         const deduplicatedMethods: any[] = []
         methodsByName.forEach((methodGroupList, methodName) => {
             if (methodGroupList.length === 1) {
-                // 只有一个版本，直接保留
                 deduplicatedMethods.push(methodGroupList[0])
-            } else {
-                // 多个版本，优先选择命名回调版本
-                const preferredMethod = this.selectPreferredMethodVersion(methodGroupList, writer, componentName)
-                deduplicatedMethods.push(preferredMethod)
+                return
+            }
+
+            // 多个版本：保留全部变体，但按偏好排序，并按参数签名去重
+            // 1) 计算偏好分数（命名回调优先）
+            const scored = methodGroupList.map(mg => ({ mg, score: this.scoreMethodForCallbackPreference(mg, writer, componentName) }))
+            scored.sort((a, b) => b.score - a.score)
+
+            // 2) 基于参数类型签名去重
+            const seen = new Set<string>()
+            for (const { mg } of scored) {
+                try {
+                    const sig = (mg.method?.signature?.args || []).map((t: idl.IDLType) => {
+                        try { return writer.getNodeName(t) } catch { return '<unknown>' }
+                    }).join(',')
+                    const key = `${mg.method?.name}(${sig})`
+                    if (seen.has(key)) continue
+                    seen.add(key)
+                    deduplicatedMethods.push(mg)
+                } catch {
+                    deduplicatedMethods.push(mg)
+                }
             }
         })
         

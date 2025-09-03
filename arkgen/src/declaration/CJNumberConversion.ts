@@ -79,11 +79,12 @@ export function mapNumberType(context: NumberMappingContext): 'Length' | 'Float6
     return 'Float64';
   }
   
-  // 场景4: 计数和索引场景 - 使用 Int32 类型（优先级高于尺寸场景）
+  // 场景4: 计数和索引场景 - 使用 Int32 类型（优先级高于位置场景）
   if (context.semanticHint === 'count' ||
       includesAny(context.propertyName, [
         'count', 'total', 'num', 'quantity', 'maxLines', 'itemCount', 
-        'selectedIndex', 'duration', 'step', 'loop', 'iterations', 'repeat',
+        'selectedIndex', 'currentIndex', 'activeIndex', 'rowIndex', 'colIndex', 'itemIndex',
+        'duration', 'step', 'loop', 'iterations', 'repeat',
         'lines', 'selection', 'selectionStart', 'selectionEnd'
       ])) {
     return 'Int32';
@@ -95,7 +96,7 @@ export function mapNumberType(context: NumberMappingContext): 'Length' | 'Float6
       endsWithAny(context.propertyName, ['Id', 'Code']) || 
       context.semanticHint === 'position' ||
       includesAny(context.propertyName, [
-        'index', 'position', 'top', 'left', 'right', 'bottom', 'x', 'y', 'z'
+        'position', 'top', 'left', 'right', 'bottom', 'x', 'y', 'z'
       ])) {
     return 'Int64';
   }
@@ -245,7 +246,8 @@ function inferSemanticHint(propertyName: string): NumberSemanticHint {
   // 计数/索引相关属性（包含通用 index）
   if (includesAny(name, [
     'count', 'total', 'num', 'quantity', 'maxlines', 'itemcount', 
-    'selectedindex', 'index', 'duration', 'step', 'loop', 'iterations', 'repeat',
+    'selectedindex', 'currentindex', 'activeindex', 'rowindex', 'colindex', 'itemindex',
+    'index', 'duration', 'step', 'loop', 'iterations', 'repeat',
     'lines', 'selection', 'selectionstart', 'selectionend'
   ])) {
     return 'count';

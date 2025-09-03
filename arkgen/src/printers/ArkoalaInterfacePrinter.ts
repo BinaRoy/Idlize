@@ -17,7 +17,7 @@ import * as idl from "@idlizer/core/idl"
 import { collapseIdlPeerMethods, collectPeers, componentToStyleClass, findComponentByDeclaration, findComponentByName, groupOverloads, isComponentDeclaration, KotlinInterfacesVisitor, PrinterFunction } from "@idlizer/libohos"
 import { ArkTSInterfacesVisitor, CJInterfacesVisitor, InterfacesVisitor, JavaInterfacesVisitor, TSDeclConvertor, TSInterfacesVisitor, PrinterResult } from "@idlizer/libohos"
 import { CJTypeMapper, TypeConversionResult } from "../declaration/CJTypeMapper"
-import { DeclarationConvertor, getSuper, indentedBy, Language, LanguageWriter, Method, MethodModifier, NamedMethodSignature, PeerLibrary, ReferenceResolver, stringOrNone } from "@idlizer/core"
+import { DeclarationConvertor, getSuper, indentedBy, Language, LanguageWriter, Method, MethodModifier, NamedMethodSignature, PeerLibrary, ReferenceResolver, stringOrNone, unionTypeProcessor } from "@idlizer/core"
 import { generateAttributeModifierSignature } from "./ComponentsPrinter"
 import { componentToAttributesInterface, generateStyleParentClass } from "./PeersPrinter"
 //
@@ -193,45 +193,100 @@ function getVisitor(peerLibrary: PeerLibrary, isDeclarations: boolean): Interfac
                                     }
                                 } catch {}
                             })
-                            node.methods.forEach((method: idl.IDLMethod) => {
-                                // 参数（就地修改，避免破坏 IDLParameter 的结构/品牌字段）
-                                method.parameters.forEach((param: idl.IDLParameter, idx: number) => {
-                                    try {
-                                        const name = param.name || `param${idx}`
-                                        const isOpt = param.isOptional
-                                        const conv: TypeConversionResult = mapper.convertParameterType(param.type, name, isOpt)
-                                        if (conv.overloads && conv.overloads.length > 0) {
-                                            const t = conv.overloads[0].cjType
-                                            if (t) {
-                                                const assigned = typeof t === 'string' ? idl.createReferenceType(t) : t
-                                                // 方法参数遵循统一规则：
-                                                // 基础类型已由 mapper 产出默认值形参（非 OptionalType）；
-                                                // 非基础类型保留 Option<T>（不拆包）。
-                                                param.type = assigned
-                                            }
-                                        } else if (conv.cjType) {
-                                            const assigned = typeof conv.cjType === 'string' ? idl.createReferenceType(conv.cjType) : conv.cjType
-                                            // 同上，保留 OptionalType（若有），不拆包
-                                            param.type = assigned
-                                        }
-                                    } catch {
-                                        // keep original
-                                    }
-                                })
+                            // 方法：将参数中的 Union_* 展开为多个方法重载；返回类型与参数一致做去Union处理
+                            const expanded: idl.IDLMethod[] = []
+                            for (const method of node.methods) {
                                 try {
-                                    const convRet: TypeConversionResult = mapper.convertParameterType(method.returnType, `${method.name}_return`, false)
-                                    if (convRet.overloads && convRet.overloads.length > 0) {
-                                        const t = convRet.overloads[0].cjType
-                                        if (t) {
-                                            const assigned = typeof t === 'string' ? idl.createReferenceType(t) : t
-                                            method.returnType = (assigned as any).kind === 'optionalType' ? (assigned as any).type : assigned
+                                    // 为每个参数计算候选类型列表
+                                    const paramTypeOptions: idl.IDLType[][] = method.parameters.map((param, idx) => {
+                                        try {
+                                            const name = param.name || `param${idx}`
+                                            // 先用 CJTypeMapper 做一次语义收敛（可能给出更贴近目标语言的类型）
+                                            const conv = mapper.convertParameterType(param.type, name, !!param.isOptional)
+                                            const direct: idl.IDLType[] = []
+                                            if (conv.overloads && conv.overloads.length > 0) {
+                                                for (const o of conv.overloads) {
+                                                    const tt = typeof o.cjType === 'string' ? idl.createReferenceType(o.cjType) : (o.cjType as idl.IDLType)
+                                                    direct.push(tt)
+                                                }
+                                                return direct
+                                            }
+                                            if (conv.cjType) {
+                                                const t = typeof conv.cjType === 'string' ? idl.createReferenceType(conv.cjType) : (conv.cjType as idl.IDLType)
+                                                return [t]
+                                            }
+                                            // 若仍为联合，使用通用 Union 处理器做兜底展开
+                                            if (idl.isUnionType(param.type)) {
+                                                const unionMembers = (param.type as any).types as idl.IDLType[]
+                                                const result = unionTypeProcessor.convertUnionType(unionMembers, name)
+                                                const types = unionTypeProcessor.convertToIDLTypes(result)
+                                                return types
+                                            }
+                                        } catch {}
+                                        // 兜底：保留原型，防止 Union_ 泄漏
+                                        if (idl.isUnionType(param.type)) {
+                                            const members = (param.type as any).types as idl.IDLType[]
+                                            return members && members.length ? [members[0]] : [idl.createReferenceType('String')]
                                         }
-                                    } else if (convRet.cjType) {
-                                        const assigned = typeof convRet.cjType === 'string' ? idl.createReferenceType(convRet.cjType) : convRet.cjType
-                                        method.returnType = (assigned as any).kind === 'optionalType' ? (assigned as any).type : assigned
+                                        return [param.type]
+                                    })
+
+                                    // 生成参数类型组合（限制组合总数，避免爆炸）
+                                    const combinations: idl.IDLType[][] = []
+                                    const limit = 12
+                                    const backtrack = (i: number, acc: idl.IDLType[]) => {
+                                        if (combinations.length >= limit) return
+                                        if (i === paramTypeOptions.length) {
+                                            combinations.push(acc.slice())
+                                            return
+                                        }
+                                        for (const t of paramTypeOptions[i]) {
+                                            acc.push(t)
+                                            backtrack(i + 1, acc)
+                                            acc.pop()
+                                        }
                                     }
-                                } catch {}
-                            })
+                                    backtrack(0, [])
+
+                                    // 若没有组合（无参数），保留原方法；否则为每个组合复制一个方法
+                                    if (!combinations.length) {
+                                        expanded.push(method)
+                                    } else {
+                                        for (const combo of combinations) {
+                                            const clonedParams = method.parameters.map((p, idx) => ({ ...p, type: combo[idx] })) as idl.IDLParameter[]
+                                            const cloned: idl.IDLMethod = { ...method, parameters: clonedParams } as any
+                                            expanded.push(cloned)
+                                        }
+                                    }
+
+                                    // 返回类型：做一次去 Union 处理，防止 Union_ 泄漏
+                                    try {
+                                        const convRet: TypeConversionResult = mapper.convertParameterType(method.returnType, `${method.name}_return`, false)
+                                        if (convRet.overloads && convRet.overloads.length > 0) {
+                                            const t = convRet.overloads[0].cjType
+                                            if (t) {
+                                                const assigned = typeof t === 'string' ? idl.createReferenceType(t) : (t as idl.IDLType)
+                                                const last = expanded[expanded.length - 1]
+                                                if (last) last.returnType = (assigned as any).kind === 'optionalType' ? (assigned as any).type : assigned
+                                            }
+                                        } else if (convRet.cjType) {
+                                            const assigned = typeof convRet.cjType === 'string' ? idl.createReferenceType(convRet.cjType) : (convRet.cjType as idl.IDLType)
+                                            const last = expanded[expanded.length - 1]
+                                            if (last) last.returnType = (assigned as any).kind === 'optionalType' ? (assigned as any).type : assigned
+                                        } else if (idl.isUnionType(method.returnType)) {
+                                            const members = (method.returnType as any).types as idl.IDLType[]
+                                            const assigned = members && members.length ? members[0] : idl.createReferenceType('String')
+                                            const last = expanded[expanded.length - 1]
+                                            if (last) last.returnType = assigned
+                                        }
+                                    } catch {}
+                                } catch {
+                                    expanded.push(method)
+                                }
+                            }
+                            if (expanded.length) {
+                                node.methods = expanded
+                            }
                         }
                     })
                 }

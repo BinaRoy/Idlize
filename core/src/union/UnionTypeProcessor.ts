@@ -115,6 +115,7 @@ export class UnionTypeProcessor {
         const hasBoolean = memberTypes.some(t => this.isBooleanType?.(t) ?? this.getTypeDisplayName(t).toLowerCase().includes('boolean'));
         const hasColor = memberTypes.some(t => this.isColorType(t));
         const hasArray = memberTypes.some(t => this.isArrayType(t));
+        const namedTypes = this.extractNamedTypes(memberTypes);
         
         // P0: 颜色语义 - 优先级最高
         if (hasColor || SEMANTIC_PATTERNS.COLOR.test(paramName)) {
@@ -147,17 +148,35 @@ export class UnionTypeProcessor {
             };
         }
 
-        // P2: 数字+数组 → 标量/向量重载（index/count 用 Int32，其余用 Int64）
+        // P2: 数字+数组 → 按策略收敛为 Array<Number>
+        // 仅 T | Array<T> 进行收敛，其余联合走重载
         if (hasNumber && hasArray && !hasString) {
             const isIndexCount = SEMANTIC_PATTERNS.INDEX_COUNT.test(paramName);
-            const scalarType = isIndexCount ? 'Int32' : 'Int64';
-            const arrayType = isIndexCount ? 'Array<Int32>' : 'Array<Int64>';
-            
-            console.log(`[UnionTypeProcessor] Creating scalar/vector overloads for ${paramName}: ${scalarType} | ${arrayType}`);
+            const arrayType = isIndexCount ? 'Array<Int32>' : 'Array<Float64>';
+            console.log(`[UnionTypeProcessor] Converging ${paramName} to ${arrayType} (number|Array<number>)`);
+            return {
+                cjType: arrayType,
+                defaultValue: DEFAULT_VALUES.ARRAY
+            };
+        }
+
+        // P2b: 字符串+数组 → 收敛为 Array<String>
+        if (hasString && hasArray && !hasNumber) {
+            console.log(`[UnionTypeProcessor] Converging ${paramName} to Array<String> (string|Array<string>)`);
+            return {
+                cjType: 'Array<String>',
+                defaultValue: DEFAULT_VALUES.ARRAY
+            };
+        }
+
+        // P2.5: 数字 + 具名类型（例如 Enum）→ 重载 [Number, Named]
+        if (hasNumber && namedTypes.length === 1 && memberTypes.length === 2) {
+            const named = namedTypes[0];
+            console.log(`[UnionTypeProcessor] Creating Number/${named} overloads for ${paramName} (number|named type)`);
             return {
                 overloads: [
-                    { cjType: scalarType, defaultValue: DEFAULT_VALUES[scalarType as keyof typeof DEFAULT_VALUES] },
-                    { cjType: arrayType, defaultValue: DEFAULT_VALUES.ARRAY }
+                    { cjType: idl.IDLNumberType, defaultValue: DEFAULT_VALUES.FLOAT64 },
+                    { cjType: named, defaultValue: this.getDefaultValueForType(named) }
                 ]
             };
         }
@@ -185,7 +204,6 @@ export class UnionTypeProcessor {
         }
 
         // P5: 具名类型联合 → 多重载
-        const namedTypes = this.extractNamedTypes(memberTypes);
         if (namedTypes.length >= 2) {
             console.log(`[UnionTypeProcessor] Creating named type overloads for ${paramName}: [${namedTypes.join(', ')}]`);
             return {

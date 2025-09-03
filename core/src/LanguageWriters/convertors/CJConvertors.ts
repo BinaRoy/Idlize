@@ -39,24 +39,33 @@ export class CJTypeNameConvertor implements NodeConvertor<string>, IdlNameConver
         return `Option<${this.convert(type.type)}>`
     }
     convertUnion(type: idl.IDLUnionType): string {
-        // 特殊处理：T | T[] 联合类型转换为 Array<T>
+        // T | T[] → Array<T>
         if (type.types.length === 2) {
             const [type1, type2] = type.types
-            
-            // 检查是否为 T | T[] 模式
             const simplifiedType = this.detectSingleTypeWithArrayUnion(type1, type2)
             if (simplifiedType) {
                 console.log(`[CJTypeNameConvertor] Converting union ${this.convert(type1)} | ${this.convert(type2)} to Array<${simplifiedType}>`)
                 return `Array<${simplifiedType}>`
             }
         }
-        
-        // 屏蔽 Union_* 类型名，返回 String 作为安全的兜底类型
+        // 调试：输出仍然落到名称分支的联合类型
+        try {
+            const variants = type.types?.map(t => idl.DebugUtils.debugPrintType(t)).join(' | ')
+            console.log(`[CJTypeNameConvertor] convertUnion fallback: name=${type.name} variants=[${variants}]`)
+        } catch {}
+        // 序列化方法参数的Union_类型展开：选择第一个成员类型，避免Union_泄漏
         if (type.name && type.name.startsWith('Union_')) {
-            console.log(`[CJTypeNameConvertor] Shielding Union type ${type.name}, returning String`)
-            return 'String'
+            console.log(`[CJTypeNameConvertor] Expanding Union type ${type.name} to first member`)
+            // 提取Union_类型的第一个成员类型
+            if (type.types && type.types.length > 0) {
+                const firstType = this.convert(type.types[0])
+                console.log(`[CJTypeNameConvertor] Union ${type.name} -> ${firstType}`)
+                return firstType
+            }
+            // 兜底：如果无法提取成员，使用Any
+            console.warn(`[CJTypeNameConvertor] Cannot extract Union members from ${type.name}, using Any`)
+            return 'Any'
         }
-        
         return type.name
     }
     convertContainer(type: idl.IDLContainerType): string {
@@ -116,10 +125,10 @@ export class CJTypeNameConvertor implements NodeConvertor<string>, IdlNameConver
         if (type.name === idl.IDLObjectType.name)
             return "KPointer"
             
-        // 屏蔽 Union_* 类型名，返回 String 作为安全兜底
+        // CJ 兜底（限定）：不再把 Union_* 映射为 Any，保留名称由上层展开
         if (type.name.startsWith('Union_')) {
-            console.log(`[CJTypeNameConvertor] Shielding Union type reference ${type.name}, returning String`)
-            return 'String'
+            console.log(`[CJTypeNameConvertor] Preserving reference to ${type.name} (no Any fallback here)`)
+            return type.name
         }
         
         // 屏蔽 Tuple_* 类型名，转换为原生元组语法

@@ -22,8 +22,8 @@ export class ArkoalaJavaTypeNameConvertor extends JavaTypeNameConvertor {
     override convertTypeReference(type: idl.IDLReferenceType): string {
         switch (type.name) {
             case "ContentModifier": return ARK_CUSTOM_OBJECT
-            case "Dimension":
-            case "Length": return "Ark_Length"
+            case "Dimension": return "Ark_Dimension"  // 保留Dimension映射
+            // 移除Length映射，让CJTypeMapper统一处理，避免层次冲突
             default: return super.convertTypeReference(type)
         }
     }
