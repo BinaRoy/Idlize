@@ -390,7 +390,11 @@ export class OverloadsPrinter {
             const castedArgName = `${(peerMethod.method.signature as NamedMethodSignature).argsNames[index]}_casted`
             const castedType = idl.maybeOptional(peerMethod.method.signature.args[index], peerMethod.method.signature.isArgOptional(index))
             if (this.printer.language == Language.CJ) {
+                if (idl.isOptionalType(collapsedMethod.signature.args[index])) {
+                    this.printer.makeAssign(castedArgName, castedType, this.printer.makeString(`if (let Some(${this.printer.escapeKeyword(argName)}) <- ${this.printer.escapeKeyword(argName)}) {${this.printer.escapeKeyword(argName)}} else { throw Exception(\"Type has to be not None\")}`), true, true).write(this.printer)
+                } else {
                     this.printer.makeAssign(castedArgName, castedType, this.printer.makeString(this.printer.escapeKeyword(argName)), true, true).write(this.printer)
+                }
             } else if (this.printer.language == Language.KOTLIN) {
                 this.printer.makeAssign(castedArgName, castedType, this.printer.makeString(argName), true, true).write(this.printer)
             } else if (this.printer.language == Language.JAVA) {
