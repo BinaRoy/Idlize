@@ -175,26 +175,23 @@ export class CJCallbackTypeManager {
                     return '() -> Unit'
                 }
                 if (methodName === 'onChange') {
-                    return '(value: Array<String>, index: Array<Float64>) -> Unit'
+                    return '(value: Array<String>, index: Array<Int32>) -> Unit'
                 }
                 if (methodName === 'onScrollStop') {
-                    return '(value: Array<String>, index: Array<Float64>) -> Unit'
+                    return '(value: Array<String>, index: Array<Int32>) -> Unit'
                 }
             }
         }
         
         // 特殊情况：处理已有类型名但需要重新命名的情况
         if (methodName === 'onScrollStop' && paramName === 'callback_') {
-            return '(value: Array<String>, index: Array<Float64>) -> Unit'
+            return '(value: Array<String>, index: Array<Int32>) -> Unit'
         }
         
         // 对于重写后的已命名回调类型，根据类型名推导签名
         if (paramName === 'callback_' && methodName === 'onScrollStop') {
-            return '(value: Array<String>, index: Array<Float64>) -> Unit'
+            return '(value: Array<String>, index: Array<Int32>) -> Unit'
         }
-        
-        // 处理IDL回调类型名称（这些逻辑已经移到prescanMethod中）
-        
         // 通用默认签名：尝试从方法名推导参数类型
         if (methodName && methodName.startsWith('on') && paramName) {
             // 从方法名推导可能的参数名和类型
@@ -813,9 +810,18 @@ export class CJCallbackTypeManager {
             const name = method.signature.argName(idx)
             let tName = typeof pc.cjType === 'string' ? pc.cjType : 'UnknownType'
             
+            // 调试：记录参数类型转换
+            if (method.name === 'onTitleModeChange' || componentName === 'Navigation') {
+                console.log(`[CJCallbackTypeManager] ${componentName}.${method.name} param[${idx}]: ${name} -> ${tName}`)
+            }
+            
             // 应用类型收敛（如果提供了 typeRewriter）
             if (typeRewriter) {
+                const originalTName = tName
                 tName = typeRewriter.rewriteTypeName(tName)
+                if (method.name === 'onTitleModeChange' || componentName === 'Navigation') {
+                    console.log(`[CJCallbackTypeManager] Type rewritten: ${originalTName} -> ${tName}`)
+                }
             }
             
             // 只处理尚未被IDL回调处理识别的类型
