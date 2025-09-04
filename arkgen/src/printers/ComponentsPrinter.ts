@@ -590,8 +590,23 @@ class CJComponentFileVisitor implements ComponentFileVisitor {
      */
     private printCjComponentOverloads(className: string, methods: any[], writer: LanguageWriter, componentName: string) {
         // 按方法名分组去重，优先保留命名回调版本
-        const methodsByName = this.groupAndDeduplicateMethods(methods, writer, componentName)        
-        methodsByName.forEach(methodGroup => {
+        const methodsByName = this.groupAndDeduplicateMethods(methods, writer, componentName)
+        
+        // 特殊过滤：对于checkbox组件，过滤掉不应该存在的onSelect方法
+        const filteredMethods = methodsByName.filter(methodGroup => {
+            const method = methodGroup.method
+            if (!method) return true
+            
+            const methodName = method.name as string
+            if (componentName === 'Checkbox' && methodName === 'onSelect') {
+                console.log(`[ComponentsPrinter] Filtering out unauthorized method: ${methodName} for ${componentName}`)
+                return false
+            }
+            
+            return true
+        })
+        
+        filteredMethods.forEach(methodGroup => {
             const method = methodGroup.method
             if (!method) return    
             const methodName = method?.name as string | undefined
@@ -673,6 +688,54 @@ class CJComponentFileVisitor implements ComponentFileVisitor {
         const imports = new ImportsCollector()
         // 合并后统一导入 commonPara
         imports.addFeatures(['*'], 'idlize.commonPara')
+        
+        // 为CJ组件添加必要的导入
+        if (!this.options.isDeclared) {
+            // 导入ComponentBase：组件需要继承ComponentBase
+            console.log(`[CJ ComponentsPrinter] Adding imports for component: ${peer.componentName}`)
+            imports.addFeature('ComponentBase', 'idlize.peers.ComponentBase')
+            // 导入Peer类
+            const peerClassName = componentToPeerClass(peer.componentName)
+            imports.addFeature(peerClassName, `idlize.peers.${peerClassName}`)
+            console.log(`[CJ ComponentsPrinter] Added ComponentBase and ${peerClassName} imports`)
+        } else {
+            console.log(`[CJ ComponentsPrinter] Skipping imports for declared component: ${peer.componentName}`)
+        }
+        
+        // 处理组件继承链的导入
+        if (peer.originalParentFilename) {
+            let [parentRef] = component.attributeDeclaration.inheritance
+            let parentDecl = this.library.resolveTypeReference(parentRef)
+            while (parentDecl) {
+                const parentComponent = findComponentByDeclaration(this.library, parentDecl as idl.IDLInterface)!
+                const parentGeneratedPath = this.library.layout.resolve({
+                    node: parentDecl,
+                    role: LayoutNodeRole.COMPONENT
+                })
+                if (!this.options.isDeclared) {
+                    imports.addFeature(generateArkComponentName(parentComponent.name), `./${parentGeneratedPath}`)
+                }
+
+                imports.addFeatures([
+                    componentToStyleClass(parentComponent.attributeDeclaration.name),
+                    componentToAttributesInterface(parentComponent.attributeDeclaration.name),
+                ], `./${parentGeneratedPath}`)
+                
+                if (parentComponent.attributeDeclaration.inheritance.length) {
+                    let [parentRef] = parentComponent.attributeDeclaration.inheritance
+                    parentDecl = this.library.resolveTypeReference(parentRef)
+                } else {
+                    parentDecl = undefined
+                }
+            }
+        }
+        
+        // 收集组件自身的类型依赖
+        collectDeclDependencies(this.library, component.attributeDeclaration, imports)
+        if (component.interfaceDeclaration) {
+            collectDeclDependencies(this.library, component.interfaceDeclaration, imports)
+        }
+        
         return imports
     }
 
@@ -900,12 +963,34 @@ class CJComponentFileVisitor implements ComponentFileVisitor {
 
     /**
      * 统一处理类型名：高频收敛 + 回调命名化
+     * 优先使用预扫描阶段收集的回调类型，确保类型定义与使用一致，避免数字后缀问题
      */
     private processTypeName(typeName: string, paramName: string, methodName: string, componentName: string): string {
         // 步骤1：应用高频联合类型收敛
+        const originalType = typeName
         let processedType = this.rewriteTypeName(typeName)
-        // 步骤2：回调命名化
-        processedType = this.callbackManager.processCallbackType(paramName, processedType, methodName, componentName)
+        
+        // 调试信息已移除，类型重写过程正常工作
+        
+        // 步骤2：回调命名化 - 优先查找预扫描阶段已注册的类型
+        if (CJCallbackTypeManager.isFunctionType(processedType)) {
+            // 尝试查找预扫描阶段已经注册的回调类型
+            const existingCallbackType = this.callbackManager.findExistingCallbackType(paramName, processedType, methodName, componentName)
+            if (existingCallbackType) {
+                console.log(`[ComponentsPrinter] Reusing existing callback type: ${existingCallbackType} for ${componentName}.${methodName}`)
+                return existingCallbackType
+            } else {
+                // 如果找不到已存在的类型，这可能表示预扫描阶段遗漏或类型签名不匹配
+                // 为了避免生成数字后缀，我们先打印调试信息
+                console.log(`[ComponentsPrinter] Warning: No existing callback type found for ${componentName}.${methodName}`)
+                console.log(`[ComponentsPrinter] Searched signature: ${processedType}`)
+                
+                // 仍然尝试注册，但这可能会导致数字后缀
+                processedType = this.callbackManager.processCallbackType(paramName, processedType, methodName, componentName)
+                console.log(`[ComponentsPrinter] Created new callback type: ${processedType}`)
+            }
+        }
+        
         return processedType
     }
 
@@ -913,11 +998,21 @@ class CJComponentFileVisitor implements ComponentFileVisitor {
      * 事件方法命名规范化：
      * 将内部事件前缀 `_onChangeEvent_foo` 统一重命名为 `onFoo`
      * 仅影响对外暴露的方法名；peer 调用仍使用原始方法名。
+     * @returns 重命名后的方法名，或null表示应该过滤掉该方法
      */
-    private normalizeEventMethodName(originalName: string): string {
+    private normalizeEventMethodName(originalName: string): string | null {
         const m = originalName.match(/^_onChangeEvent_(.+)$/)
         if (!m) return originalName
         const tail = m[1]
+        
+        // 特殊过滤：某些内部事件方法不应该暴露为公共API
+        // 例如：_onChangeEvent_select 不应该转换为 onSelect（checkbox组件没有这个API）
+        const internalOnlyEvents = ['select'] // 添加需要过滤的事件
+        if (internalOnlyEvents.includes(tail)) {
+            console.log(`[ComponentsPrinter] Filtering out internal event method: ${originalName}`)
+            return null // 返回null表示应该过滤掉这个方法
+        }
+        
         // foo -> onFoo
         return 'on' + tail.replace(/^(.)/, (c) => c.toUpperCase())
     }
@@ -1035,6 +1130,12 @@ class CJComponentFileVisitor implements ComponentFileVisitor {
         const originalMethodName = method.name as string
         const exposedMethodName = this.normalizeEventMethodName(originalMethodName)
         
+        // 如果方法被过滤掉（返回null），跳过生成
+        if (exposedMethodName === null) {
+            console.log(`[ComponentsPrinter] Skipping filtered method: ${originalMethodName}`)
+            return
+        }
+        
         // Peer层方法名（应用setter规范化，与Peer层保持一致）
         const peerMethodName = this.normalizeSetterName(exposedMethodName)
         
@@ -1134,6 +1235,9 @@ class CJComponentFileVisitor implements ComponentFileVisitor {
         s = s.replace(/Union_String_Number_Color/g, 'ResourceColor');
         s = s.replace(/[Ss]tring\s*\|\s*[Nn]umber\s*\|\s*Color/g, 'ResourceColor');
         s = s.replace(/Color\s*\|\s*[Nn]umber\s*\|\s*[Ss]tring/g, 'ResourceColor');
+        
+        // 回调类型命名约定修正
+        s = s.replace(/TextPickerScrollStopCallback/g, 'OnTextPickerScrollStopCallback');
         
         return s;
     }
@@ -1429,6 +1533,32 @@ class CJComponentFileVisitor implements ComponentFileVisitor {
     }
 
     /**
+     * 判断是否应该为组件生成构建函数
+     */
+    private shouldGenerateBuildFunction(peer: PeerClass): boolean {
+        // 检查组件名称，IDL 组件通常有特定的命名模式
+        const componentName = peer.componentName;
+        
+        // CustomLayoutRoot 等是 IDL 组件，不需要构建函数
+        const idlComponents = ['CustomLayoutRoot'];
+        if (idlComponents.includes(componentName)) {
+            return false;
+        }
+        
+        // 检查方法列表，如果没有常见的属性设置方法，可能是 IDL 组件
+        const hasAttributeMethods = peer.methods.some((method: any) => 
+            method && method.name && (method.name.endsWith('Attribute') || method.name.startsWith('set'))
+        );
+        
+        // 如果只有很少的方法且都是特殊方法（如 subscribeOn*），可能是 IDL 组件
+        const specialMethods = peer.methods.filter((method: any) => 
+            method && method.name && (method.name.startsWith('subscribeOn') || method.name === 'getPeer')
+        );
+        
+        return !(specialMethods.length > 0 && peer.methods.length <= specialMethods.length + 2);
+    }
+
+    /**
      * 生成构建函数专用的回调类型定义
      */
     private generateBuildFunctionCallbackDefinitions(componentName: string): string[] {
@@ -1554,14 +1684,18 @@ class CJComponentFileVisitor implements ComponentFileVisitor {
         // 清理组件回调缓存并预扫描
         const componentName = peer.componentName
         this.callbackManager.clearComponentCallbacks(componentName)
-        // 预扫描所有方法以收集回调类型，传入 this 作为 typeRewriter
+        // 预扫描所有方法以收集回调类型（传入typeRewriter确保类型一致性，避免预扫描和实际处理阶段类型差异）
         this.callbackManager.prescanMethods(peer.methods, componentName, this.typeMapper, this)
         
         // 打印回调类型定义（当前阶段：仍然在组件内就地声明，确保类型可用；后续将统一迁移至 cores/Common.cj）
         const callbackDefinitions = this.callbackManager.getCallbackDefinitions(componentName)
         
-        // 添加构建函数专用的回调类型定义
-        const buildFunctionCallbacks = this.generateBuildFunctionCallbackDefinitions(componentName)
+        // 调试信息：显示获取到的回调类型定义
+        console.log(`[ComponentsPrinter] Callback definitions for ${componentName}:`, callbackDefinitions)
+        
+        // 添加构建函数专用的回调类型定义（仅当组件有构建函数时）
+        const buildFunctionCallbacks = this.shouldGenerateBuildFunction(peer) ? 
+            this.generateBuildFunctionCallbackDefinitions(componentName) : []
         
         // 合并并去重回调定义
         const allCallbackDefinitions = [...callbackDefinitions, ...buildFunctionCallbacks]

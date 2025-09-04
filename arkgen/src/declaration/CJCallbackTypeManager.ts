@@ -27,12 +27,15 @@ export class CJCallbackTypeManager {
     private callbackAliasBySignature: Map<string, string> = new Map()
     // 组件级别的回调类型定义
     private componentCallbackDefinitions: Map<string, Set<string>> = new Map()
+    // 跟踪实际使用的回调类型
+    private usedCallbackTypes: Map<string, Set<string>> = new Map()
     
     /**
      * 清理当前组件的回调类型缓存
      */
     public clearComponentCallbacks(componentName: string): void {
         this.componentCallbackDefinitions.delete(componentName)
+        this.usedCallbackTypes.delete(componentName)
     }
     
     /**
@@ -50,6 +53,15 @@ export class CJCallbackTypeManager {
         methodName: string, 
         componentName: string
     ): string {
+        // 特殊处理：对于已知的回调模式，即使类型未知也生成回调类型
+        if (this.isKnownCallbackPattern(typeName, paramName, methodName)) {
+            const defaultSignature = this.generateDefaultCallbackSignature(paramName, methodName, componentName)
+            const aliasName = this.getOrCreateCallbackAlias(defaultSignature, paramName, methodName, componentName)
+            // 标记为已使用
+            this.markCallbackTypeUsed(componentName, aliasName)
+            return aliasName
+        }
+        
         // 字符串归一化：去掉可空前缀、剥外层括号、展开 Option 内层类型
         const normalized = this.normalizeCallbackTypeName(typeName)
 
@@ -58,10 +70,157 @@ export class CJCallbackTypeManager {
         if (fnMatch) {
             const functionSignature = fnMatch[0]
             const aliasName = this.getOrCreateCallbackAlias(functionSignature, paramName, methodName, componentName)
+            // 标记为已使用
+            this.markCallbackTypeUsed(componentName, aliasName)
             console.log(`[CJCallbackTypeManager] Converted inline function to named callback: ${typeName} -> ${aliasName}`)
             return aliasName
         }
         return typeName
+    }
+
+    /**
+     * 检查是否为已知的回调模式
+     */
+    private isKnownCallbackPattern(typeName: string, paramName: string, methodName: string): boolean {
+        // 对于UnknownType类型，检查是否是已知的回调模式
+        if (typeName === 'UnknownType') {
+            // onClick事件模式
+            if (methodName === 'onClick' && paramName === 'event') return true
+            
+            // 通用的on*回调模式
+            if (methodName && methodName.startsWith('on')) {
+                // 常见的回调参数名模式
+                if (['callback', 'callback_', 'handler', 'listener', 'event'].includes(paramName)) {
+                    return true
+                }
+            }
+        }
+        
+        // 对于String类型，如果是callback相关的参数名和on*方法，也认为是回调模式
+        if (typeName === 'String') {
+            if (methodName && methodName.startsWith('on')) {
+                // 常见的回调参数名模式
+                if (['callback', 'callback_', 'handler', 'listener'].includes(paramName)) {
+                    return true
+                }
+            }
+        }
+        
+        // 对于Bool类型，如果是callback相关的参数名和on*方法，也认为是回调模式
+        if (typeName === 'Bool') {
+            if (methodName && methodName.startsWith('on')) {
+                // 常见的回调参数名模式
+                if (['callback', 'callback_', 'handler', 'listener'].includes(paramName)) {
+                    return true
+                }
+            }
+        }
+        
+        // 对于Float64类型，如果是callback相关的参数名和on*方法，也认为是回调模式
+        if (typeName === 'Float64') {
+            if (methodName && methodName.startsWith('on')) {
+                // 常见的回调参数名模式
+                if (['callback', 'callback_', 'handler', 'listener'].includes(paramName)) {
+                    return true
+                }
+            }
+        }
+        
+        // 对于重写后的已命名回调类型，也认为是回调模式
+        if (typeName === 'OnTextPickerScrollStopCallback') {
+            return true
+        }
+        
+        // 通用的 On*Callback 类型都认为是回调模式
+        if (typeName.startsWith('On') && typeName.endsWith('Callback')) {
+            return true
+        }
+        
+        return false
+    }
+
+    /**
+     * 为已知的回调模式生成默认的函数签名
+     */
+    private generateDefaultCallbackSignature(paramName: string, methodName: string, componentName?: string): string {
+        // 根据方法名和参数名生成合适的默认签名
+        if (methodName === 'onClick' && paramName === 'event') {
+            return '(event: ClickEvent) -> Unit'
+        }
+        
+        if (methodName === 'onTitleModeChange' && paramName === 'callback_') {
+            return '(titleMode: NavigationTitleMode) -> Unit'
+        }
+        
+        // 特殊的回调方法处理
+        if (methodName === 'onCopy' && paramName === 'callback_') {
+            return '(text: String) -> Unit'
+        }
+        
+        // 根据组件名和方法名生成特定签名
+        if (componentName && methodName.startsWith('on') && paramName === 'callback_') {
+            // Checkbox 特定回调
+            if (componentName === 'Checkbox') {
+                if (methodName === 'onChange') {
+                    return '(value: Bool) -> Unit'
+                }
+            }
+            
+            // TextPicker 特定回调
+            if (componentName === 'TextPicker') {
+                if (methodName === 'onAccept') {
+                    return '(value: String, index: Float64) -> Unit'
+                }
+                if (methodName === 'onCancel') {
+                    return '() -> Unit'
+                }
+                if (methodName === 'onChange') {
+                    return '(value: Array<String>, index: Array<Float64>) -> Unit'
+                }
+                if (methodName === 'onScrollStop') {
+                    return '(value: Array<String>, index: Array<Float64>) -> Unit'
+                }
+            }
+        }
+        
+        // 特殊情况：处理已有类型名但需要重新命名的情况
+        if (methodName === 'onScrollStop' && paramName === 'callback_') {
+            return '(value: Array<String>, index: Array<Float64>) -> Unit'
+        }
+        
+        // 对于重写后的已命名回调类型，根据类型名推导签名
+        if (paramName === 'callback_' && methodName === 'onScrollStop') {
+            return '(value: Array<String>, index: Array<Float64>) -> Unit'
+        }
+        
+        // 处理IDL回调类型名称（这些逻辑已经移到prescanMethod中）
+        
+        // 通用默认签名：尝试从方法名推导参数类型
+        if (methodName && methodName.startsWith('on') && paramName) {
+            // 从方法名推导可能的参数名和类型
+            // 例如：onTitleModeChange -> titleMode: TitleMode, onValueChange -> value: Value
+            const eventSuffix = methodName.slice(2) // 去掉 "on" 前缀
+            if (eventSuffix.endsWith('Change')) {
+                const propertyName = eventSuffix.slice(0, -6) // 去掉 "Change" 后缀
+                const lowerPropertyName = propertyName.charAt(0).toLowerCase() + propertyName.slice(1)
+                const typeName = propertyName
+                return `(${lowerPropertyName}: ${typeName}) -> Unit`
+            }
+            
+            // 对于其他on*方法，尝试推导合理的参数
+            if (eventSuffix.toLowerCase().includes('copy')) {
+                return '(text: String) -> Unit'
+            }
+            if (eventSuffix.toLowerCase().includes('text')) {
+                return '(text: String) -> Unit'
+            }
+            if (eventSuffix.toLowerCase().includes('value')) {
+                return '(value: String) -> Unit'
+            }
+        }
+        
+        // 通用默认签名
+        return `(${paramName}: Object) -> Unit`
     }
 
     /**
@@ -101,11 +260,14 @@ export class CJCallbackTypeManager {
         methodName: string, 
         componentName: string
     ): string {
-        // 规范化函数签名作为缓存键
+        // 规范化函数签名作为缓存键，但也包含方法名以确保唯一性
         const normalizedSignature = this.normalizeFunctionSignature(functionSignature)
+        // 使用类型签名而非参数名，避免预扫描和实际处理阶段参数名不一致的问题
+        const typeOnlySignature = this.extractTypeOnlySignature(normalizedSignature)
+        const cacheKey = `${componentName}.${methodName}:${typeOnlySignature}`
         
         // 检查是否已存在别名
-        let aliasName = this.callbackAliasBySignature.get(normalizedSignature)
+        let aliasName = this.callbackAliasBySignature.get(cacheKey)
         if (aliasName) {
             return aliasName
         }
@@ -114,15 +276,16 @@ export class CJCallbackTypeManager {
         aliasName = this.generateCallbackAliasName(paramName, methodName, componentName)
         
         // 注册别名
-        this.callbackAliasBySignature.set(normalizedSignature, aliasName)
+        this.callbackAliasBySignature.set(cacheKey, aliasName)
         
         // 记录到组件定义中
         if (!this.componentCallbackDefinitions.has(componentName)) {
             this.componentCallbackDefinitions.set(componentName, new Set())
         }
-        this.componentCallbackDefinitions.get(componentName)!.add(
-            `public type ${aliasName} = ${normalizedSignature}`
-        )
+        const typeDefinition = `public type ${aliasName} = ${normalizedSignature}`
+        this.componentCallbackDefinitions.get(componentName)!.add(typeDefinition)
+        
+        console.log(`[CJCallbackTypeManager] Added callback definition: ${typeDefinition}`)
         
         return aliasName
     }
@@ -131,13 +294,93 @@ export class CJCallbackTypeManager {
      * 规范化函数签名
      */
     private normalizeFunctionSignature(signature: string): string {
-        return signature
+        let normalized = signature
             .replace(/\s+/g, ' ')           // 统一空白字符
             .replace(/\s*\(\s*/g, '(')      // 移除括号内的空格
             .replace(/\s*\)\s*/g, ')')      
             .replace(/\s*->\s*/g, ' -> ')   // 统一箭头格式
             .replace(/\s*,\s*/g, ', ')      // 统一逗号格式
             .trim()
+        
+        // 处理双重括号的函数类型：((param: Type) -> ReturnType) -> (param: Type) -> ReturnType
+        if (normalized.startsWith('((') && normalized.includes(') -> ')) {
+            // 提取内层函数签名
+            const match = normalized.match(/^\(\(([^)]+)\) -> ([^)]+)\)$/)
+            if (match) {
+                const innerParams = match[1]
+                const returnType = match[2]
+                normalized = `(${innerParams}) -> ${returnType}`
+            }
+        }
+        
+        // 统一参数名：将 parameter: Type 格式统一为更语义化的参数名
+        // 这样可以避免预扫描时生成的 (text: String) 和实际生成时的 (parameter: String) 不匹配
+        normalized = normalized.replace(
+            /\(parameter:\s*([^)]+)\)/g, 
+            (match, type) => {
+                // 根据类型推断合适的参数名
+                if (type.trim() === 'String') {
+                    return '(text: String)'
+                }
+                return match
+            }
+        )
+        
+        return normalized
+    }
+    
+    /**
+     * 提取仅包含类型信息的签名，忽略参数名差异
+     * 支持单参数和多参数：
+     * - (value: Bool) -> Unit 和 (parameter: Bool) -> Unit 都变成 (Bool) -> Unit
+     * - (value: Array<String>, index: Array<Int32>) -> Unit 变成 (Array<String>, Array<Int32>) -> Unit
+     */
+    private extractTypeOnlySignature(signature: string): string {
+        // 匹配函数签名模式：(param1: Type1, param2: Type2, ...) -> ReturnType
+        const match = signature.match(/^\s*\(([^)]*)\)\s*->\s*(.+)\s*$/)
+        if (match) {
+            const paramsString = match[1].trim()
+            const returnType = match[2].trim()
+            
+            if (!paramsString) {
+                // 无参数函数：() -> Unit
+                return `() -> ${returnType}`
+            }
+            
+            // 提取每个参数的类型，忽略参数名
+            const paramTypes = paramsString
+                .split(',')
+                .map(param => {
+                    const paramMatch = param.trim().match(/^\s*\w+\s*:\s*(.+)$/)
+                    return paramMatch ? paramMatch[1].trim() : param.trim()
+                })
+                .join(', ')
+            
+            return `(${paramTypes}) -> ${returnType}`
+        }
+        
+        // 如果不匹配标准模式，返回原签名
+        console.log(`[CJCallbackTypeManager] Warning: Cannot extract type-only signature from: ${signature}`)
+        return signature
+    }
+    
+    /**
+     * 将IDL类型名映射到CJ类型名
+     */
+    private mapIDLTypeToCJType(idlTypeName: string): string {
+        const typeMap: { [key: string]: string } = {
+            'Number': 'Float64',
+            'String': 'String',
+            'Boolean': 'Bool',
+            'Void': 'Unit',
+            'Bool': 'Bool',
+            'Float64': 'Float64',
+            'Int32': 'Int32',
+            'Array': 'Array',
+            'Option': 'Option'
+        }
+        
+        return typeMap[idlTypeName] || idlTypeName
     }
     
     /**
@@ -172,9 +415,14 @@ export class CJCallbackTypeManager {
         else if (methodName.startsWith('on') && methodName.length > 2) {
             baseName = this.toPascalCase(methodName) + 'Callback'
         }
-        // 最后默认：参数名 + Callback
+        // 最后默认：参数名 + Callback，如果有组件名则加前缀避免冲突
         else {
-            baseName = this.toPascalCase(paramName) + 'Callback'
+            if (componentName && componentName.length > 0) {
+                const sanitized = componentName.replace(/(Attribute|Component)$/, '')
+                baseName = this.toPascalCase(sanitized) + this.toPascalCase(paramName) + 'Callback'
+            } else {
+                baseName = this.toPascalCase(paramName) + 'Callback'
+            }
         }
 
         // 避免生成 CallbackCallback 这类无信息量别名，回退到组件+方法名策略
@@ -205,6 +453,7 @@ export class CJCallbackTypeManager {
     
     /**
      * 确保名称唯一性
+     * 增加调试信息以便追踪类型冲突
      */
     private ensureUniqueName(baseName: string): string {
         const existingNames = new Set(this.callbackAliasBySignature.values())
@@ -212,6 +461,10 @@ export class CJCallbackTypeManager {
         if (!existingNames.has(baseName)) {
             return baseName
         }
+        
+        // 记录类型冲突的调试信息
+        console.log(`[CJCallbackTypeManager] Type name conflict detected for: ${baseName}`)
+        console.log(`[CJCallbackTypeManager] Existing names:`, Array.from(existingNames))
         
         // 添加数字后缀
         let counter = 1
@@ -221,15 +474,191 @@ export class CJCallbackTypeManager {
             candidateName = `${baseName}${counter}`
         }
         
+        console.log(`[CJCallbackTypeManager] Generated unique name: ${candidateName}`)
         return candidateName
     }
     
     /**
-     * 获取指定组件的回调类型定义
+     * 标记回调类型为已使用
+     */
+    public markCallbackTypeUsed(componentName: string, typeName: string): void {
+        if (!this.usedCallbackTypes.has(componentName)) {
+            this.usedCallbackTypes.set(componentName, new Set())
+        }
+        this.usedCallbackTypes.get(componentName)!.add(typeName)
+    }
+    
+    /**
+     * 获取指定组件的回调类型定义（仅返回实际使用的）
      */
     public getCallbackDefinitions(componentName: string): string[] {
-        const definitions = this.componentCallbackDefinitions.get(componentName)
-        return definitions ? Array.from(definitions).sort() : []
+        const allDefinitions = this.componentCallbackDefinitions.get(componentName)
+        const usedTypes = this.usedCallbackTypes.get(componentName)
+        
+        if (!allDefinitions || !usedTypes || usedTypes.size === 0) {
+            return []
+        }
+        
+        // 只返回实际使用的回调类型定义
+        const result = Array.from(allDefinitions).filter(def => {
+            const typeName = def.match(/public type (\w+)/)?.[1]
+            return typeName && usedTypes.has(typeName)
+        }).sort()
+        
+        console.log(`[CJCallbackTypeManager] getCallbackDefinitions for ${componentName}: ${result.length}/${allDefinitions.size} definitions (used/total)`)
+        if (result.length > 0) {
+            console.log(`[CJCallbackTypeManager] Used definitions for ${componentName}:`, result)
+        }
+        
+        return result
+    }
+
+    /**
+     * 从TypeScript声明文件中提取回调类型信息并生成CJ回调类型定义
+     * 
+     * @param methodName 方法名
+     * @param callbackSignature TypeScript回调函数签名
+     * @param componentName 组件名
+     * @returns 生成的CJ回调类型定义字符串
+     */
+    public generateCallbackTypeFromTSDeclaration(
+        methodName: string, 
+        callbackSignature: string, 
+        componentName: string
+    ): string {
+        console.log(`[CJCallbackTypeManager] generateCallbackTypeFromTSDeclaration: methodName=${methodName}, callbackSignature=${callbackSignature}, componentName=${componentName}`)
+        
+        // 解析TypeScript回调函数签名
+        const parsed = this.parseTSCallbackSignature(callbackSignature)
+        if (!parsed) {
+            console.log(`[CJCallbackTypeManager] Failed to parse callback signature: ${callbackSignature}`)
+            return ''
+        }
+        
+        // 生成CJ回调类型名称
+        const callbackTypeName = this.generateCallbackAliasName(parsed.paramName, methodName, componentName)
+        
+        // 转换TypeScript类型到CJ类型
+        const cjParamType = this.convertTSTypeToCJType(parsed.paramType)
+        
+        // 生成CJ回调类型定义
+        const cjCallbackDef = `public type ${callbackTypeName} = (${parsed.paramName}: ${cjParamType}) -> Unit`
+        
+        // 记录到组件定义中
+        if (!this.componentCallbackDefinitions.has(componentName)) {
+            this.componentCallbackDefinitions.set(componentName, new Set())
+        }
+        this.componentCallbackDefinitions.get(componentName)!.add(cjCallbackDef)
+        
+        console.log(`[CJCallbackTypeManager] Generated callback type: ${cjCallbackDef}`)
+        return cjCallbackDef
+    }
+    
+    /**
+     * 解析TypeScript回调函数签名
+     * 例如: "(titleMode: NavigationTitleMode) => void" -> { paramName: "titleMode", paramType: "NavigationTitleMode" }
+     */
+    private parseTSCallbackSignature(signature: string): { paramName: string, paramType: string } | null {
+        // 匹配模式: (paramName: paramType) => returnType
+        const match = signature.match(/^\s*\(\s*(\w+)\s*:\s*([^)]+)\s*\)\s*=>\s*\w+\s*$/)
+        if (match) {
+            return {
+                paramName: match[1].trim(),
+                paramType: match[2].trim()
+            }
+        }
+        
+        // 匹配模式: (paramName: paramType) => void
+        const voidMatch = signature.match(/^\s*\(\s*(\w+)\s*:\s*([^)]+)\s*\)\s*=>\s*void\s*$/)
+        if (voidMatch) {
+            return {
+                paramName: voidMatch[1].trim(),
+                paramType: voidMatch[2].trim()
+            }
+        }
+        
+        return null
+    }
+    
+    /**
+     * 将TypeScript类型转换为CJ类型
+     */
+    private convertTSTypeToCJType(tsType: string): string {
+        // 基础类型映射
+        const typeMap: Record<string, string> = {
+            'string': 'String',
+            'number': 'Float64',
+            'boolean': 'Bool',
+            'void': 'Unit',
+            'any': 'Object',
+            'object': 'Object',
+            'Array': 'Array',
+            'Promise': 'Promise'
+        }
+        
+        // 检查是否为已知的基础类型
+        if (typeMap[tsType.toLowerCase()]) {
+            return typeMap[tsType.toLowerCase()]
+        }
+        
+        // 检查是否为数组类型
+        if (tsType.includes('Array<') || tsType.includes('[]')) {
+            const innerType = tsType.replace(/Array<|>/g, '').replace(/\[\]/g, '').trim()
+            const convertedInnerType = this.convertTSTypeToCJType(innerType)
+            return `Array<${convertedInnerType}>`
+        }
+        
+        // 检查是否为联合类型
+        if (tsType.includes('|')) {
+            const types = tsType.split('|').map(t => t.trim())
+            const convertedTypes = types.map(t => this.convertTSTypeToCJType(t))
+            // 对于联合类型，选择第一个非基础类型，如果没有则使用Object
+            const nonBasicTypes = convertedTypes.filter(t => !['String', 'Float64', 'Bool', 'Unit'].includes(t))
+            return nonBasicTypes.length > 0 ? nonBasicTypes[0] : 'Object'
+        }
+        
+        // 对于其他类型，保持原样（假设是已定义的CJ类型）
+        return tsType
+    }
+
+    public addCallbackDefinitions(componentName: string, definitions: string[]): void {
+        if (!this.componentCallbackDefinitions.has(componentName)) {
+            this.componentCallbackDefinitions.set(componentName, new Set())
+        }
+        const existingDefinitions = this.componentCallbackDefinitions.get(componentName)!
+        definitions.forEach(def => existingDefinitions.add(def))
+        console.log(`[CJCallbackTypeManager] Added ${definitions.length} definitions to ${componentName}`)
+    }
+    
+    /**
+     * 查找已存在的回调类型，避免重复注册
+     * @param paramName 参数名
+     * @param functionSignature 函数签名
+     * @param methodName 方法名
+     * @param componentName 组件名
+     * @returns 已存在的回调类型名称，如果不存在则返回undefined
+     */
+    public findExistingCallbackType(
+        paramName: string,
+        functionSignature: string,
+        methodName: string,
+        componentName: string
+    ): string | undefined {
+        // 构造与processCallbackType相同的缓存键
+        const normalizedSignature = this.normalizeFunctionSignature(functionSignature)
+        // 使用类型签名而非参数名，避免预扫描和实际处理阶段参数名不一致的问题
+        const typeOnlySignature = this.extractTypeOnlySignature(normalizedSignature)
+        const cacheKey = `${componentName}.${methodName}:${typeOnlySignature}`
+        
+        // 查找是否已存在
+        const existingAlias = this.callbackAliasBySignature.get(cacheKey)
+        if (existingAlias) {
+            console.log(`[CJCallbackTypeManager] Found existing callback type for key ${cacheKey}: ${existingAlias}`)
+            return existingAlias
+        }
+        
+        console.log(`[CJCallbackTypeManager] No existing callback type found for key ${cacheKey}`)
+        return undefined
     }
     
     /**
@@ -333,13 +762,53 @@ export class CJCallbackTypeManager {
     ): void {
         if (!method) return
 
+        // 调试：记录正在预扫描的方法
+        console.log(`[CJCallbackTypeManager] prescanMethod called: ${componentName}.${method.name}`)
+
+        // 检查IDL原始参数类型，识别回调类型
+        method.signature.args.forEach((paramType: any, idx: number) => {
+            const name = method.signature.argName(idx)
+            
+            // 调试：显示IDL原始类型信息
+            if (method.name === 'testFunctionNumberVoid' || method.name === 'onTitleModeChange') {
+                console.log(`[CJCallbackTypeManager] IDL param[${idx}]: ${name}, kind: ${paramType.kind}, name: ${paramType.name}`)
+            }
+            
+            // 检查IDL类型是否为回调类型
+            let isCallbackType = false
+            let callbackSignature = ''
+            
+            // 1. 检查IDL引用类型名称中是否包含Callback
+            if (paramType.kind === 'ReferenceType' && paramType.name && paramType.name.includes('Callback')) {
+                isCallbackType = true
+                // 根据IDL回调类型名称生成对应的函数签名
+                callbackSignature = this.generateDefaultCallbackSignature(name, method.name, componentName)
+                // 特殊处理：对于特定IDL回调类型，使用专用签名
+                if (paramType.name === 'Callback_Number_Void') {
+                    callbackSignature = '(select: Float64) -> Unit'
+                }
+                console.log(`[CJCallbackTypeManager] Found IDL callback type: ${paramType.name} -> ${callbackSignature}`)
+            }
+            
+            if (isCallbackType && callbackSignature) {
+                // 应用类型收敛（如果提供了 typeRewriter）
+                let processedSignature = callbackSignature
+                if (typeRewriter) {
+                    processedSignature = typeRewriter.rewriteTypeName(callbackSignature)
+                }
+                
+                console.log(`[CJCallbackTypeManager] Found callback type in prescan: ${componentName}.${method.name}(${name}: ${processedSignature})`)
+                this.processCallbackType(name, processedSignature, method.name, componentName)
+            }
+        })
+
+        // 兜底：使用转换后的类型进行检查（保留原有逻辑）
         const perParamConversions = method.signature.args.map((paramType: any, idx: number) => {
             const paramName = method.signature.argName(idx)
             const isOptional = method.signature.isArgOptional(idx)
             return typeMapper.convertParameterType(paramType, paramName, isOptional)
         })
 
-        // 预扫描每个参数，收集回调类型
         perParamConversions.forEach((pc: any, idx: number) => {
             const name = method.signature.argName(idx)
             let tName = typeof pc.cjType === 'string' ? pc.cjType : 'UnknownType'
@@ -349,11 +818,64 @@ export class CJCallbackTypeManager {
                 tName = typeRewriter.rewriteTypeName(tName)
             }
             
-            // 预扫描回调类型（只收集，不修改参数）
-            if (CJCallbackTypeManager.isFunctionType(tName)) {
-                this.processCallbackType(name, tName, method.name, componentName)
+            // 只处理尚未被IDL回调处理识别的类型
+            const alreadyProcessed = this.callbackAliasBySignature.has(`${componentName}.${method.name}:${this.extractTypeOnlySignature(this.normalizeFunctionSignature(tName))}`)
+            
+            if (!alreadyProcessed) {
+                // 检查标准的函数类型格式
+                if (CJCallbackTypeManager.isFunctionType(tName)) {
+                    console.log(`[CJCallbackTypeManager] Found function type in prescan: ${componentName}.${method.name}(${name}: ${tName})`)
+                    this.processCallbackType(name, tName, method.name, componentName)
+                } 
+                // 特殊处理：检查是否为IDL函数类型
+                else if (this.isLikelyCallbackType(tName, name, method.name)) {
+                    console.log(`[CJCallbackTypeManager] Found likely callback type in prescan: ${componentName}.${method.name}(${name}: ${tName})`)
+                    this.processCallbackType(name, tName, method.name, componentName)
+                }
             }
         })
+    }
+
+    /**
+     * 检查是否为可能的回调类型
+     * 用于预扫描阶段识别尚未转换为标准格式的回调类型
+     */
+    private isLikelyCallbackType(typeName: string, paramName: string, methodName: string): boolean {
+        if (!typeName || typeof typeName !== 'string') return false
+        
+        // 检查特定的模式
+        // 1. 包含 "function" 关键字
+        if (/\bfunction\b/i.test(typeName)) return true
+        
+        // 2. 已经是回调类型命名格式
+        if (/\w+Callback\b/.test(typeName)) return true
+        
+        // 3. 特殊的onClick模式：参数名为event且方法名为onClick
+        if (methodName === 'onClick' && paramName === 'event') return true
+        
+        // 4. 通用回调方法模式：以on开头的方法名，且参数名包含常见的回调参数名
+        if (methodName && methodName.startsWith('on')) {
+            // 常见的回调参数名模式
+            if (['callback', 'callback_', 'handler', 'listener', 'event'].includes(paramName)) {
+                return true
+            }
+            // 参数名以callback开头或结尾
+            if (paramName && (paramName.startsWith('callback') || paramName.endsWith('callback') || 
+                             paramName.startsWith('handler') || paramName.endsWith('handler'))) {
+                return true
+            }
+        }
+        
+        // 5. 包含箭头函数语法的类型
+        if (typeName.includes('=>') || typeName.includes('->')) return true
+        
+        // 6. Option包装的可能回调类型
+        if (typeName.startsWith('Option<') && typeName.endsWith('>')) {
+            const innerType = typeName.slice(7, -1).trim()
+            return this.isLikelyCallbackType(innerType, paramName, methodName)
+        }
+        
+        return false
     }
 
     /**
