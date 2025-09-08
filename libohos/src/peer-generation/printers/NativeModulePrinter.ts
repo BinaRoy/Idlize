@@ -239,9 +239,94 @@ class NativeModuleArkUIGeneratedVisitor extends NativeModulePrinterBase {
             }
         }
 
-        const name = `_${component}_${normalizedSigName}`
+        // 为重载函数添加类型后缀
+        let name = `_${component}_${normalizedSigName}`
+        const methodName = method.method.name
+        const sig = method.method.signature as NamedMethodSignature
+        
+        // 检查参数类型，为重载函数生成唯一名称
+        const paramTypes = sig.args.map((arg: idl.IDLType) => {
+            if (idl.isOptionalType(arg)) {
+                const base = (arg as idl.IDLOptionalType).type
+                if (idl.isPrimitiveType(base)) {
+                    return base.kind === 'PrimitiveType' ? base.name : base.kind
+                }
+                return this.getTypeName(base)
+            }
+            if (idl.isPrimitiveType(arg)) {
+                return arg.kind === 'PrimitiveType' ? arg.name : arg.kind
+            }
+            return this.getTypeName(arg)
+        }).join('_')
+        
+        // 检查是否需要类型后缀来避免重名
+        const needsTypeSuffix = this.shouldAddTypeSuffix(methodName, sig.args)
+        
+        if (needsTypeSuffix) {
+            name = `_${component}_${normalizedSigName}_${paramTypes}`
+        }
+        
         const interopMethod = makeInteropMethod(this.library, name, method)
         this.printMethod(interopMethod)
+    }
+
+    // 获取类型的可读名称，用于生成函数名后缀
+    private getTypeName(type: idl.IDLType): string {
+        if (idl.isReferenceType(type)) {
+            const refType = type as idl.IDLReferenceType
+            return refType.name || 'Unknown'
+        }
+        if (idl.isUnionType(type)) {
+            return 'Union'
+        }
+        if (idl.isOptionalType(type)) {
+            return 'Optional'
+        }
+        // 对于其他复杂类型，使用种类
+        return type.kind || 'Unknown'
+    }
+
+    // 检查是否需要添加类型后缀来避免重名
+    private shouldAddTypeSuffix(methodName: string, args: idl.IDLType[]): boolean {
+        // 1. 检查是否有联合类型参数
+        const hasUnionTypeParams = args.some(arg => {
+            const base = idl.isOptionalType(arg) ? (arg as idl.IDLOptionalType).type : arg
+            return idl.isUnionType(base) || (idl.isReferenceType(base) && (base as idl.IDLReferenceType).name?.startsWith('Union_'))
+        })
+        
+        if (hasUnionTypeParams) {
+            return true
+        }
+        
+        // 2. 检查是否是已知的重载方法（通过方法名模式）
+        const overloadPatterns = [
+            /scrollBarWidth/i,
+            /setTestUnion/i,
+            /testUnion/i,
+            /setDefaultPickerItemHeight/i,
+            /defaultPickerItemHeight/i
+        ]
+        
+        if (overloadPatterns.some(pattern => pattern.test(methodName))) {
+            return true
+        }
+        
+        // 3. 检查参数类型是否包含多种基本类型（可能是重载）
+        const primitiveTypes = args.map(arg => {
+            const base = idl.isOptionalType(arg) ? (arg as idl.IDLOptionalType).type : arg
+            if (idl.isPrimitiveType(base)) {
+                return base.kind === 'PrimitiveType' ? base.name : base.kind
+            }
+            return null
+        }).filter(Boolean)
+        
+        // 如果参数包含多种不同的基本类型，可能是重载
+        const uniqueTypes = new Set(primitiveTypes)
+        if (uniqueTypes.size > 1 && primitiveTypes.length === 1) {
+            return true
+        }
+        
+        return false
     }
 
     // 生成互操作函数名的后缀，基于分支类型
@@ -383,7 +468,9 @@ function writeCJNativeModuleMethod(method: Method, nativeModule: LanguageWriter,
     })
     if (nativeFunctions) {
         nativeFunctions!.pushIndent()
-        nativeFunctions!.writeNativeMethodDeclaration(new Method(nativeName, signature))
+        // 使用原始方法名（包含类型后缀）而不是去掉下划线前缀的 nativeName
+        const foreignMethodName = method.name.substring(1) // 去掉下划线前缀，但保留类型后缀
+        nativeFunctions!.writeNativeMethodDeclaration(new Method(foreignMethodName, signature))
         nativeFunctions!.popIndent()
     }
 }

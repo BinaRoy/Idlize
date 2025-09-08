@@ -625,6 +625,7 @@ export class CJLanguageWriter extends LanguageWriter {
     writeNativeMethodDeclaration(method: Method): void {
         let name = method.name
         let signture = `${method.signature.args.map((it, index) => `${this.escapeKeyword(method.signature.argName(index))}: ${this.typeForeignConvertor.convert(it)}`).join(", ")}`
+        // 只去掉下划线前缀，保留类型后缀（如 _Float64, _CString 等）
         name = name.startsWith('_') ? name.slice(1) : name
         this.print(`func ${name}(${signture}): ${this.typeForeignConvertor.convert(method.signature.returnType)}`)
     }
