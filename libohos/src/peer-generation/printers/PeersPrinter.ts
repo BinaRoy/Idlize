@@ -85,8 +85,13 @@ export function writePeerMethod(library: PeerLibrary, printer: LanguageWriter, m
     // 去除数字重载后缀（如 name0/name1 → name），以启用同名多重载
     const stripOverloadIndex = (name: string): string => name.replace(/\d+$/, '')
     const normalizedName = printer.language === Language.CJ
-        ? stripOverloadIndex(normalizeSetterName(normalizeEventName(method.sig.name)))
+        ? stripOverloadIndex(
+            methodPostfix === "_serialize" 
+                ? normalizeEventName(method.sig.name)  // 对于 _serialize 方法，保留 set 前缀
+                : normalizeSetterName(normalizeEventName(method.sig.name))  // 对于其他方法，去掉 set 前缀
+          )
         : method.sig.name
+    
     // 对 CJ 语言应用元组类型转换
     let finalArgs = signature.args
     if (printer.language === Language.CJ) {
