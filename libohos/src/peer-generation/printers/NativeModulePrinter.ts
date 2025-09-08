@@ -180,9 +180,86 @@ class NativeModuleArkUIGeneratedVisitor extends NativeModulePrinterBase {
         }
         
         const normalizedSigName = this.language === Language.CJ ? normalizeEventName(method.sig.name) : method.sig.name
+
+        // CJ: 对参数位置的 Option<Union<...>> 展开为多重重载的互操作方法
+        if (this.language === Language.CJ) {
+            try {
+                const sig = method.method.signature as NamedMethodSignature
+                try {
+                    const dbgArgTypes = sig.args.map((t, i) => `${sig.argName(i)}:${idl.DebugUtils.debugPrintType(t)}`).join(', ')
+                    console.log(`[NativeModulePrinter][CJ] inspect method ${component}.${method.method.name} args=[${dbgArgTypes}]`)
+                } catch {}
+                const unionParamIndex = sig.args.findIndex(arg => {
+                    const base = idl.isOptionalType(arg) ? (arg as idl.IDLOptionalType).type : arg
+                    if (idl.isUnionType(base)) return true
+                    if (idl.isReferenceType(base) && (base as idl.IDLReferenceType).name?.startsWith('Union_')) return true
+                    return false
+                })
+
+                if (unionParamIndex >= 0) {
+                    const originalArgs = sig.args
+                    const originalNames = sig.argsNames
+                    const isOpt = sig.isArgOptional(unionParamIndex)
+                    const baseUnion = idl.isOptionalType(originalArgs[unionParamIndex])
+                        ? (originalArgs[unionParamIndex] as idl.IDLOptionalType).type
+                        : originalArgs[unionParamIndex]
+                    let unionTypes: idl.IDLType[]
+                    if (idl.isUnionType(baseUnion)) {
+                        unionTypes = (baseUnion as idl.IDLUnionType).types
+                    } else if (idl.isReferenceType(baseUnion) && (baseUnion as idl.IDLReferenceType).name?.startsWith('Union_')) {
+                        const name = (baseUnion as idl.IDLReferenceType).name
+                        const tokens = name.replace(/^Union_/, '').split('_').filter(Boolean)
+                        unionTypes = tokens.map(tok => idl.createReferenceType(tok))
+                    } else {
+                        unionTypes = []
+                    }
+
+                    const maxOverloads = Math.min(3, unionTypes.length)
+                    console.log(`[NativeModulePrinter][CJ] expanding param#${unionParamIndex} into ${maxOverloads} overloads for ${component}.${method.method.name}`)
+                    for (let i = 0; i < maxOverloads; i++) {
+                        const branch = unionTypes[i]
+                        const altArgs = originalArgs.slice()
+                        const altBranch = isOpt ? idl.createOptionalType(branch) : branch
+                        altArgs[unionParamIndex] = altBranch
+                        const suffix = this.getTypeSuffix(branch)
+                        const name = `_${component}_${normalizedSigName}_${suffix}`
+                        try { console.log(`[NativeModulePrinter][CJ] make overload interop: ${name} with branch=${idl.DebugUtils.debugPrintType(branch)}`) } catch {}
+                        const idlParams = altArgs.map((t, idx) => idl.createParameter(originalNames[idx], t, sig.isArgOptional(idx)))
+                        const interopMethod = makeInteropMethod(this.library, name, idlParams, returnType, {
+                            forceContext: !!method.method.modifiers?.includes(MethodModifier.FORCE_CONTEXT),
+                            throws: !!method.method.modifiers,
+                            hasReceiver: !!method.sig.context,
+                        })
+                        this.printMethod(interopMethod)
+                    }
+                    return
+                }
+            } catch {
+                // fall through to default
+            }
+        }
+
         const name = `_${component}_${normalizedSigName}`
         const interopMethod = makeInteropMethod(this.library, name, method)
         this.printMethod(interopMethod)
+    }
+
+    // 生成互操作函数名的后缀，基于分支类型
+    private getTypeSuffix(type: idl.IDLType): string {
+        try {
+            if (idl.isReferenceType(type)) {
+                return type.name.replace(/[^A-Za-z0-9]/g, '_')
+            }
+            if (idl.isPrimitiveType(type)) {
+                switch (type) {
+                    case idl.IDLStringType: return 'String'
+                    case idl.IDLNumberType: return 'Float64'
+                    case idl.IDLBooleanType: return 'Bool'
+                    default: return idl.IDLKind[type.kind]
+                }
+            }
+            return 'Alt'
+        } catch { return 'Alt' }
     }
 
     visit(): void {

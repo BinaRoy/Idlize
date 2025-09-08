@@ -44,6 +44,8 @@ import { LayoutNodeRole } from "../peer-generation/LayoutManager";
 import { PeerMethodSignature } from "../peer-generation/PeerMethod";
 import { isInExternalModule } from "../peer-generation/modules";
 
+// 🔄 完全回滚：移除所有修复相关的辅助函数
+
 export function getSerializerName(declaration:idl.IDLEntry) {
     return `${idl.getQualifiedName(declaration, "namespace.name").split('.').join('_')}_serializer`;
 }
@@ -246,6 +248,13 @@ export class StringConvertor extends BaseArgConvertor {
             : writer.escapeKeyword(param)
     }
     convertorSerialize(param: string, value: string, writer: LanguageWriter): LanguageStatement {
+        // [cj-log][StringConvertor] 仅日志
+        try { console.log(`[cj-log][StringConvertor] serialize param=${param} value=${value}`) } catch {}
+        
+        if (value.includes('getSelector') || value.includes('getValue')) {
+            try { console.log(`[cj-log][StringConvertor] suspicious union-like usage value=${value}`) } catch {}
+        }
+        
         return writer.makeStatement(
             writer.makeMethodCall(`${param}Serializer`, "writeString",
                 [writer.makeString(value)]
@@ -289,6 +298,13 @@ export class EnumConvertor extends BaseArgConvertor {
         return writer.i32FromEnum(writer.makeString(writer.escapeKeyword(param)), this.enumEntry).asString()
     }
     convertorSerialize(param: string, value: string, writer: LanguageWriter): LanguageStatement {
+        // [cj-log][EnumConvertor] 仅日志
+        try { console.log(`[cj-log][EnumConvertor] serialize param=${param} value=${value} enum=${writer.getNodeName(this.enumEntry)} isString=${idl.isStringEnum(this.enumEntry)}`) } catch {}
+        
+        if (value.includes('getSelector') || value.includes('getValue')) {
+            try { console.log(`[cj-log][EnumConvertor] suspicious union-like usage value=${value} enum=${writer.getNodeName(this.enumEntry)}`) } catch {}
+        }
+        
         if (idl.isStringEnum(this.enumEntry)) {
             // 对于字符串字面量枚举，按字符串序列化
             return writer.makeStatement(
@@ -469,6 +485,13 @@ export class ObjectConvertor extends BaseArgConvertor {
         return writer.escapeKeyword(param)
     }
     convertorSerialize(param: string, value: string, writer: LanguageWriter): LanguageStatement {
+        // [cj-log][ObjectConvertor] 仅日志
+        try { console.log(`[cj-log][ObjectConvertor] serialize param=${param} value=${value} type=${writer.getNodeName(this.idlType)}`) } catch {}
+        
+        if (value.includes('getSelector') || value.includes('getValue')) {
+            try { console.log(`[cj-log][ObjectConvertor] suspicious union-like usage value=${value} type=${writer.getNodeName(this.idlType)}`) } catch {}
+        }
+        
         return writer.makeStatement(
             writer.makeMethodCall(`${param}Serializer`, writer.language === Language.CPP ? `writeObject` : "holdAndWriteObject",
                 [writer.makeString(value)]
@@ -1104,6 +1127,9 @@ export class UnionConvertor extends BaseArgConvertor {
         throw new Error("Do not use for union")
     }
     convertorSerialize(param: string, value: string, printer: LanguageWriter): LanguageStatement {
+        // [cj-log][UnionConvertor] 仅日志：追踪联合类型序列化
+        try { console.log(`[cj-log][UnionConvertor] serialize param=${param} value=${value} members=${this.memberConvertors.length}`) } catch {}
+        
         const branches: BranchStatement[] = this.memberConvertors.map((it, index) => {
             const discriminator = this.unionChecker.makeDiscriminator(value, index, printer)
             const statements: LanguageStatement[] = []
@@ -1117,10 +1143,16 @@ export class UnionConvertor extends BaseArgConvertor {
 
             if (!(it instanceof UndefinedConvertor)) {
                 const varName = `${value}ForIdx${index}`
+                
+                // [cj-log][UnionConvertor] 仅日志：成员类型信息
+                try { console.log(`[cj-log][UnionConvertor] member index=${index} type=${printer.getNodeName(it.idlType)} var=${varName}`) } catch {}
+                
+                // 🔄 完全回滚：恢复原始的联合类型处理逻辑
                 statements.push(
                     printer.makeAssign(varName, undefined,
                         printer.makeUnionVariantCast(it.getObjectAccessor(printer.language, value), printer.getNodeName(it.idlType), it, index), true)
                 )
+                
                 statements.push(it.convertorSerialize(param, varName, printer))
             }
 
@@ -1131,6 +1163,8 @@ export class UnionConvertor extends BaseArgConvertor {
         return printer.makeMultiBranchCondition(branches)
     }
     convertorDeserialize(bufferName: string, deserializerName: string, assigneer: ExpressionAssigner, writer: LanguageWriter): LanguageStatement {
+        // [cj-log][UnionConvertor] 仅日志：追踪联合类型反序列化
+        try { console.log(`[cj-log][UnionConvertor] deserialize buf=${bufferName} des=${deserializerName} members=${this.memberConvertors.length}`) } catch {}
         const statements: LanguageStatement[] = []
         let selectorBuffer = `${bufferName}UnionSelector`
         const maybeOptionalUnion = writer.language === Language.CPP || writer.language == Language.CJ
@@ -1154,6 +1188,7 @@ export class UnionConvertor extends BaseArgConvertor {
                     }
                 }, writer),
             ], false)
+            try { console.log(`[cj-log][UnionConvertor] branch index=${index} recv=${receiver}`) } catch {}
             return { expr, stmt }
         })
         statements.push(writer.makeMultiBranchCondition(branches, writer.makeThrowError(`One of the branches for ${bufferName} has to be chosen through deserialisation.`)))

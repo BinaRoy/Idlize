@@ -334,6 +334,8 @@ export class PeerLibrary implements LibraryInterface {
     }
 
     typeConvertor(param: string, type: idl.IDLType, isOptionalParam = false): ArgConvertor {
+        // [cj-log][PeerLibrary] 仅日志：记录进入类型转换的原始类型
+        try { console.log(`[cj-log][PeerLibrary] typeConvertor param=${param} type=${idl.DebugUtils.debugPrintType(type)} optional=${isOptionalParam}`) } catch {}
         if (isOptionalParam) {
             return new OptionConvertor(this, param, idl.maybeUnwrapOptionalType(type))
         }
@@ -372,6 +374,8 @@ export class PeerLibrary implements LibraryInterface {
             }
         }
         if (idl.isReferenceType(type)) {
+            // [cj-log][PeerLibrary] 仅日志：记录引用类型进入声明解析
+            try { console.log(`[cj-log][PeerLibrary] ref name=${type.name}`) } catch {}
             // TODO: special cases for interop types.
             // TODO: this types are not references! NativeModulePrinter must be fixed
             switch (type.name.replaceAll('%TEXT%:', '')) { // this is really bad stub, to fix legacy references
@@ -388,6 +392,7 @@ export class PeerLibrary implements LibraryInterface {
                 return new ObjectConvertor(param, type)
             }
             const decl = this.resolveTypeReference(type)
+            try { console.log(`[cj-log][PeerLibrary] resolved name=${type.name} -> decl=${decl ? idl.getFQName(decl) : 'undefined'}`) } catch {}
             if (decl && isImportAttr(decl) || !decl && isImportAttr(type))
                 return new ImportTypeConvertor(param, this.targetNameConvertorInstance.convert(type))
             return this.declarationConvertor(param, type, decl)
@@ -409,6 +414,8 @@ export class PeerLibrary implements LibraryInterface {
     }
 
     declarationConvertor(param: string, type: idl.IDLReferenceType, declaration: idl.IDLEntry | undefined): ArgConvertor {
+        // [cj-log][PeerLibrary] 仅日志：声明转换入口
+        try { console.log(`[cj-log][PeerLibrary] declarationConvertor param=${param} type=${type.name} decl=${declaration ? idl.getFQName(declaration) : 'undefined'}`) } catch {}
         if (generatorConfiguration().forceResource.includes(type.name)) {
             return new ObjectConvertor(param, type)
         }

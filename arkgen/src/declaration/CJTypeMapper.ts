@@ -386,6 +386,18 @@ export class CJTypeMapper {
             
             this.debugLog(`Union analysis: ${typeName} -> tokens=[${tokens.join(',')}], flags=${JSON.stringify(typeFlags)}`);
             
+            // 对于命名联合类型，如果是参数位置且包含多个命名类型，则展开为多重重载
+            const namedTokens = tokens.filter(tok => /^[A-Z]/.test(tok) && !this.isPrimitiveOrLiteral(tok))
+            if (namedTokens.length >= 2) {
+                this.debugLog(`Expanding named union ${typeName} into ${namedTokens.length} overloads`)
+                const overloads: Array<{ cjType: idl.IDLType | string; debugInfo?: string; isOverload?: boolean }> = tokens.map(token => ({
+                    cjType: isOptional ? idl.createOptionalType(idl.createReferenceType(token)) : idl.createReferenceType(token),
+                    debugInfo: `Union branch: ${token}`,
+                    isOverload: true
+                }))
+                return { overloads }
+            }
+            
             return this.applyUnionConvergenceRules(typeFlags, paramName, isOptional);
         } catch (error) {
             this.logError('convertNamedUnionDisplay failed', error);
@@ -399,6 +411,14 @@ export class CJTypeMapper {
     private extractUnionTokens(typeName: string): string[] {
         const match = typeName.match(UNION_PATTERNS.EXTRACT_TOKENS);
         return match ? match[1].split('_').filter(Boolean) : [];
+    }
+
+    /**
+     * 判断是否为原始类型或字面量类型
+     */
+    private isPrimitiveOrLiteral(token: string): boolean {
+        const lower = token.toLowerCase();
+        return ['string', 'number', 'boolean', 'int32', 'int64', 'float32', 'float64', 'bool'].includes(lower);
     }
     
     /**

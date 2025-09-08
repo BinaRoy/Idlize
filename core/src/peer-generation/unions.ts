@@ -88,6 +88,12 @@ export class UnionRuntimeTypeChecker {
         })
     }
     makeDiscriminator(value: string, convertorIndex: number, writer: LanguageWriter): LanguageExpression {
+        // [cj-log][UnionRuntimeTypeChecker] 仅日志：记录判别式生成输入信息
+        try {
+            const conv = this.convertors[convertorIndex]
+            const typeName = writer.getNodeName(conv.idlType)
+            console.log(`[cj-log][UnionRuntimeTypeChecker] makeDiscriminator value=${value} index=${convertorIndex} type=${typeName} rt=[${conv.runtimeTypes.join(',')}]`)
+        } catch {}
         const convertor = this.convertors[convertorIndex]
         if (this.conflictingConvertors.has(convertor) && writer.language === Language.TS) {
             const discriminator = convertor.unionDiscriminator(value, convertorIndex, writer, this.duplicateMembers)

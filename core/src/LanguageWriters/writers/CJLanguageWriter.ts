@@ -16,7 +16,7 @@
 import * as idl from "../../idl"
 import { IndentedPrinter } from "../../IndentedPrinter";
 import { CJKeywords } from "../../languageSpecificKeywords";
-import { ArgConvertor, BaseArgConvertor } from "../ArgConvertors"
+import { ArgConvertor, BaseArgConvertor, StringConvertor, ObjectConvertor, EnumConvertor } from "../ArgConvertors"
 import { RuntimeType } from "../common"
 import {
     AssignStatement,
@@ -752,14 +752,26 @@ export class CJLanguageWriter extends LanguageWriter {
         return [FieldModifier.PUBLIC, FieldModifier.PRIVATE, FieldModifier.PROTECTED, FieldModifier.STATIC]
     }
     makeUnionSelector(value: string, valueType: string): LanguageStatement {
+        // [cj-log][CJLanguageWriter] 仅日志：记录 selector 获取表达式
+        try { console.log(`[cj-log][CJLanguageWriter] makeUnionSelector value=${value} -> ${valueType}.getSelector`) } catch {}
         return this.makeAssign(valueType, undefined, this.makeMethodCall(value, "getSelector", []), false)
     }
     makeUnionVariantCondition(_convertor: ArgConvertor, _valueName: string, valueType: string, type: string, convertorIndex?: number): LanguageExpression {
+        // [cj-log][CJLanguageWriter] 仅日志：记录变体判定
+        try { console.log(`[cj-log][CJLanguageWriter] makeUnionVariantCondition ${valueType} == ${convertorIndex} type=${type}`) } catch {}
         return this.makeString(`${valueType} == ${convertorIndex}`)
     }
     makeUnionVariantCast(value: string, type: string, convertor: ArgConvertor, index: number) {
+        // [cj-log][CJLanguageWriter] 仅日志：追踪联合类型转换，不改逻辑
+        try {
+            console.log(`[cj-log][CJLanguageWriter] makeUnionVariantCast value=${value} type=${type} index=${index} conv=${convertor.constructor.name}`)
+        } catch {}
+        
+        // 🔄 完全回滚：恢复原始的联合类型处理逻辑
         return this.makeMethodCall(value, `getValue${index}`, [])
     }
+    
+    // 🔄 完全回滚：移除所有修复相关的辅助方法
     makeTupleAccess(value: string, index: number): LanguageExpression {
         return this.makeString(`${value}.value${index}`)
     }

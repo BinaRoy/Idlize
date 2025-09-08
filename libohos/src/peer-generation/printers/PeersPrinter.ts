@@ -29,6 +29,7 @@ import {
     isPrimitiveType,
     LayoutNodeRole,
     PeerMethodSignature,
+    PeerMethodArg,
     getExtractor
 } from '@idlizer/core'
 import {
@@ -121,6 +122,16 @@ export function writePeerMethod(library: PeerLibrary, printer: LanguageWriter, m
         method.method.modifiers, method.method.generics
     )
     const argConvertors = method.argAndOutConvertors(library)
+    try { console.log(`[DEBUG] writePeerMethod: method=${method.sig.name}, argConvertors=${argConvertors.map(c => c.constructor.name).join(', ')}`) } catch {}
+    
+    // 检查是否有联合类型参数需要重载
+    const hasUnionParams = checkForUnionParameters(signature, library)
+    if (hasUnionParams && printer.language === Language.CJ) {
+        console.log(`[DEBUG] writePeerMethod: Found union parameters in method ${method.sig.name}, generating overloads`)
+        generateUnionOverloads(library, printer, method, isIDL, dumpSerialized, methodPostfix, ptr, returnType, generics)
+        return
+    }
+    
     printer.writeMethodImplementation(peerMethod, (writer) => {
         let scopes = argConvertors.filter(it => it.isScoped)
         scopes.forEach(it => {
@@ -326,4 +337,246 @@ function constructMaterializedObject(writer: LanguageWriter, signature: MethodSi
             false),
     ]
     */
+}
+
+// 检查方法参数中是否有联合类型
+function checkForUnionParameters(signature: NamedMethodSignature, library: PeerLibrary): boolean {
+    return signature.args.some(argType => {
+        const base = idl.isOptionalType(argType) ? 
+            (argType as idl.IDLOptionalType).type : argType;
+        return idl.isUnionType(base) || 
+               (idl.isReferenceType(base) && 
+                (base as idl.IDLReferenceType).name?.startsWith('Union_'));
+    });
+}
+
+// 生成联合类型重载方法
+function generateUnionOverloads(
+    library: PeerLibrary, 
+    printer: LanguageWriter, 
+    method: PeerMethod, 
+    isIDL: boolean, 
+    dumpSerialized: boolean,
+    methodPostfix: string, 
+    ptr: string, 
+    returnType: IDLType, 
+    generics?: string[]
+) {
+    const signature = method.method.signature as NamedMethodSignature
+    const unionParamIndex = signature.args.findIndex(argType => {
+        const base = idl.isOptionalType(argType) ? 
+            (argType as idl.IDLOptionalType).type : argType;
+        return idl.isUnionType(base) || 
+               (idl.isReferenceType(base) && 
+                (base as idl.IDLReferenceType).name?.startsWith('Union_'));
+    });
+
+    if (unionParamIndex === -1) {
+        console.log(`[DEBUG] generateUnionOverloads: No union parameter found in method ${method.sig.name}`)
+        return;
+    }
+
+    const unionType = signature.args[unionParamIndex];
+    const baseUnionType = idl.isOptionalType(unionType) ? 
+        (unionType as idl.IDLOptionalType).type : unionType;
+    
+    let unionBranches: string[] = [];
+    
+    if (idl.isUnionType(baseUnionType)) {
+        unionBranches = (baseUnionType as idl.IDLUnionType).types.map(t => {
+            if (idl.isReferenceType(t)) {
+                return (t as idl.IDLReferenceType).name!;
+            }
+            return t.toString();
+        });
+    } else if (idl.isReferenceType(baseUnionType)) {
+        const typeName = (baseUnionType as idl.IDLReferenceType).name!;
+        if (typeName.startsWith('Union_')) {
+            // 解析 Union_Length_EdgeWidths_LocalizedEdgeWidths
+            const tokens = typeName.substring(6).split('_').filter(t => t.length > 0);
+            unionBranches = tokens;
+        }
+    }
+
+    console.log(`[DEBUG] generateUnionOverloads: Found union branches: ${unionBranches.join(', ')}`)
+
+    // 为每个联合分支生成重载方法
+    unionBranches.forEach(branchType => {
+        const suffix = getTypeSuffix(branchType);
+        console.log(`[DEBUG] generateUnionOverloads: Generating overload for branch ${branchType} with suffix ${suffix}`)
+        
+        // 创建新的参数类型数组
+        const newArgs = [...signature.args];
+        const isOptional = idl.isOptionalType(unionType);
+        
+        if (isOptional) {
+            newArgs[unionParamIndex] = idl.createOptionalType(idl.createReferenceType(branchType));
+        } else {
+            newArgs[unionParamIndex] = idl.createReferenceType(branchType);
+        }
+
+        // 创建新的方法签名
+        const newSignature = new NamedMethodSignature(
+            returnType,
+            newArgs,
+            signature.argsNames,
+            signature.defaults,
+            signature.argsModifiers
+        );
+
+        // 创建新的方法
+        const overloadMethod = new Method(
+            `${method.sig.name}${methodPostfix}`,
+            newSignature,
+            method.method.modifiers,
+            method.method.generics
+        );
+
+        // 创建新的 PeerMethod
+        const overloadPeerMethod = new PeerMethod(
+            method.sig,
+            method.originalParentName,
+            returnType,
+            method.isCallSignature,
+            overloadMethod
+        );
+
+        // 生成重载方法实现
+        printer.writeMethodImplementation(overloadMethod, (writer) => {
+            console.log(`[DEBUG] generateUnionOverloads: Generating implementation for ${overloadMethod.name} with type ${branchType}`)
+            
+            // 创建新的方法签名用于参数转换器
+            const newSignature = new NamedMethodSignature(
+                returnType,
+                newArgs,
+                signature.argsNames,
+                signature.defaults,
+                signature.argsModifiers
+            );
+            
+            // 创建新的 PeerMethod 用于获取参数转换器
+            const newPeerMethodArgs = newArgs.map((argType, index) => 
+                new PeerMethodArg(signature.argsNames[index], argType)
+            );
+            const newPeerMethodSig = new PeerMethodSignature(
+                method.sig.name,
+                method.sig.fqname,
+                newPeerMethodArgs,
+                returnType,
+                method.sig.context
+            );
+            
+            const tempMethod = new PeerMethod(
+                newPeerMethodSig,
+                method.originalParentName,
+                returnType,
+                method.isCallSignature,
+                overloadMethod
+            );
+            
+            const argConvertors = tempMethod.argAndOutConvertors(library)
+            console.log(`[DEBUG] generateUnionOverloads: Got ${argConvertors.length} arg convertors`)
+            
+            let scopes = argConvertors.filter(it => it.isScoped)
+            scopes.forEach(it => {
+                writer.pushIndent()
+            })
+            let serializerCreated = false
+            let returnValueFilledThroughOutArg = false
+            argConvertors.forEach((it, index) => {
+                if (it.useArray) {
+                    if (!serializerCreated) {
+                        const serializerRef = createReferenceType('SerializerBase')
+                        const serializerEntry = library.resolveTypeReference(serializerRef)
+                        if (!serializerEntry) {
+                            throw new Error("Not found SerializerBase!")
+                        }
+                        writer.addFeature('SerializerBase', library.layout.resolve({ node: serializerEntry, role: LayoutNodeRole.INTERFACE }))
+                        writer.addFeature('DeserializerBase', library.layout.resolve({ node: serializerEntry, role: LayoutNodeRole.INTERFACE }))
+                        writer.writeStatement(
+                            writer.makeAssign(`thisSerializer`, createReferenceType('SerializerBase'),
+                                writer.makeMethodCall('SerializerBase', 'hold', []), true)
+                        )
+                        serializerCreated = true
+                    }
+                    if (it.isOut) {
+                        returnValueFilledThroughOutArg = true
+                        console.log(`[DEBUG] Serializing out arg ${index}: ${it.constructor.name} for param ${it.param}`)
+                        writer.writeStatement(it.convertorSerialize(`this`, returnValName, writer))
+                    } else {
+                        console.log(`[DEBUG] Serializing arg ${index}: ${it.constructor.name} for param ${it.param}`)
+                        writer.writeStatement(it.convertorSerialize(`this`, it.param, writer))
+                    }
+                }
+            })
+            
+            // Enable to see serialized data.
+            if (dumpSerialized) {
+                let arrayNum = 0
+                argConvertors.forEach((it, index) => {
+                    if (it.useArray) {
+                        writer.writePrintLog(`"${it.param}:", thisSerializer.asBuffer(), thisSerializer.length())`)
+                    }
+                })
+            }
+            
+            let params: LanguageExpression[] = []
+            if (method.sig.context) {
+                params.push(writer.makeString(ptr))
+            }
+            let serializerPushed = false
+            argConvertors.forEach(it => {
+                if (it.useArray) {
+                    if (!serializerPushed) {
+                        params.push(writer.makeSerializedBufferGetter(`thisSerializer`))
+                        params.push(writer.makeMethodCall(`thisSerializer`, 'length', []))
+                        serializerPushed = true
+                    }
+                } else {
+                    params.push(writer.makeString(it.convertorArg(it.param, writer)))
+                }
+            })
+            
+            // 调用带后缀的互操作函数
+            const interopName = `_${method.originalParentName}_${method.sig.name}_${suffix}`;
+            console.log(`[DEBUG] generateUnionOverloads: Calling interop function ${interopName}`)
+            
+            let call = writer.makeNativeCall(
+                NativeModule.Generated,
+                interopName,
+                params)
+
+            if (!returnValueFilledThroughOutArg && returnType != IDLVoidType && returnType !== IDLThisType) {
+                writer.writeStatement(writer.makeAssign(returnValName, undefined, call, true))
+            } else {
+                writer.writeStatement(writer.makeStatement(call))
+            }
+            if (serializerPushed)
+                writer.writeStatement(new ExpressionStatement(
+                    writer.makeMethodCall('thisSerializer', 'release', [])))
+            scopes.reverse().forEach(it => {
+                writer.popIndent()
+            })
+            
+            // 处理返回值
+            if (returnType != IDLVoidType) {
+                let result: LanguageStatement[] = [writer.makeReturn(writer.makeString(returnValName))]
+                if (returnValueFilledThroughOutArg) {
+                    // keep result
+                } else if (returnsThis(method, returnType)) {
+                    result = [writer.makeReturn(writer.makeString("this"))]
+                }
+                for (const stmt of result) {
+                    writer.writeStatement(stmt)
+                }
+            }
+        });
+    });
+}
+
+// 获取类型后缀
+function getTypeSuffix(typeName: string): string {
+    // 将类型名转换为后缀格式
+    // 例如: Length -> Length, EdgeWidths -> EdgeWidths, LocalizedEdgeWidths -> LocalizedEdgeWidths
+    return typeName;
 }
