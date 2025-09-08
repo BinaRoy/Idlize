@@ -521,8 +521,17 @@ export class OverloadsPrinter {
         const receiver = isStatic
             ? peer
             : this.isComponent ? `this.getPeer()` : `this`
+
+        const stripOverloadIndex = (name: string): string => name.replace(/\d+$/, '')
+        
         const namePostifx = this.isComponent ? "Attribute" : `${this.posfix}_serialize`
-        const methodName = `${peerMethod.sig.name}${namePostifx}`
+
+        const baseName =
+            namePostifx === `${this.posfix}_serialize`
+                ? stripOverloadIndex(peerMethod.sig.name)
+                : peerMethod.sig.name
+
+        const methodName = `${baseName}${namePostifx}`
         if (collapsedMethod.signature.returnType === idl.IDLThisType) {
             if (this.printer.language == Language.CJ) {
                 if (isStatic) {
