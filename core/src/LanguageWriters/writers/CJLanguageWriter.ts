@@ -574,7 +574,7 @@ export class CJLanguageWriter extends LanguageWriter {
         }
         let isStatic = modifiers.includes(FieldModifier.STATIC)
         let initializer = initExpr ? ` = ${initExpr.asString()}` : ""
-        this.print(`public ${isStatic ? "static " : "open "}prop ${truePropName}: ${this.getNodeName(propType)}${initializer}`)
+        this.print(`public ${isStatic ? "static " : "open "}mut prop ${truePropName}: ${this.getNodeName(propType)}${initializer}`)
         if (getter) {
             this.print('{')
             this.pushIndent()
@@ -655,7 +655,6 @@ export class CJLanguageWriter extends LanguageWriter {
     writeNativeMethodDeclaration(method: Method): void {
         let name = method.name
         let signture = `${method.signature.args.map((it, index) => `${this.escapeKeyword(method.signature.argName(index))}: ${this.typeForeignConvertor.convert(it)}`).join(", ")}`
-        // 只去掉下划线前缀，保留类型后缀（如 _Float64, _CString 等）
         name = name.startsWith('_') ? name.slice(1) : name
         this.print(`func ${name}(${signture}): ${this.typeForeignConvertor.convert(method.signature.returnType)}`)
     }
@@ -801,7 +800,7 @@ export class CJLanguageWriter extends LanguageWriter {
         // 🔄 完全回滚：恢复原始的联合类型处理逻辑
         return this.makeMethodCall(value, `getValue${index}`, [])
     }
-    
+
     // 🔄 完全回滚：移除所有修复相关的辅助方法
     makeTupleAccess(value: string, index: number): LanguageExpression {
         return this.makeString(`${value}.value${index}`)
