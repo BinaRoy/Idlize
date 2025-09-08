@@ -452,7 +452,6 @@ export class CJLanguageWriter extends LanguageWriter {
         
         if (needsOpen) {
             classModifiers = "public open ";
-            console.log(`🔓 [CJLanguageWriter] Adding 'open' modifier to class: ${name}`)
         }
         
         let extendsClause = superClass ? `${superClass}` : undefined
