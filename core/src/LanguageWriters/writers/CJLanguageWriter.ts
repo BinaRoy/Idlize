@@ -393,15 +393,34 @@ class CJArrayResizeStatement implements LanguageStatement {
 
 export class CJLanguageWriter extends LanguageWriter {
     protected typeConvertor: IdlNameConvertor
+    private readonly interfacesVisitor?: any  // CJInterfacesVisitor类型
     protected typeForeignConvertor: IdlNameConvertor
+    
+    // 静态变量来存储全局的interfacesVisitor
+    private static globalInterfacesVisitor: any = null
+    
+    static setGlobalInterfacesVisitor(visitor: any) {
+        CJLanguageWriter.globalInterfacesVisitor = visitor
+    }
+    
+    static getGlobalInterfacesVisitor(): any {
+        return CJLanguageWriter.globalInterfacesVisitor
+    }
+    
+    // 在writeClass方法中设置全局visitor
+    static setInterfacesVisitorFromContext(visitor: any) {
+        CJLanguageWriter.globalInterfacesVisitor = visitor
+    }
     constructor(printer: IndentedPrinter,
                 resolver: ReferenceResolver,
                 typeConvertor: IdlNameConvertor,
                 typeForeignConvertor: IdlNameConvertor,
-                language: Language = Language.CJ) {
+                language: Language = Language.CJ,
+                interfacesVisitor?: any) {
         super(printer, resolver, language)
         this.typeConvertor = typeConvertor
         this.typeForeignConvertor = typeForeignConvertor
+        this.interfacesVisitor = interfacesVisitor
     }
     
     maybeSemicolon() { return "" }
@@ -421,9 +440,17 @@ export class CJLanguageWriter extends LanguageWriter {
         interfaces?: string[],
         generics?: string[]
     ): void {
-        // 特殊处理CommonMethod类，添加open关键字
+        // 智能检测是否需要添加open修饰符
         let classModifiers = "public ";
-        if (name === "CommonMethod") {
+        
+        // 使用智能检测：检查是否有子类
+        const needsOpen = this.interfacesVisitor?.needsOpenModifier(name) || 
+                         CJLanguageWriter.getGlobalInterfacesVisitor()?.needsOpenModifier(name) ||
+                         superClass || 
+                         interfaces?.length || 
+                         name === "CommonMethod";
+        
+        if (needsOpen) {
             classModifiers = "public open ";
         }
         
@@ -515,6 +542,9 @@ export class CJLanguageWriter extends LanguageWriter {
         if (delegationCall) {
             const delegationType = (delegationCall?.delegationType == DelegationType.THIS) ? "this" : "super"
             this.print(`${delegationType}(${delegationCall.delegationArgs.map(it =>it.asString()).join(", ")})`)
+        } else {
+            // 如果没有delegationCall但有父类，添加默认的super()调用
+            // 这里需要根据实际情况判断是否需要调用super()
         }
         op(this)
         this.popIndent()

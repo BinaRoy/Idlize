@@ -33,7 +33,9 @@ import {
     collapseTypes,
     getSuper,
     isInplacedGeneric,
-    maybeRestoreGenerics
+    maybeRestoreGenerics,
+    DelegationCall,
+    DelegationType
 } from '@idlizer/core'
 import { PrinterFunction, PrinterResult } from '../LayoutManager'
 import { peerGeneratorConfiguration } from '../../DefaultConfiguration'
@@ -1127,6 +1129,8 @@ export class ArkTSInterfacesVisitor implements InterfacesVisitor {
 }
 
 export class CJInterfacesVisitor implements InterfacesVisitor {
+    private readonly classesWithChildren: Set<string> = new Set()
+    
     constructor(
         protected readonly peerLibrary: PeerLibrary
     ) { }
@@ -1138,6 +1142,9 @@ export class CJInterfacesVisitor implements InterfacesVisitor {
 
     printInterfaces(): PrinterResult[] {
         const moduleToEntries = new Map<string, idl.IDLEntry[]>()
+
+        // 第一步：分析所有类的继承关系，找出有子类的父类
+        this.analyzeInheritanceRelations()
 
         const registerEntry = (entry: idl.IDLEntry) => {
             if (this.shouldNotPrint(entry)) {
@@ -1174,9 +1181,14 @@ export class CJInterfacesVisitor implements InterfacesVisitor {
                 const imports = new ImportsCollector()
                 const writer = createLanguageWriter(this.peerLibrary.language, this.peerLibrary)
 
+                // 设置全局的interfacesVisitor
+                if (writer.constructor.name === 'CJLanguageWriter') {
+                    (writer.constructor as any).setGlobalInterfacesVisitor(this)
+                }
+
                 collectDeclDependencies(this.peerLibrary, entry, imports)
 
-                const printVisitor = new CJDeclarationConvertor(writer, seenNames, this.peerLibrary)
+                const printVisitor = new CJDeclarationConvertor(writer, seenNames, this.peerLibrary, this)
                 convertDeclaration(printVisitor, entry)
 
                 result.push({
@@ -1190,6 +1202,47 @@ export class CJInterfacesVisitor implements InterfacesVisitor {
             }
         }
         return result
+    }
+
+    /**
+     * 分析所有类的继承关系，找出有子类的父类
+     */
+    private analyzeInheritanceRelations(): void {
+        console.log('🔍 [CJInterfacesVisitor] Analyzing inheritance relations...')
+        
+        // 收集所有接口/类
+        const allInterfaces: idl.IDLInterface[] = []
+        
+        for (const file of this.peerLibrary.files) {
+            for (const entry of idl.linearizeNamespaceMembers(file.entries)) {
+                if (idl.isInterface(entry) && !this.shouldNotPrint(entry)) {
+                    allInterfaces.push(entry)
+                }
+            }
+        }
+        
+        // 分析继承关系
+        for (const interfaceDecl of allInterfaces) {
+            if (interfaceDecl.inheritance && interfaceDecl.inheritance.length > 0) {
+                for (const parentRef of interfaceDecl.inheritance) {
+                    const parentDecl = this.peerLibrary.resolveTypeReference(parentRef as idl.IDLReferenceType)
+                    if (parentDecl && idl.isInterface(parentDecl)) {
+                        const parentName = parentDecl.name
+                        this.classesWithChildren.add(parentName)
+                        console.log(`📋 [CJInterfacesVisitor] Found parent-child relationship: ${parentName} <- ${interfaceDecl.name}`)
+                    }
+                }
+            }
+        }
+        
+        console.log(`✅ [CJInterfacesVisitor] Found ${this.classesWithChildren.size} classes with children:`, Array.from(this.classesWithChildren))
+    }
+
+    /**
+     * 检查类是否需要open修饰符
+     */
+    public needsOpenModifier(className: string): boolean {
+        return this.classesWithChildren.has(className)
     }
 }
 
@@ -1406,12 +1459,16 @@ class CJSyntheticGenerator extends DependenciesCollector {
 
 class CJDeclarationConvertor implements DeclarationConvertor<void> {
     private readonly emittedLiteralEnums: Set<string> = new Set()
+    private readonly interfacesVisitor: CJInterfacesVisitor
 
     constructor(
         protected readonly writer: LanguageWriter,
         protected readonly seenInterfaceNames: Set<string>,
-        readonly peerLibrary: PeerLibrary
-    ) { }
+        readonly peerLibrary: PeerLibrary,
+        interfacesVisitor?: CJInterfacesVisitor
+    ) { 
+        this.interfacesVisitor = interfacesVisitor || new CJInterfacesVisitor(peerLibrary)
+    }
 
     convertCallback(node: idl.IDLCallback): void {
         if (!idl.hasExtAttribute(node, idl.IDLExtendedAttributes.Synthetic))
@@ -1710,6 +1767,13 @@ class CJDeclarationConvertor implements DeclarationConvertor<void> {
             // 2) 构造函数：参数 = 自有 + 父类；赋值到 this.<name>
             const ctorProps = [...ownProperties, ...parentProperties]
 
+            // 准备super()调用的参数
+            const superCallArgs = parentProperties.map(p => writer.escapeKeyword(p.name))
+            const delegationCall = superNames && superNames.length > 0 ? {
+                delegationType: DelegationType.SUPER,
+                delegationArgs: superCallArgs.map(arg => writer.makeString(arg))
+            } : undefined
+
             writer.writeConstructorImplementation(
                 `${FQInterfaceName}`,
                 new NamedMethodSignature(
@@ -1718,7 +1782,7 @@ class CJDeclarationConvertor implements DeclarationConvertor<void> {
                 ctorProps.map(it => writer.escapeKeyword(it.name))
                 ),
                 () => {
-                // 给“自有字段”赋值
+                // 给"自有字段"赋值
                 for (const p of ownProperties) {
                     writer.print(
                     `this.${writer.escapeKeyword(p.name)} = ${writer.escapeKeyword(p.name)}`
@@ -1726,7 +1790,7 @@ class CJDeclarationConvertor implements DeclarationConvertor<void> {
                     // 如需 *_container，请改为：
                     // writer.print(`this.${p.name}_container = ${writer.escapeKeyword(p.name)}`)
                 }
-                // 初始化“父类字段”（这里只是对父类成员赋值，不会 shadow）
+                // 初始化"父类字段"（这里只是对父类成员赋值，不会 shadow）
                 for (const p of parentProperties) {
                     writer.print(
                     `this.${writer.escapeKeyword(p.name)} = ${writer.escapeKeyword(p.name)}`
@@ -1734,7 +1798,8 @@ class CJDeclarationConvertor implements DeclarationConvertor<void> {
                     // 如需 *_container，请改为：
                     // writer.print(`this.${p.name}_container = ${writer.escapeKeyword(p.name)}`)
                 }
-                }
+                },
+                delegationCall
             )
             },
             // 继承父类
