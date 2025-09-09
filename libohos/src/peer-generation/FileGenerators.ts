@@ -301,7 +301,43 @@ export function copyFile(from: string, to: string) {
     if (!fs.existsSync(path.dirname(to))) {
         fs.mkdirSync(path.dirname(to), { recursive: true })
     }
-    fs.copyFileSync(from, to)
+    
+    // 特殊处理 CallbacksChecker.cj 文件，应用枚举修复
+    if (path.basename(from) === 'CallbacksChecker.cj') {
+        let content = fs.readFileSync(from, 'utf8')
+        
+        // 将 class 改为 enum
+        content = content.replace(
+            /class CallbackEventKind \{\s*public static var Event_CallCallback: CallbackEventKind = CallbackEventKind\(0\)\s*public static var Event_HoldManagedResource: CallbackEventKind = CallbackEventKind\(1\)\s*public static var Event_ReleaseManagedResource: CallbackEventKind = CallbackEventKind\(2\)\s*public var value: Int32\s*CallbackEventKind\(arg0: Int32\) \{\s*value = arg0\s*\}\s*\}/s,
+            `enum CallbackEventKind {
+    | Event_CallCallback
+    | Event_HoldManagedResource
+    | Event_ReleaseManagedResource
+}`
+        )
+        
+        // 修改使用方式，从 .value 改为直接数值比较
+        content = content.replace(
+            /let eventKind = deserializer\.readInt32\(\)\s*if \(eventKind == CallbackEventKind\.Event_CallCallback\.value\) \{\s*deserializeAndCallCallback\(deserializer\)\s*\}\s*else if \(eventKind == CallbackEventKind\.Event_HoldManagedResource\.value\) \{\s*let resourceId = deserializer\.readInt32\(\)\s*ResourceHolder\.instance\(\)\.hold\(resourceId\)\s*\}\s*else if \(eventKind == CallbackEventKind\.Event_ReleaseManagedResource\.value\) \{\s*let resourceId = deserializer\.readInt32\(\)\s*ResourceHolder\.instance\(\)\.release\(resourceId\)\s*\}\s*else \{ throw Exception\("Unknown callback event kind \$\{eventKind\}"\) \}/s,
+            `let eventKindValue = deserializer.readInt32()
+        if (eventKindValue == 0) {
+            deserializeAndCallCallback(deserializer)
+        }
+        else if (eventKindValue == 1) {
+            let resourceId = deserializer.readInt32()
+            ResourceHolder.instance().hold(resourceId)
+        }
+        else if (eventKindValue == 2) {
+            let resourceId = deserializer.readInt32()
+            ResourceHolder.instance().release(resourceId)
+        }
+        else { throw Exception("Unknown callback event kind \${eventKindValue}") }`
+        )
+        
+        fs.writeFileSync(to, content, 'utf8')
+    } else {
+        fs.copyFileSync(from, to)
+    }
 }
 
 export function makeArkuiModule(componentsFiles: string[], root:string): string {

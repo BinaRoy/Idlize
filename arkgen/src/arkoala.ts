@@ -730,7 +730,7 @@ function enforceCJPackageConventions(options: { root: string }) {
 
             // 2) 读取端构造：EnumName(valueDeserializer.readInt32()/readString()) -> EnumName.parse(read...)
             // 也覆盖 Color(...), ThemeColorMode(...), 等所有大写开头的枚举类型
-            updated = updated.replace(/\b([A-Z][A-Za-z0-9_]*)\(\s*(valueDeserializer\.read(?:Int32|String)\(\))\s*\)/g, '$1.parse($2)')
+            updated = updated.replace(/\b([A-Z][A-Za-z0-9_]*)\(\s*((?:this|value)Deserializer\.read(?:Int32|String)\(\))\s*\)/g, '$1.parse($2)')
 
             // 3) return EnumName(retval) -> return EnumName.parse(retval)
             updated = updated.replace(/return\s+([A-Z][A-Za-z0-9_]*)\(\s*retval\s*\)/g, 'return $1.parse(retval)')
