@@ -834,12 +834,13 @@ class CJComponentFileVisitor implements ComponentFileVisitor {
         // 可选参数：优先使用有效默认值
         const validDefault = this.getValidDefaultValue(typeName, defaultValue);
         if (validDefault) {
-            return `${name}: ${typeName} = ${validDefault}`;
+            // 🔧 修复：CJ语言中为有默认值的参数添加!后缀并保留默认值
+            return `${name}!: ${typeName} = ${validDefault}`;
         }
 
         // Option<T> 类型：统一默认为 Option.None
         if (this.isOptionType(typeName)) {
-            return `${name}: ${typeName} = Option.None`;
+            return `${name}!: ${typeName} = Option.None`;
         }
 
         // 其他类型：输出为必选形式，避免 "?:" 双可选
@@ -1037,7 +1038,7 @@ class CJComponentFileVisitor implements ComponentFileVisitor {
         // Peer层方法名（应用setter规范化，与Peer层保持一致）
         const peerMethodName = this.normalizeSetterName(exposedMethodName)
         
-        writer.print(`public func ${exposedMethodName}(${paramsStr}): ${effectiveReturnTypeName} {`);
+        writer.print(`public func ${writer.escapeKeyword(exposedMethodName)}(${paramsStr}): ${effectiveReturnTypeName} {`);
         writer.pushIndent();
         
         // 为基础类型参数添加Some()包装，以匹配Peer层的Option<T>期望

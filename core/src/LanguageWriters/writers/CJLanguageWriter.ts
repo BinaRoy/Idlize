@@ -225,7 +225,7 @@ export class CJEnumWithGetter implements LanguageStatement {
         
         // 生成get()方法 - 对于字面量联合枚举，返回String而非Int32
         const returnType = (isStringEnum || isLiteralUnionEnum) ? 'String' : 'Int32'
-        writer.print(`func get(): ${returnType} {`)
+        writer.print(`public func get(): ${returnType} {`)
         writer.pushIndent()
         writer.print('match(this) {')
         writer.pushIndent()
@@ -495,7 +495,16 @@ export class CJLanguageWriter extends LanguageWriter {
         this.printer.print('}')
     }
     private generateFunctionDeclaration(name: string, signature: MethodSignature): string {
-        const args = signature.args.map((it, index) => `${this.escapeKeyword(signature.argName(index))}: ${this.getNodeName(it)}`)
+        // 🔧 修复：CJ语言中为有默认值的参数添加!后缀并保留默认值
+        const args = signature.args.map((it, index) => {
+            const paramName = this.escapeKeyword(signature.argName(index));
+            const paramType = this.getNodeName(it);
+            const defaultValue = signature.argDefault(index);
+            const hasDefault = defaultValue !== undefined;
+            const suffix = hasDefault ? "!" : "";
+            const defaultExpr = hasDefault ? ` = ${defaultValue}` : "";
+            return `${paramName}${suffix}: ${paramType}${defaultExpr}`;
+        });
         return `public func ${name}(${args.join(", ")}): ${this.getNodeName(signature.returnType)}`
     }
     writeMethodCall(receiver: string, method: string, params: string[], nullable = false): void {
@@ -641,7 +650,11 @@ export class CJLanguageWriter extends LanguageWriter {
         const args = signature.args.map((it, index) => {
             const paramName = this.escapeKeyword(signature.argName(index));
             const paramType = this.getNodeName(idl.maybeOptional(it, signature.isArgOptional(index)));
-            return `${paramName}: ${paramType}`;
+            const defaultValue = signature.argDefault(index);
+            const hasDefault = defaultValue !== undefined;
+            const suffix = hasDefault ? "!" : "";
+            const defaultExpr = hasDefault ? ` = ${defaultValue}` : "";
+            return `${paramName}${suffix}: ${paramType}${defaultExpr}`;
         }).join(", ");
         
         const isSetterOrGetter = modifiers?.includes(MethodModifier.SETTER) || modifiers?.includes(MethodModifier.GETTER);
