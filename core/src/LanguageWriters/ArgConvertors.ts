@@ -22,6 +22,7 @@ import {
     LanguageExpression,
     LanguageStatement,
     LanguageWriter,
+    MultiBranchIfStatement,
     PrintHint,
     StringExpression,
     Method,
@@ -1160,13 +1161,130 @@ export class UnionConvertor extends BaseArgConvertor {
             return { expr: discriminator, stmt }
         })
 
-        return printer.makeMultiBranchCondition(branches)
+        return printer.makeMultiBranchCondition(branches, printer.makeThrowError(`One of the branches for ${value} has to be chosen for serialisation.`))
     }
     convertorDeserialize(bufferName: string, deserializerName: string, assigneer: ExpressionAssigner, writer: LanguageWriter): LanguageStatement {
-        // [cj-log][UnionConvertor] 仅日志：追踪联合类型反序列化
-        try { console.log(`[cj-log][UnionConvertor] deserialize buf=${bufferName} des=${deserializerName} members=${this.memberConvertors.length}`) } catch {}
+        
+        // 特殊处理 Union<T, Array<T>> 类型的 CJ 语言生成（只针对特定的selected参数）
+        if (writer.language === Language.CJ && 
+            this.memberConvertors.length === 2 && 
+            bufferName.toLowerCase().includes('selected')) {
+            
+            // 检查是否为 T | Array<T> 模式：一个是基本类型，一个是对应的数组类型
+            const types = this.memberConvertors.map(conv => writer.getNodeName(conv.idlType))
+            const isNumberArrayUnion = (types.includes('Float64') && types.includes('ArrayList<Float64>'))
+            const isStringArrayUnion = (types.includes('String') && types.includes('ArrayList<String>'))
+            
+            
+            const statements: LanguageStatement[] = []
+            const selectorBuffer = `${bufferName}UnionSelector`
+            
+            // 只有真正匹配 T|Array<T> 模式时才使用特殊处理
+            if (isNumberArrayUnion || isStringArrayUnion) {
+                // 读取选择器
+                statements.push(writer.makeAssign(selectorBuffer, idl.IDLI8Type,
+                    writer.makeString(`${deserializerName}.readInt8()`), true))
+            }
+            
+            if (isNumberArrayUnion) {
+                // Number Union处理: 声明变量但不初始化
+                statements.push(writer.makeAssign(bufferName, this.type, undefined, true, false))
+                
+                // 分支1：单值 Number 
+                const numberBranch = new BlockStatement([
+                    writer.makeAssign(bufferName, undefined, 
+                        writer.makeString(`[ match (${deserializerName}.readNumber() as Float64) { case Some(x) => x; case None => throw Exception("Cast is not succeeded")} ]`), false)
+                ], true)
+                
+                // 分支2：Array<Number>
+                const arrayBranch = new BlockStatement([
+                    // 读取数组长度
+                    writer.makeAssign(`${bufferName}BufULength`, idl.IDLI32Type, 
+                        writer.makeString(`${deserializerName}.readInt32()`), true),
+                    // 创建ArrayList并初始化两次
+                    writer.makeAssign(`${bufferName}BufU`, undefined,
+                        writer.makeString(`ArrayList<Float64>(Int64(${bufferName}BufULength))`), true, false),
+                    writer.makeAssign(`${bufferName}BufU`, undefined,
+                        writer.makeString(`ArrayList<Float64>(Int64(${bufferName}BufULength))`), false),
+                    // 循环读取元素
+                    writer.makeLoop(`${bufferName}BufUBufCounterI`, `${bufferName}BufULength`, 
+                        writer.makeAssign(`${bufferName}BufU[Int64(${bufferName}BufUBufCounterI)]`, undefined, 
+                            writer.makeString(`match (${deserializerName}.readNumber() as Float64) { case Some(x) => x; case None => throw Exception("Cast is not succeeded")}`), false)
+                    ),
+                    // 转换为数组
+                    writer.makeAssign(bufferName, undefined, writer.makeString(`${bufferName}BufU.toArray()`), false)
+                ], true)
+                
+                // 构建条件分支，添加else分支, 解决error：未 initial 就使用
+                const condition1 = writer.makeString(`${selectorBuffer} == ${writer.castToInt('0', 8)}`)
+                const condition2 = writer.makeString(`${selectorBuffer} == ${writer.castToInt('1', 8)}`)
+                const elseBranch = new BlockStatement([
+                    writer.makeThrowError(`One of the branches for ${bufferName} has to be chosen through deserialisation.`)
+                ], true)
+                const elseIfStatement = writer.makeCondition(condition2, arrayBranch, elseBranch)
+                const ifStatement = writer.makeCondition(condition1, numberBranch, elseIfStatement)
+                statements.push(ifStatement)
+                
+                statements.push(assigneer(writer.makeCast(writer.makeString(bufferName), this.nativeType())))
+                return new BlockStatement(statements, false)
+                
+            } else if (isStringArrayUnion) {
+                // String Union处理: 声明变量但不初始化
+                statements.push(writer.makeAssign(bufferName, this.type, undefined, true, false))
+                
+                // 分支1：单值 String
+                const stringBranch = new BlockStatement([
+                    writer.makeAssign(bufferName, undefined, 
+                        writer.makeString(`[match (${deserializerName}.readString() as String) { case Some(x) => x; case None => throw Exception("Cast is not succeeded")}]`), false)
+                ], true)
+                
+                // 分支2：Array<String>
+                const arrayBranch = new BlockStatement([
+                    // 读取数组长度
+                    writer.makeAssign(`${bufferName}BufULength`, idl.IDLI32Type, 
+                        writer.makeString(`${deserializerName}.readInt32()`), true),
+                    // 创建ArrayList并初始化两次
+                    writer.makeAssign(`${bufferName}BufU`, undefined,
+                        writer.makeString(`ArrayList<String>(Int64(${bufferName}BufULength))`), true, false),
+                    writer.makeAssign(`${bufferName}BufU`, undefined,
+                        writer.makeString(`ArrayList<String>(Int64(${bufferName}BufULength))`), false),
+                    // 循环读取元素
+                    writer.makeLoop(`${bufferName}BufUBufCounterI`, `${bufferName}BufULength`, 
+                        writer.makeAssign(`${bufferName}BufU[Int64(${bufferName}BufUBufCounterI)]`, undefined, 
+                            writer.makeString(`match (${deserializerName}.readString() as String) { case Some(x) => x; case None => throw Exception("Cast is not succeeded")}`), false)
+                    ),
+                    // 转换为数组
+                    writer.makeAssign(bufferName, undefined, writer.makeString(`${bufferName}BufU.toArray()`), false)
+                ], true)
+                
+                // 构建条件分支，添加else分支
+                const condition1 = writer.makeString(`${selectorBuffer} == ${writer.castToInt('0', 8)}`)
+                const condition2 = writer.makeString(`${selectorBuffer} == ${writer.castToInt('1', 8)}`)
+                const elseBranch = new BlockStatement([
+                    writer.makeThrowError(`One of the branches for ${bufferName} has to be chosen through deserialisation.`)
+                ], true)
+                const elseIfStatement = writer.makeCondition(condition2, arrayBranch, elseBranch)
+                const ifStatement = writer.makeCondition(condition1, stringBranch, elseIfStatement)
+                statements.push(ifStatement)
+                
+                statements.push(assigneer(writer.makeCast(writer.makeString(bufferName), this.nativeType())))
+                return new BlockStatement(statements, false)
+            }
+            
+            // 如果不匹配特殊的T|Array<T>模式，fallback到通用逻辑
+            // 这里不return，继续执行下面的通用逻辑
+        }
+        
+        // 通用Union逻辑，但对T|Array<T>模式的单值情况使用方括号语法
         const statements: LanguageStatement[] = []
         let selectorBuffer = `${bufferName}UnionSelector`
+        
+        // 检查是否为T|Array<T>模式
+        const types = this.memberConvertors.map(conv => writer.getNodeName(conv.idlType))
+        const isTypeArrayUnion = writer.language === Language.CJ && 
+            this.memberConvertors.length === 2 &&
+            ((types.includes('Float64') && types.includes('ArrayList<Float64>')) ||
+             (types.includes('String') && types.includes('ArrayList<String>')))
         const maybeOptionalUnion = writer.language === Language.CPP || writer.language == Language.CJ
             ? this.type
             : idl.createOptionalType(this.type)
@@ -1178,6 +1296,37 @@ export class UnionConvertor extends BaseArgConvertor {
         const branches: BranchStatement[] = this.memberConvertors.map((it, index) => {
             const receiver = this.getObjectAccessor(writer.language, bufferName, {index: `${index}`})
             const expr = writer.makeString(`${selectorBuffer} == ${writer.castToInt(index.toString(), 8)}`)
+            
+            // 对于T|Array<T>模式的特殊处理
+            if (isTypeArrayUnion) {
+                const elemType = types.includes('Float64') ? 'Float64' : 'String'
+                const readMethod = elemType === 'Float64' ? 'readNumber' : 'readString'
+                
+                if (index === 0) {
+                    // 第一个分支（单值），使用方括号语法
+                    const stmt = new BlockStatement([
+                        writer.makeSetUnionSelector(bufferName, `${index}`),
+                        writer.makeAssign(bufferName, undefined, 
+                            writer.makeString(`[match (${deserializerName}.${readMethod}() as ${elemType}) { case Some(x) => x; case None => throw Exception("Cast is not succeeded")}]`), false)
+                    ], false)
+                    return { expr, stmt }
+                } else if (index === 1) {
+                    // 第二个分支（数组），使用ArrayList然后转换
+                    const stmt = new BlockStatement([
+                        writer.makeSetUnionSelector(bufferName, `${index}`),
+                        writer.makeAssign(`${bufferName}BufULength`, idl.IDLI32Type, writer.makeString(`${deserializerName}.readInt32()`), true),
+                        writer.makeAssign(`${bufferName}BufU`, undefined, writer.makeString(`ArrayList<${elemType}>(Int64(${bufferName}BufULength))`), true, false),
+                        writer.makeAssign(`${bufferName}BufU`, undefined, writer.makeString(`ArrayList<${elemType}>(Int64(${bufferName}BufULength))`), false),
+                        writer.makeLoop(`${bufferName}BufUBufCounterI`, `${bufferName}BufULength`, 
+                            writer.makeAssign(`${bufferName}BufU[Int64(${bufferName}BufUBufCounterI)]`, undefined, 
+                                writer.makeString(`match (${deserializerName}.${readMethod}() as ${elemType}) { case Some(x) => x; case None => throw Exception("Cast is not succeeded")}`), false)
+                        ),
+                        writer.makeAssign(bufferName, undefined, writer.makeString(`${bufferName}BufU.toArray()`), false)
+                    ], false)
+                    return { expr, stmt }
+                }
+            }
+            
             const stmt = new BlockStatement([
                 writer.makeSetUnionSelector(bufferName, `${index}`),
                 it.convertorDeserialize(`${bufferName}BufU`, deserializerName, (expr) => {
@@ -1188,7 +1337,6 @@ export class UnionConvertor extends BaseArgConvertor {
                     }
                 }, writer),
             ], false)
-            try { console.log(`[cj-log][UnionConvertor] branch index=${index} recv=${receiver}`) } catch {}
             return { expr, stmt }
         })
         statements.push(writer.makeMultiBranchCondition(branches, writer.makeThrowError(`One of the branches for ${bufferName} has to be chosen through deserialisation.`)))
