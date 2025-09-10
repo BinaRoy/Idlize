@@ -678,7 +678,11 @@ export class CJLanguageWriter extends LanguageWriter {
         throw new Error(`makeClassInit`)
     }
     makeArrayInit(type: idl.IDLContainerType, size?:number): LanguageExpression {
-        return this.makeString(`ArrayList<${this.getNodeName(type.elementType[0])}>(Int64(${size ?? ''}))`)
+        const elementType = this.getNodeName(type.elementType[0])
+        if (size === 0 || size === undefined) {
+            return this.makeString(`Array<${elementType}>(Int64(0), { i => 0 })`)
+        }
+        return this.makeString(`ArrayList<${elementType}>(Int64(${size}))`)
     }
     makeMapInit(type: idl.IDLType): LanguageExpression {
         return this.makeString(`${this.getNodeName(type)}()`)

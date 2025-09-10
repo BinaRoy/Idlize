@@ -247,10 +247,10 @@ export class CJTypeNameConvertor implements NodeConvertor<string>, IdlNameConver
         
         // 检查 number | number[] 模式
         if (this.isNumberType(type1) && this.isNumberArrayType(type2)) {
-            return 'Int32'  // 根据需求，number[] 转换为 Array<Int32>
+            return 'Float64'  // 修改：number[] 转换为 Array<Float64>
         }
         if (this.isNumberArrayType(type1) && this.isNumberType(type2)) {
-            return 'Int32'
+            return 'Float64'  // 修改：number[] 转换为 Array<Float64>
         }
         
         return null
