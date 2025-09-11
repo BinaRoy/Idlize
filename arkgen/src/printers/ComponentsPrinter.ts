@@ -111,7 +111,7 @@ function renderDirective(meta: Meta): string {
     parts.push(`${k}: ${values[k]}`)
   }
   for (const k of Object.keys(flags)) parts.push(`${k}: true`)
-  return `@!APILevel [${parts.join(', ')}]`
+  return `// @!APILevel[${parts.join(', ')}]`
 }
 
 // Index .d.ts files for @since + tags
@@ -420,8 +420,8 @@ class TSComponentFileVisitor implements ComponentFileVisitor {
 
             const attributesFinishSignature = new MethodSignature(IDLVoidType, [])
             const applyAttributesFinish = 'applyAttributesFinish'
-            writer.writeMethodImplementation(new Method(applyAttributesFinish, attributesFinishSignature, [MethodModifier.PUBLIC]), (writer) => {
-                writer.print('// we call this function outside of class, so need to make it public')
+            writer.writeMethodImplementation(new Method(applyAttributesFinish, attributesFinishSignature, [MethodModifier.PROTECTED]), (writer) => {
+                writer.print('// we call this function outside of class, so need to make it protected')
                 writer.writeMethodCall('super', applyAttributesFinish, [])
             })
         }, parentComponentClassName, [componentToAttributesInterface(peer.originalClassName!)])
@@ -545,13 +545,13 @@ class JavaComponentFileVisitor implements ComponentFileVisitor {
 
             const attributesFinishSignature = new MethodSignature(IDLVoidType, [])
             const applyAttributesFinish = 'applyAttributesFinish'
-            writer.writeMethodImplementation(new Method(applyAttributesFinish, attributesFinishSignature, [MethodModifier.PUBLIC]), (writer) => {
+            writer.writeMethodImplementation(new Method(applyAttributesFinish, attributesFinishSignature, [MethodModifier.PROTECTED]), (writer) => {
                 writer.writeMethodCall('super', applyAttributesFinish, [])
             })
 
             const applyAttributesSignature = new MethodSignature(IDLVoidType, [])
             const applyAttributes = 'applyAttributes'
-            writer.writeMethodImplementation(new Method(applyAttributes, applyAttributesSignature, [MethodModifier.PUBLIC]), (writer) => {
+            writer.writeMethodImplementation(new Method(applyAttributes, applyAttributesSignature, [MethodModifier.PROTECTED]), (writer) => {
                 writer.writeMethodCall('super', applyAttributes, [])
                 writer.writeStatement(writer.makeStatement(writer.makeString(`throw new RuntimeException("not implemented")`)))
             })
@@ -1612,10 +1612,13 @@ class CJComponentFileVisitor implements ComponentFileVisitor {
 
             const attributesFinishSignature = new MethodSignature(IDLVoidType, [])
             const applyAttributesFinish = 'applyAttributesFinish'
-            writer.writeMethodImplementation(new Method(applyAttributesFinish, attributesFinishSignature, [MethodModifier.PUBLIC]), (writer) => {
-                writer.print('// we call this function outside of class, so need to make it public')
-                writer.writeMethodCall('super', applyAttributesFinish, [])
-            })
+            // Generate protected open func for ArkCommonMethodComponent to allow subclass override
+            writer.print('protected open func applyAttributesFinish(): Unit {')
+            writer.pushIndent()
+            writer.print('// we call this function outside of class, so need to make it protected')
+            writer.print('super.applyAttributesFinish()')
+            writer.popIndent()
+            writer.print('}')
         }, parentComponentClassName, undefined)
 
         return [{
