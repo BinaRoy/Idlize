@@ -259,7 +259,6 @@ class PeerFileVisitor {
                             writer.makeString('flags')]),
                         true)
                 )
-                writer.writeExpressionStatement(writer.makeString(`${_peer}.registerSelf()`))
                 writer.writeMethodCall(signature.argName(0), 'setPeer', [_peer], true)
                 writer.writeStatement(writer.makeReturn(writer.makeString(_peer)))
             })
