@@ -820,7 +820,7 @@ export class CJLanguageWriter extends LanguageWriter {
 
     // 🔄 完全回滚：移除所有修复相关的辅助方法
     makeTupleAccess(value: string, index: number): LanguageExpression {
-        return this.makeString(`${value}[${index}]`)
+        return this.makeString(`${value}.value${index}`)
     }
     enumFromI32(value: LanguageExpression, enumEntry: idl.IDLEnum): LanguageExpression {
         // 检查是否是字符串枚举或字面量联合枚举

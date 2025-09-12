@@ -1752,7 +1752,7 @@ class CJDeclarationConvertor implements DeclarationConvertor<void> {
             () => {
             // 1) 只声明“自有属性”
             ownProperties.forEach(it => {
-                const modifiers: FieldModifier[] = [FieldModifier.PUBLIC]
+                const modifiers: FieldModifier[] = []
                 // CJ 不支持 readonly；仅保留 static
                 if (it.isStatic) modifiers.push(FieldModifier.STATIC)
 

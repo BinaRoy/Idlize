@@ -55,55 +55,6 @@ export function componentToStyleClass(component: string) {
 
 const returnValName = "retval"  // make sure this doesn't collide with parameter names!
 
-/**
- * 根据方法签名获取类型后缀
- */
-function getTypeSuffixFromSignature(signature: NamedMethodSignature): string {
-    // 检查第一个参数的类型
-    if (signature.args.length > 0) {
-        const firstArg = signature.args[0] as any
-        const typeName = firstArg?.name || String(firstArg)
-        
-        console.log(`[DEBUG] getTypeSuffixFromSignature: checking type ${typeName}`)
-        
-        // 根据类型名返回后缀
-        if (/(^String$|KString(P|Ptr)?$)/i.test(typeName)) {
-            console.log(`[DEBUG] Matched String type, returning _String`)
-            return '_String'
-        }
-        if (/^(Float|Float64|Double|Int|Int32|Int64|Number)$/i.test(typeName)) {
-            console.log(`[DEBUG] Matched Number type, returning _number`)
-            return '_number'
-        }
-        if (/Bool(ean)?$/i.test(typeName)) {
-            console.log(`[DEBUG] Matched Boolean type, returning _boolean`)
-            return '_boolean'
-        }
-        if (/EnumDTS$/.test(typeName)) {
-            console.log(`[DEBUG] Matched EnumDTS, returning _EnumDTS`)
-            return '_EnumDTS'
-        }
-        if (/UnionInterfaceDTS$/.test(typeName)) {
-            console.log(`[DEBUG] Matched UnionInterfaceDTS, returning _UnionInterfaceDTS`)
-            return '_UnionInterfaceDTS'
-        }
-        if (/UnionOptionalInterfaceDTS$/.test(typeName)) {
-            console.log(`[DEBUG] Matched UnionOptionalInterfaceDTS, returning _UnionOptionalInterfaceDTS`)
-            return '_UnionOptionalInterfaceDTS'
-        }
-    }
-    
-    console.log(`[DEBUG] No type suffix matched, returning empty`)
-    return ''
-}
-
-/**
- * 根据重载序号和参数类型获取类型后缀（保留用于向后兼容）
- */
-function getTypeSuffixForOverload(method: any, overloadOrdinal: number, signature: NamedMethodSignature): string {
-    return getTypeSuffixFromSignature(signature)
-}
-
 export function writePeerMethod(library: PeerLibrary, printer: LanguageWriter, method: PeerMethod, isIDL: boolean, dumpSerialized: boolean,
     methodPostfix: string, ptr: string, returnType: IDLType = IDLVoidType, generics?: string[]
 ) {
@@ -241,35 +192,10 @@ export function writePeerMethod(library: PeerLibrary, printer: LanguageWriter, m
                 params.push(writer.makeString(it.convertorArg(it.param, writer)))
             }
         })
-        // 优先使用从arkgen传递的native方法名（如果存在）
-        let nativeMethodName = method.sig.name
-        if ((method as any).__nativeMethodName) {
-            nativeMethodName = (method as any).__nativeMethodName
-            console.log(`[DEBUG] Using pre-computed native method name: ${nativeMethodName}`)
-        } else {
-            // 检测是否需要添加类型后缀（针对已知的联合类型重载方法）
-            const isUnionOverload = (method as any).__isUnionOverload
-            const overloadOrdinal = (method as any).__overloadOrdinal
-            
-            // 检测已知需要类型后缀的方法
-            const knownOverloadMethods = ['scrollBarWidth', 'defaultPickerItemHeight']
-            const needsTypeSuffix = printer.language === Language.CJ && 
-                                   knownOverloadMethods.some(methodName => method.sig.name.includes(methodName))
-            
-            if ((isUnionOverload && typeof overloadOrdinal === 'number') || needsTypeSuffix) {
-                // 根据参数类型添加后缀
-                const typeSuffix = getTypeSuffixFromSignature(signature)
-                if (typeSuffix) {
-                    nativeMethodName = method.sig.name + typeSuffix
-                    console.log(`[DEBUG] Adding type suffix: ${method.sig.name} -> ${nativeMethodName}`)
-                }
-            }
-        }
-
         let call = writer.makeNativeCall(
             NativeModule.Generated,
             // Native 符号保持原始签名，避免与其他语言/既有导出不一致
-            `_${method.originalParentName}_${nativeMethodName}`,
+            `_${method.originalParentName}_${method.sig.name}`,
             params)
 
         if (!returnValueFilledThroughOutArg && returnType != IDLVoidType && returnType !== IDLThisType) {
