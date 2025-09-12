@@ -28,6 +28,8 @@ export interface TypeConversionResult {
     // When union requires overloads, provide alternatives
     overloads?: Array<{ cjType: idl.IDLType | string; defaultValue?: string; useOption?: boolean }>;
     error?: string;
+    // 新增：标记这是从联合类型展开的重载
+    isFromUnionOverload?: boolean;
 }
 
 interface TypeChecker {
@@ -395,7 +397,7 @@ export class CJTypeMapper {
                     debugInfo: `Union branch: ${token}`,
                     isOverload: true
                 }))
-                return { overloads }
+                return { overloads, isFromUnionOverload: true }
             }
             
             return this.applyUnionConvergenceRules(typeFlags, paramName, isOptional);
@@ -491,15 +493,21 @@ export class CJTypeMapper {
             console.log(`[CJTypeMapper] Rule: String+Number overloads (no semantic inference)`);
             try {
                 const numMapping: NumberConversionResult = convertNumberProperty({ propertyName: paramName, isOptional });
-                return { overloads: [
-                    { cjType: numMapping.cjType, defaultValue: numMapping.defaultValue },
-                    { cjType: 'String', defaultValue: DEFAULT_VALUES.RESOURCE_STR }
-                ]};
+                return { 
+                    overloads: [
+                        { cjType: numMapping.cjType, defaultValue: numMapping.defaultValue },
+                        { cjType: 'String', defaultValue: DEFAULT_VALUES.RESOURCE_STR }
+                    ],
+                    isFromUnionOverload: true
+                };
             } catch {
-                return { overloads: [
-                    { cjType: 'Float64', defaultValue: DEFAULT_VALUES.FLOAT64 },
-                    { cjType: 'String', defaultValue: DEFAULT_VALUES.RESOURCE_STR }
-                ] };
+                return { 
+                    overloads: [
+                        { cjType: 'Float64', defaultValue: DEFAULT_VALUES.FLOAT64 },
+                        { cjType: 'String', defaultValue: DEFAULT_VALUES.RESOURCE_STR }
+                    ],
+                    isFromUnionOverload: true
+                };
             }
         }
 
@@ -734,7 +742,7 @@ export class CJTypeMapper {
                         }
                     }
                 })
-                return { overloads: processedOverloads }
+                return { overloads: processedOverloads, isFromUnionOverload: true }
             }
             return conversion
         }
@@ -997,7 +1005,7 @@ export class CJTypeMapper {
                     }
                 } catch {
                     const resBranch = hasResourceStr ? 'ResourceStr' : 'Resource'
-                    return { overloads: [ { cjType: 'Float64', defaultValue: DEFAULT_VALUES.FLOAT64 }, { cjType: resBranch as any } ] }
+                    return { overloads: [ { cjType: 'Float64', defaultValue: DEFAULT_VALUES.FLOAT64 }, { cjType: resBranch as any } ], isFromUnionOverload: true }
                 }
             }
 
@@ -1012,10 +1020,10 @@ export class CJTypeMapper {
                         { cjType: 'String', defaultValue: DEFAULT_VALUES.RESOURCE_STR }
                     ]
                     console.log(`[CJTypeMapper] Generated overloads for ${paramName}: [${overloads.map(o => `${o.cjType}=${o.defaultValue}`).join(', ')}]`);
-                    return { overloads }
+                    return { overloads, isFromUnionOverload: true }
                 } catch (error) {
                     this.logError(`Failed to create string|number overloads for ${paramName}`, error)
-                    return { overloads: [ { cjType: 'Float64', defaultValue: DEFAULT_VALUES.FLOAT64 }, { cjType: 'String', defaultValue: DEFAULT_VALUES.RESOURCE_STR } ] }
+                    return { overloads: [ { cjType: 'Float64', defaultValue: DEFAULT_VALUES.FLOAT64 }, { cjType: 'String', defaultValue: DEFAULT_VALUES.RESOURCE_STR } ], isFromUnionOverload: true }
                 }
             }
 
@@ -1029,7 +1037,7 @@ export class CJTypeMapper {
                         { cjType: 'String', defaultValue: DEFAULT_VALUES.RESOURCE_STR }      // 字符串路径 → String
                     ]
                     console.log(`[CJTypeMapper] Fallback generated overloads for ${paramName}: [${overloads.map(o => `${o.cjType}=${o.defaultValue}`).join(', ')}]`);
-                    return { overloads }
+                    return { overloads, isFromUnionOverload: true }
                 } catch (error) {
                     this.logError(`Failed to create fallback string|number overloads for ${paramName}`, error)
                 }
@@ -1058,7 +1066,7 @@ export class CJTypeMapper {
                 const smartMerged = this.smartMergeTypes(mappedWithNames, paramName)
                 if (smartMerged) {
                     console.log(`[CJTypeMapper] P3-P5: Smart merged to ${smartMerged.length} types for ${paramName}`);
-                    return { overloads: smartMerged }
+                    return { overloads: smartMerged, isFromUnionOverload: true }
                 }
             }
             
@@ -1078,7 +1086,7 @@ export class CJTypeMapper {
             
             if (distinct.length > 1) {
                 console.log(`[CJTypeMapper] P3-P5: Generated ${distinct.length} overloads for ${paramName}: [${distinct.map(o => typeof o.cjType === 'string' ? o.cjType : this.getTypeDisplayName(o.cjType as idl.IDLType)).join(', ')}]`);
-                return { overloads: distinct }
+                return { overloads: distinct, isFromUnionOverload: true }
             }
             
             // 如果只有一个去重后的类型，直接使用
