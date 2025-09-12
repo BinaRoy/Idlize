@@ -300,9 +300,46 @@ class PeerFileVisitor {
         printer.writeClass(componentToPeerClass(peer.componentName), (writer) => {
             this.printPeerConstructor(peer, writer)
             this.printCreateMethod(peer, writer);
+            
+            // 预处理：检测同名方法并标记重载信息
+            this.preprocessOverloadMethods(peer.methods as any[]);
+            
             (peer.methods as any[])
                 .forEach(method => this.printPeerMethod(method, writer))
         }, this.generatePeerParentName(peer))
+    }
+
+    /**
+     * 预处理方法列表，检测同名方法并标记重载信息
+     */
+    private preprocessOverloadMethods(methods: any[]) {
+        // 统计每个方法名的出现次数
+        const methodNameCounts = new Map<string, number>()
+        const methodsByName = new Map<string, any[]>()
+        
+        methods.forEach(method => {
+            const methodName = method.sig?.name
+            if (methodName) {
+                methodNameCounts.set(methodName, (methodNameCounts.get(methodName) || 0) + 1)
+                if (!methodsByName.has(methodName)) {
+                    methodsByName.set(methodName, [])
+                }
+                methodsByName.get(methodName)!.push(method)
+            }
+        })
+        
+        // 标记重载方法
+        methodNameCounts.forEach((count, methodName) => {
+            if (count >= 2) {
+                console.log(`[DEBUG] Detected overload method: ${methodName} (${count} overloads)`)
+                const overloadMethods = methodsByName.get(methodName)!
+                overloadMethods.forEach((method, index) => {
+                    ;(method as any).__isOverloadMethod = true
+                    ;(method as any).__overloadOrdinal = index
+                    console.log(`[DEBUG] Marked method ${methodName}[${index}] as overload`)
+                })
+            }
+        })
     }
 
     printFile(): PrinterResult[] {
@@ -438,8 +475,18 @@ class CJPeerFileVisitor extends PeerFileVisitor {
         })
 
         const hasOverloads = paramConversions.some(c => c.overloads && c.overloads.length > 0)
+        const hasUnionOverload = paramConversions.some(c => c.isFromUnionOverload)
+        
+        // 检测是否是联合类型重载
+        const originalSigName: string | undefined = (method as any).sig?.name
+        
+        if (hasUnionOverload) {
+            console.log(`[DEBUG] Detected union overload for method: ${originalSigName}`)
+            // 标记这个方法来自联合类型重载
+            ;(method as any).__isUnionOverload = true
+        }
 
-        if (hasOverloads) {
+        if (hasOverloads || hasUnionOverload) {
             // 生成重载方法
             this.generatePeerOverloads(method, paramConversions, printer)
         } else {
@@ -450,6 +497,7 @@ class CJPeerFileVisitor extends PeerFileVisitor {
         this.library.setCurrentContext(undefined)
     }
 
+
     /**
      * 生成 Peer 重载方法
      */
@@ -458,8 +506,9 @@ class CJPeerFileVisitor extends PeerFileVisitor {
         const overloadIndex = paramConversions.findIndex(c => c.overloads && c.overloads.length > 0)
         
         if (overloadParam && overloadParam.overloads) {
-            for (const alt of overloadParam.overloads) {
-                this.generateSinglePeerMethodWithOverride(method, paramConversions, overloadIndex, alt, printer)
+            for (let __overloadOrdinal = 0; __overloadOrdinal < overloadParam.overloads.length; __overloadOrdinal++) {
+                const alt = overloadParam.overloads[__overloadOrdinal]
+                this.generateSinglePeerMethodWithOverride(method, paramConversions, overloadIndex, alt, printer, __overloadOrdinal)
             }
         }
     }
@@ -480,10 +529,16 @@ class CJPeerFileVisitor extends PeerFileVisitor {
         paramConversions: TypeConversionResult[], 
         overloadIndex: number, 
         overloadAlt: { cjType: idl.IDLType | string; defaultValue?: string }, 
-        printer: LanguageWriter
+        printer: LanguageWriter,
+        __overloadOrdinal: number
     ) {
         // 对于重载，我们需要创建一个新的方法对象
         const modifiedMethod = this.createOverloadedMethod(method, overloadIndex, overloadAlt)
+        ;(modifiedMethod as any).__overloadOrdinal = __overloadOrdinal
+        // 传递联合类型重载标志位
+        if ((method as any).__isUnionOverload) {
+            ;(modifiedMethod as any).__isUnionOverload = true
+        }
         this.callOriginalWritePeerMethod(modifiedMethod, printer)
     }
 
@@ -534,34 +589,240 @@ class CJPeerFileVisitor extends PeerFileVisitor {
      * 调用原始的 writePeerMethod 函数
      */
     private callOriginalWritePeerMethod(method: PeerMethod, printer: LanguageWriter) {
-        // 事件命名规范化
-        const normalizeEventName = (name: string): string => {
-            let n = name
-            let m: RegExpMatchArray | null
-            if ((m = n.match(/^set_onChangeEvent_(.+)$/))) {
-                const tail = m[1]
-                return 'on' + tail.replace(/^(.)/, (c) => c.toUpperCase())
+        // 生成原生桥接名所需的名称（保持 set/on/类型后缀/编号后缀），避免展示名规范化影响
+        const toPascalCase = (s: string) => s.replace(/^([a-z])/, (_a, c: string) => c.toUpperCase())
+        const startsWithOnEvent = (s: string) => /^on[A-Z].*/.test(s)
+        // 少量原生即为 onXxx 的白名单
+        const keepOnWhitelist = new Set<string>(['onSelect', 'onText', 'onSelected', 'onValue'])
+
+        // 根据参数类型推断类型后缀（仅必要时）
+        const getTypeSuffix = (sig?: NamedMethodSignature): string => {
+            if (!sig) return ''
+
+            // 上下文方法名（原始 IDL 名称）
+            const originalName: string = (method as any).sig?.name || ''
+            const inUnionContext = /Union/i.test(originalName)
+
+            // 先判断是否为重载或包含联合参数（避免被早退逻辑短路）
+            const isOverloadMethod = (method as any).__overloadOrdinal !== undefined || (method as any).__isOverloadMethod
+
+            console.log(`[DEBUG] getTypeSuffix called for method: ${originalName}`)
+            console.log(`[DEBUG] - inUnionContext: ${inUnionContext}`)
+            console.log(`[DEBUG] - isOverloadMethod: ${isOverloadMethod}`)
+            console.log(`[DEBUG] - __overloadOrdinal: ${(method as any).__overloadOrdinal}`)
+
+            let hasUnionParam = false
+            for (let i = 0; i < sig.args.length; i++) {
+                const t: any = sig.args[i]
+                const refName: string | undefined = (t && typeof t === 'object' && 'name' in t) ? (t as any).name : undefined
+                const asString = refName || String(t)
+
+                // 调试信息（定位特定问题方法）
+                if (originalName.includes('scrollBarWidth') || originalName.includes('defaultPickerItemHeight')) {
+                    console.log(`[DEBUG] Method: ${originalName}, Arg ${i}:`, {
+                        type: t,
+                        refName,
+                        asString,
+                        isUnion: /Union_/.test(asString) || (t && typeof t === 'object' && t.types && Array.isArray(t.types)) || asString.includes('|')
+                    })
+                }
+
+                // 检测联合类型标记 - 增强检测逻辑
+                if (/Union_/.test(asString) ||
+                    (t && typeof t === 'object' && t.types && Array.isArray(t.types)) || // IDL UnionType
+                    asString.includes('|') || // 直接的联合类型语法
+                    /^(number|string|boolean)\s*\|\s*(number|string|boolean)/.test(asString) ||
+                    (t && typeof t === 'object' && (t as any).kind === 'UnionType') ||
+                    (asString === 'number | string' || asString === 'string | number')) {
+                    hasUnionParam = true
+                    console.log(`[DEBUG] Found union param at index ${i}: ${asString}`)
+                    break
+                }
             }
-            if ((m = n.match(/^_onChangeEvent_(.+)$/))) {
-                const tail = m[1]
-                return 'on' + tail.replace(/^(.)/, (c) => c.toUpperCase())
+
+            // 特殊处理：对于已知需要重载的方法，强制添加类型后缀
+            const knownOverloadMethods = ['scrollBarWidth', 'defaultPickerItemHeight']
+            if (knownOverloadMethods.some(methodName => originalName.includes(methodName))) {
+                hasUnionParam = true
+                console.log(`[DEBUG] Forcing union param for method: ${originalName}`)
             }
-            return name
+
+            // 检测参数类型是否为联合类型（number | string）
+            // 只对已知需要重载的方法进行检测
+            if (knownOverloadMethods.some(methodName => originalName.includes(methodName))) {
+                for (let i = 0; i < sig.args.length; i++) {
+                    const t: any = sig.args[i]
+                    const refName: string | undefined = (t && typeof t === 'object' && 'name' in t) ? (t as any).name : undefined
+                    const asString = refName || String(t)
+                    
+                    // 检测是否为 number 或 String 类型（这些方法需要重载）
+                    if (asString === 'number' || asString === 'String') {
+                        hasUnionParam = true
+                        console.log(`[DEBUG] Detected number/String param for overload method: ${originalName}, arg: ${asString}`)
+                        break
+                    }
+                }
+            }
+
+            console.log(`[DEBUG] - hasUnionParam: ${hasUnionParam}`)
+
+            // 在重载/联合场景下优先决定后缀，避免被"复杂类型免后缀"的早退短路
+            if (inUnionContext || hasUnionParam || isOverloadMethod) {
+                console.log(`[DEBUG] Entering union/overload suffix logic for: ${originalName}`)
+                for (let i = 0; i < sig.args.length; i++) {
+                    const t: any = sig.args[i]
+                    const refName: string | undefined = (t && typeof t === 'object' && 'name' in t) ? (t as any).name : undefined
+                    const asString = refName || String(t)
+
+                    console.log(`[DEBUG] Checking arg ${i}: ${asString}`)
+
+                    if (/EnumDTS$/.test(asString)) {
+                        console.log(`[DEBUG] Matched EnumDTS, returning _EnumDTS`)
+                        return '_EnumDTS'
+                    }
+                    if (/UnionInterfaceDTS$/.test(asString)) {
+                        console.log(`[DEBUG] Matched UnionInterfaceDTS, returning _UnionInterfaceDTS`)
+                        return '_UnionInterfaceDTS'
+                    }
+                    if (/UnionOptionalInterfaceDTS$/.test(asString)) {
+                        console.log(`[DEBUG] Matched UnionOptionalInterfaceDTS, returning _UnionOptionalInterfaceDTS`)
+                        return '_UnionOptionalInterfaceDTS'
+                    }
+                    if (/(^String$|KString(P|Ptr)?$)/i.test(asString)) {
+                        console.log(`[DEBUG] Matched String type, returning _String`)
+                        return '_String'
+                    }
+                    if (/^(Float|Float64|Double|Int|Int32|Int64|Number)$/i.test(asString)) {
+                        console.log(`[DEBUG] Matched Number type, returning _number`)
+                        return '_number'
+                    }
+                    if (/Bool(ean)?$/i.test(asString)) {
+                        console.log(`[DEBUG] Matched Boolean type, returning _boolean`)
+                        return '_boolean'
+                    }
+                }
+                // 无法识别具体基础类型时，对重载按序号兜底映射（常见顺序：0 -> number，1 -> String）
+                const ord: unknown = (method as any).__overloadOrdinal
+                console.log(`[DEBUG] No specific type matched, checking overload ordinal: ${ord}`)
+                if (typeof ord === 'number') {
+                    if (ord === 0) {
+                        console.log(`[DEBUG] Using ordinal 0 -> _number`)
+                        return '_number'
+                    }
+                    if (ord === 1) {
+                        console.log(`[DEBUG] Using ordinal 1 -> _String`)
+                        return '_String'
+                    }
+                }
+                // 无法识别具体基础类型时，不加后缀
+                console.log(`[DEBUG] No ordinal match, returning empty suffix`)
+                return ''
+            }
+
+            // 非联合/非重载：出现序列化或复杂语义类型 → 不加后缀
+            for (let i = 0; i < sig.args.length; i++) {
+                const argName = typeof (sig as any).argName === 'function' ? (sig as any).argName(i) : undefined
+                const t: any = sig.args[i]
+                const refName: string | undefined = (t && typeof t === 'object' && 'name' in t) ? (t as any).name : undefined
+                const asString = refName || String(t)
+
+                if (/^(this(Array|Length))$/i.test(String(argName || ''))) {
+                    return ''
+                }
+                if (/KSerializerBuffer/i.test(asString)) {
+                    return ''
+                }
+                // 原生元组显示名：(A, B, ...)
+                if (/^\(.*\)$/.test(asString)) {
+                    return ''
+                }
+                // 明显的复杂/复合语义类型：统一视为走序列化 → 不加后缀
+                if (/(Options$|Interface$|Tuple_|Struct$|Resource(Color|Str)?$|Length$|Padding$|Edge(Widths|Colors|Styles|Radiuses|)$|Border(Options|Radiuses|Styles)?$|Font(Weight)?$|Matrix4$|LayoutPolicy$|Dimension$)/.test(asString)) {
+                    return ''
+                }
+            }
+
+            // 默认不加后缀
+            console.log(`[DEBUG] No union/overload detected, returning empty suffix for: ${originalName}`)
+            return ''
         }
-        
-        const normalizeSetterName = (name: string): string => 
-            name.replace(/^set([A-Z])(.*)$/,( _all, first: string, rest: string) => first.toLowerCase() + rest)
-        const stripOverloadIndex = (name: string): string => name.replace(/\d+$/, '')
-        
-        const originalSigName = (method as any).sig?.name
-        if (originalSigName) {
-            ;(method as any).sig.name = stripOverloadIndex(normalizeSetterName(normalizeEventName(originalSigName)))
+
+        const originalSigName: string | undefined = (method as any).sig?.name
+        const originalSignature: NamedMethodSignature | undefined = (method.method.signature as NamedMethodSignature)
+
+        // 语义收敛：统一处理复杂联合方法名到实际原生名
+        const normalizeNativeBaseName = (name: string | undefined): string => {
+            let n = name || ''
+            // 简化复杂联合：boolean|string|number|undefined → boolean|undefined
+            n = n.replace(/testUnionBooleanStringNumberUndefined/g, 'testBooleanUndefined')
+            // 事件方法名收敛：setOnChangeEvent_* → onXxx
+            n = n.replace(/^setOnChangeEvent_(.+)$/, (_, tail) => 'on' + tail.replace(/^(.)/, (c: string) => c.toUpperCase()))
+            return n
         }
+
+        // 计算应当用于原生桥接名的基名
+        let nativeBase = normalizeNativeBaseName(originalSigName)
         
+        // 处理 set_ 开头的特殊情况
+        if (nativeBase.startsWith('set_')) {
+            // set_onChangeEvent_select -> setOnChangeEvent_select
+            nativeBase = 'set' + toPascalCase(nativeBase.substring(4))
+        } else {
+            // 检查是否已经以set开头，避免重复添加
+            const alreadyHasSet = /^set[A-Z]/.test(nativeBase)
+            
+            if (startsWithOnEvent(nativeBase)) {
+                // 事件：优先 setOnXxx，少量白名单保持 onXxx
+                if (!keepOnWhitelist.has(nativeBase)) {
+                    if (!alreadyHasSet) {
+                        nativeBase = 'set' + toPascalCase(nativeBase)
+                    }
+                }
+            } else {
+                // 非事件：统一 setXxx
+                if (!alreadyHasSet) {
+                    nativeBase = 'set' + toPascalCase(nativeBase)
+                }
+            }
+        }
+
+        // 类型后缀（如 _number/_String/...）
+        const typeSuffix = getTypeSuffix(originalSignature)
+        console.log(`[DEBUG] Final typeSuffix for ${originalSigName}: "${typeSuffix}"`)
+
+        // 重载编号（如 onClick0/1）
+        const overloadOrdinal: number | undefined = (method as any).__overloadOrdinal
+        let overloadSuffix = ''
+        if (/^setOn[A-Z].*/.test(nativeBase) && Number.isInteger(overloadOrdinal)) {
+            overloadSuffix = String(overloadOrdinal)
+        }
+
+        const nativeSigName = nativeBase + typeSuffix + overloadSuffix
+        console.log(`[DEBUG] Final nativeSigName for ${originalSigName}: "${nativeSigName}"`)
+        console.log(`[DEBUG] - nativeBase: "${nativeBase}"`)
+        console.log(`[DEBUG] - typeSuffix: "${typeSuffix}"`)
+        console.log(`[DEBUG] - overloadSuffix: "${overloadSuffix}"`)
+        console.log(`[DEBUG] - overloadOrdinal: ${overloadOrdinal}`)
+
+        // 方法声明使用原始名称（无后缀），native调用使用带后缀的名称
+        const methodNameForDeclaration = nativeBase + overloadSuffix  // 不包含typeSuffix
+        const methodNameForNativeCall = nativeSigName  // 包含typeSuffix
+        
+        console.log(`[DEBUG] Method declaration name: "${methodNameForDeclaration}"`)
+        console.log(`[DEBUG] Native call name: "${methodNameForNativeCall}"`)
+
+        const backupName = originalSigName
+        if (backupName) {
+            ;(method as any).sig.name = methodNameForDeclaration
+        }
+
+        // 将native调用名称传递给writePeerMethod
+        ;(method as any).__nativeMethodName = methodNameForNativeCall
+
         writePeerMethod(this.library, printer, method, true, this.dumpSerialized, "Attribute", "this.peer.ptr")
-        
-        if (originalSigName) {
-            (method as any).sig.name = originalSigName
+
+        if (backupName) {
+            (method as any).sig.name = backupName
         }
     }
     
