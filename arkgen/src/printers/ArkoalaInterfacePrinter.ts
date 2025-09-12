@@ -151,6 +151,23 @@ function getVisitor(peerLibrary: PeerLibrary, isDeclarations: boolean): Interfac
     if (peerLibrary.language == Language.CJ) {
         const inner = new CJInterfacesVisitor(peerLibrary)
         const mapper = new CJTypeMapper()
+        // 将 CJ 基础类型字符串映射回 IDL 原生 primitive，避免后续被当作引用类型导致在 CJ 端退化为 Any
+        function toIdlTypeFromCjString(cj: string): idl.IDLType {
+            switch (cj) {
+                case 'Float64': return idl.IDLNumberType
+                case 'Float32': return idl.IDLF32Type
+                case 'Int32':   return idl.IDLI32Type
+                case 'Int64':   return idl.IDLI64Type
+                case 'UInt8':   return idl.IDLU8Type
+                case 'UInt16':  return idl.IDLU16Type
+                case 'UInt32':  return idl.IDLU32Type
+                case 'Bool':    return idl.IDLBooleanType
+                case 'String':  return idl.IDLStringType
+                case 'Unit':    return idl.IDLVoidType
+                case 'Array<UInt8>': return idl.IDLBufferType
+                default:        return idl.createReferenceType(cj)
+            }
+        }
         return {
             printInterfaces(): PrinterResult[] {
                 // 在调用inner.printInterfaces()之前，直接修改peerLibrary.files来过滤掉Tuple_*接口
@@ -187,7 +204,7 @@ function getVisitor(peerLibrary: PeerLibrary, isDeclarations: boolean): Interfac
                                     const conv = mapper.convertParameterType(chosenType, prop.name, true)
                                     const cj = conv.cjType ?? conv.overloads?.[0]?.cjType
                                     if (cj) {
-                                        const assigned = typeof cj === 'string' ? idl.createReferenceType(cj) : cj
+                                        const assigned = typeof cj === 'string' ? toIdlTypeFromCjString(cj) : cj
                                         // 字段层面：保持 Option 承载由上游 Optional 决定，这里不强制拆包
                                         prop.type = assigned
                                     }

@@ -21,6 +21,48 @@ import { InteropArgConvertor } from './InteropConvertors'
 
 export class CJTypeNameConvertor implements NodeConvertor<string>, IdlNameConvertor {
 
+    // 控制调试日志输出
+    private static readonly DEBUG_LOG = false
+    private dbg(fn: () => void) { if (CJTypeNameConvertor.DEBUG_LOG) try { fn() } catch { } }
+    
+    /**
+     * 基础类型映射表：处理被错误包装为引用类型的基础类型名
+     * 
+     * 问题：某些阶段会将基础类型（如 void）错误地包装为 IDLReferenceType('Unit')，
+     * 导致类型解析失败并兜底返回 Any。
+     * 
+     * 解决：直接映射这些"伪引用类型"的名称到正确的 CJ 类型字符串。
+     * 
+     * 影响：所有使用 CJTypeNameConvertor 的地方，包括：
+     * - Foreign 函数声明
+     * - 类方法返回类型  
+     * - 参数类型转换
+     * - 其他类型引用位置
+     */
+    private static readonly BASIC_TYPE_MAPPING: Record<string, string> = {
+        // void 类型映射
+        'Unit': 'Unit',
+        'void': 'Unit',
+        // 布尔类型映射
+        'Bool': 'Bool', 
+        'boolean': 'Bool',
+        // 整数类型映射
+        'Int32': 'Int32',
+        'Int64': 'Int64',
+        'UInt8': 'UInt8',
+        'UInt16': 'UInt16', 
+        'UInt32': 'UInt32',
+        'UInt64': 'UInt64',
+        // 浮点类型映射
+        'Float32': 'Float32',
+        'Float64': 'Float64',
+        // 字符串类型映射
+        'String': 'String',
+        // 指针类型映射
+        'pointer': 'UInt64',
+        'Pointer': 'UInt64'
+    }
+
     constructor(
         protected resolver: ReferenceResolver
     ) { }
@@ -44,26 +86,26 @@ export class CJTypeNameConvertor implements NodeConvertor<string>, IdlNameConver
             const [type1, type2] = type.types
             const simplifiedType = this.detectSingleTypeWithArrayUnion(type1, type2)
             if (simplifiedType) {
-                console.log(`[CJTypeNameConvertor] Converting union ${this.convert(type1)} | ${this.convert(type2)} to Array<${simplifiedType}>`)
+                this.dbg(() => console.log(`[CJTypeNameConvertor] Converting union ${this.convert(type1)} | ${this.convert(type2)} to Array<${simplifiedType}>`))
                 return `Array<${simplifiedType}>`
             }
         }
         // 调试：输出仍然落到名称分支的联合类型
-        try {
+        this.dbg(() => {
             const variants = type.types?.map(t => idl.DebugUtils.debugPrintType(t)).join(' | ')
             console.log(`[CJTypeNameConvertor] convertUnion fallback: name=${type.name} variants=[${variants}]`)
-        } catch {}
+        })
         // 序列化方法参数的Union_类型展开：选择第一个成员类型，避免Union_泄漏
         if (type.name && type.name.startsWith('Union_')) {
-            console.log(`[CJTypeNameConvertor] Expanding Union type ${type.name} to first member`)
+            this.dbg(() => console.log(`[CJTypeNameConvertor] Expanding Union type ${type.name} to first member`))
             // 提取Union_类型的第一个成员类型
             if (type.types && type.types.length > 0) {
                 const firstType = this.convert(type.types[0])
-                console.log(`[CJTypeNameConvertor] Union ${type.name} -> ${firstType}`)
+                this.dbg(() => console.log(`[CJTypeNameConvertor] Union ${type.name} -> ${firstType}`))
                 return firstType
             }
             // 兜底：如果无法提取成员，使用Any
-            console.warn(`[CJTypeNameConvertor] Cannot extract Union members from ${type.name}, using Any`)
+            this.dbg(() => console.warn(`[CJTypeNameConvertor] Cannot extract Union members from ${type.name}, using Any`))
             return 'Any'
         }
         return type.name
@@ -124,10 +166,17 @@ export class CJTypeNameConvertor implements NodeConvertor<string>, IdlNameConver
     convertTypeReference(type: idl.IDLReferenceType): string {
         if (type.name === idl.IDLObjectType.name)
             return "KPointer"
+        
+        // 处理被错误包装为引用类型的基础类型名
+        // 这是一个通用修复，影响所有使用 CJTypeNameConvertor 的地方（包括类方法返回类型）
+        const mappedType = type.name ? CJTypeNameConvertor.BASIC_TYPE_MAPPING[type.name] : undefined
+        if (mappedType) {
+            return mappedType
+        }
             
         // CJ 兜底（限定）：不再把 Union_* 映射为 Any，保留名称由上层展开
         if (type.name.startsWith('Union_')) {
-            console.log(`[CJTypeNameConvertor] Preserving reference to ${type.name} (no Any fallback here)`)
+            this.dbg(() => console.log(`[CJTypeNameConvertor] Preserving reference to ${type.name} (no Any fallback here)`))
             return type.name
         }
         
@@ -147,11 +196,11 @@ export class CJTypeNameConvertor implements NodeConvertor<string>, IdlNameConver
                     return tok // 枚举或自定义类型，保持原样
                 })
                 const nativeTupleSyntax = `(${elementTypes.join(', ')})`
-                console.log(`[CJTypeNameConvertor] Converting Tuple type reference ${type.name} to native syntax: ${nativeTupleSyntax}`)
+                this.dbg(() => console.log(`[CJTypeNameConvertor] Converting Tuple type reference ${type.name} to native syntax: ${nativeTupleSyntax}`))
                 return nativeTupleSyntax
             }
             // 如果解析失败，返回兜底类型
-            console.log(`[CJTypeNameConvertor] Failed to parse Tuple type ${type.name}, returning String`)
+            this.dbg(() => console.log(`[CJTypeNameConvertor] Failed to parse Tuple type ${type.name}, returning String`))
             return 'String'
         }
         
@@ -223,7 +272,7 @@ export class CJTypeNameConvertor implements NodeConvertor<string>, IdlNameConver
         if (isTuple && decl.name.startsWith('Tuple_')) {
             const fieldTypes = decl.properties.map(prop => this.convert(prop.type))
             const nativeTupleSyntax = `(${fieldTypes.join(', ')})`
-            console.log(`[CJTypeNameConvertor] Converting Tuple type ${decl.name} to native syntax: ${nativeTupleSyntax}`)
+            this.dbg(() => console.log(`[CJTypeNameConvertor] Converting Tuple type ${decl.name} to native syntax: ${nativeTupleSyntax}`))
             return nativeTupleSyntax
         }
         
@@ -283,10 +332,12 @@ export class CJIDLTypeToForeignStringConvertor extends CJTypeNameConvertor {
     convert(type: idl.IDLNode): string {
         if (idl.isPrimitiveType(type)) {
             switch (type) {
-                case idl.IDLStringType: return 'CString'
+                case idl.IDLStringType: 
+                    return 'CString'  // 强制所有字符串类型在 foreign 函数中使用 CString
                 case idl.IDLInteropReturnBufferType: return 'KInteropReturnBuffer'
                 case idl.IDLSerializerBuffer: return 'KSerializerBuffer'
                 case idl.IDLObjectType: return 'Unit'
+                case idl.IDLVoidType: return 'Unit'  // void 类型在 foreign 函数中返回 Unit
             }
         }
         if (idl.isContainerType(type)) {
@@ -295,20 +346,41 @@ export class CJIDLTypeToForeignStringConvertor extends CJTypeNameConvertor {
             }
         }
         if (idl.isReferenceType(type)) {
-            // Fix, actual mapping has to be due to IDLType
-            if (super.convert(type).startsWith('Array'))
-                return `CPointer<UInt8>`
-            if (super.convert(type) == 'String' || super.convert(type) == 'KStringPtr' ) {
-                return `CString`
+            const ref = type as idl.IDLReferenceType
+            const refName = ref.name
+            // 规范化：去除命名空间/前缀，取最后一段（支持 "%TEXT%:KStringPtr"、"ns.sub.String" 等）
+            const simpleRef = (() => {
+                const tailByColon = refName.split(':').pop() ?? refName
+                const tailByDot = tailByColon.split('.').pop() ?? tailByColon
+                return tailByDot
+            })()
+            
+            // Foreign 函数中的特殊字符串类型映射 - 优先处理
+            if (simpleRef === 'String' || simpleRef === 'KStringPtr') {
+                return 'CString'
             }
-            if (super.convert(type) == 'Object') {
+            
+            // 其他引用类型先尝试父类转换
+            const superConverted = super.convert(type)
+            
+            // Foreign 函数中的特殊处理 - 确保 String 类型始终映射为 CString
+            if (superConverted === 'String') {
+                return 'CString'
+            }
+            if (superConverted.startsWith('Array')) {
+                return `CPointer<UInt8>`
+            }
+            if (superConverted === 'Object') {
                 return `KPointer`
             }
+            
+            return superConverted
         }
         return super.convert(type)
     }
     convertPrimitiveType(type: idl.IDLPrimitiveType): string {
         switch (type) {
+            case idl.IDLStringType: return 'CString'  // 确保字符串原始类型也映射为 CString
             case idl.IDLBufferType: return 'CPointer<UInt8>'
         }
         return super.convertPrimitiveType(type)

@@ -667,9 +667,45 @@ export class CJLanguageWriter extends LanguageWriter {
     }
     writeNativeMethodDeclaration(method: Method): void {
         let name = method.name
-        let signture = `${method.signature.args.map((it, index) => `${this.escapeKeyword(method.signature.argName(index))}: ${this.typeForeignConvertor.convert(it)}`).join(", ")}`
+        // 逐参记录 foreign 类型映射日志，并构造签名
+        const argParts: string[] = []
+        method.signature.args.forEach((it, index) => {
+            const converted = this.typeForeignConvertor.convert(it)
+            let idlName = 'unknown'
+            if (idl.isReferenceType(it)) {
+                idlName = (it as idl.IDLReferenceType).name
+            } else if (idl.isPrimitiveType(it)) {
+                switch (it) {
+                    case idl.IDLStringType: idlName = 'string'; break
+                    case idl.IDLBooleanType: idlName = 'boolean'; break
+                    case idl.IDLNumberType: idlName = 'number'; break
+                    case idl.IDLVoidType: idlName = 'void'; break
+                    default: idlName = 'primitive'
+                }
+            }
+            console.log(`[ForeignDecl] method=${name} arg#${index} idl=${idlName} -> ${converted}`)
+            argParts.push(`${this.escapeKeyword(method.signature.argName(index))}: ${converted}`)
+        })
+        let signture = `${argParts.join(", ")}`
         name = name.startsWith('_') ? name.slice(1) : name
-        this.print(`func ${name}(${signture}): ${this.typeForeignConvertor.convert(method.signature.returnType)}`)
+        
+        // 获取返回类型字符串，带兜底修复确保 void 类型正确处理
+        let retType = this.typeForeignConvertor.convert(method.signature.returnType)
+        console.log(`[ForeignDecl] method=${name} return -> ${retType}`)
+        
+        // 兜底修复：如果类型转换器仍返回 Any，但原始类型是 void 相关的，强制修正为 Unit
+        if (retType === 'Any') {
+            if (method.signature.returnType === idl.IDLVoidType) {
+                retType = 'Unit'
+            } else if (idl.isReferenceType(method.signature.returnType)) {
+                const refName = (method.signature.returnType as idl.IDLReferenceType).name
+                if (refName === 'Unit' || refName === 'void') {
+                    retType = 'Unit'
+                }
+            }
+        }
+        
+        this.print(`func ${name}(${signture}): ${retType}`)
     }
     override i32FromEnum(value: LanguageExpression, enumEntry: idl.IDLEnum): LanguageExpression {
         // 检查是否是字符串枚举或字面量联合枚举

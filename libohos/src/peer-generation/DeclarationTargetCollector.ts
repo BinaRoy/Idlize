@@ -62,6 +62,24 @@ export function collectDeclarationTargetsUncached(library: LibraryInterface, opt
                         orderer.addDep(library.toDeclaration(idl.maybeOptional(property.type, property.isOptional)))
                     }
                 }
+
+                // 通用增强：无论是否为组件/实体类，始终收集接口的方法/构造/可调用签名中的类型依赖。
+                // 这样 peers 中引用到的接口（例如 *InterfaceDTS）也会被纳入依赖图，触发序列化生成。
+                for (const method of entry.methods) {
+                    if (peerGeneratorConfiguration().components.ignorePeerMethod.includes(method.name))
+                        continue
+                    for (const parameter of method.parameters)
+                        orderer.addDep(library.toDeclaration(idl.maybeOptional(parameter.type!, parameter.isOptional)))
+                    orderer.addDep(library.toDeclaration(method.returnType))
+                }
+                for (const constructor of entry.constructors) {
+                    for (const parameter of constructor.parameters)
+                        orderer.addDep(library.toDeclaration(idl.maybeOptional(parameter.type!, parameter.isOptional)))
+                }
+                for (const callable of entry.callables) {
+                    for (const parameter of callable.parameters)
+                        orderer.addDep(library.toDeclaration(idl.maybeOptional(parameter.type!, parameter.isOptional)))
+                }
             }
             else if (idl.isEnum(entry)) {
                 orderer.addDep(library.toDeclaration(entry))
@@ -81,6 +99,23 @@ export function collectDeclarationTargetsUncached(library: LibraryInterface, opt
     if (options.synthesizeCallbacks) {
         synthesizeCallbacks(library, orderer)
     }
+
+    // 兜底收集：确保所有 InterfaceDTS 类型都被纳入序列化生成清单
+    // 这些类型通常需要在 peers 间传递，必须有序列化支持
+    for (const file of library.files) {
+        for (const entry of file.entries) {
+            if (!isInCurrentModule(entry)) continue
+            if (!idl.isInterface(entry)) continue
+            if (idl.hasTypeParameters(entry)) continue // 泛型接口跳过
+            if (peerGeneratorConfiguration().ignoreEntry(entry.name, library.language)) continue
+            
+            // 只处理 InterfaceDTS 后缀的接口，这是数据传输对象的命名约定
+            if (entry.name?.endsWith('InterfaceDTS')) {
+                orderer.addDep(library.toDeclaration(entry))
+            }
+        }
+    }
+
     let orderedDependencies = orderer.getToposorted()
     orderedDependencies.unshift(idl.IDLI32Type)
     return orderedDependencies

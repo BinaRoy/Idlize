@@ -249,12 +249,7 @@ export class StringConvertor extends BaseArgConvertor {
             : writer.escapeKeyword(param)
     }
     convertorSerialize(param: string, value: string, writer: LanguageWriter): LanguageStatement {
-        // [cj-log][StringConvertor] 仅日志
-        try { console.log(`[cj-log][StringConvertor] serialize param=${param} value=${value}`) } catch {}
-        
-        if (value.includes('getSelector') || value.includes('getValue')) {
-            try { console.log(`[cj-log][StringConvertor] suspicious union-like usage value=${value}`) } catch {}
-        }
+        // 关闭冗余调试日志
         
         return writer.makeStatement(
             writer.makeMethodCall(`${param}Serializer`, "writeString",
@@ -299,12 +294,7 @@ export class EnumConvertor extends BaseArgConvertor {
         return writer.i32FromEnum(writer.makeString(writer.escapeKeyword(param)), this.enumEntry).asString()
     }
     convertorSerialize(param: string, value: string, writer: LanguageWriter): LanguageStatement {
-        // [cj-log][EnumConvertor] 仅日志
-        try { console.log(`[cj-log][EnumConvertor] serialize param=${param} value=${value} enum=${writer.getNodeName(this.enumEntry)} isString=${idl.isStringEnum(this.enumEntry)}`) } catch {}
-        
-        if (value.includes('getSelector') || value.includes('getValue')) {
-            try { console.log(`[cj-log][EnumConvertor] suspicious union-like usage value=${value} enum=${writer.getNodeName(this.enumEntry)}`) } catch {}
-        }
+        // 关闭冗余调试日志
         
         if (idl.isStringEnum(this.enumEntry)) {
             // 对于字符串字面量枚举，按字符串序列化
@@ -486,12 +476,7 @@ export class ObjectConvertor extends BaseArgConvertor {
         return writer.escapeKeyword(param)
     }
     convertorSerialize(param: string, value: string, writer: LanguageWriter): LanguageStatement {
-        // [cj-log][ObjectConvertor] 仅日志
-        try { console.log(`[cj-log][ObjectConvertor] serialize param=${param} value=${value} type=${writer.getNodeName(this.idlType)}`) } catch {}
-        
-        if (value.includes('getSelector') || value.includes('getValue')) {
-            try { console.log(`[cj-log][ObjectConvertor] suspicious union-like usage value=${value} type=${writer.getNodeName(this.idlType)}`) } catch {}
-        }
+        // 关闭冗余调试日志
         
         return writer.makeStatement(
             writer.makeMethodCall(`${param}Serializer`, writer.language === Language.CPP ? `writeObject` : "holdAndWriteObject",
@@ -1128,8 +1113,7 @@ export class UnionConvertor extends BaseArgConvertor {
         throw new Error("Do not use for union")
     }
     convertorSerialize(param: string, value: string, printer: LanguageWriter): LanguageStatement {
-        // [cj-log][UnionConvertor] 仅日志：追踪联合类型序列化
-        try { console.log(`[cj-log][UnionConvertor] serialize param=${param} value=${value} members=${this.memberConvertors.length}`) } catch {}
+        // 关闭冗余调试日志
         
         const branches: BranchStatement[] = this.memberConvertors.map((it, index) => {
             const discriminator = this.unionChecker.makeDiscriminator(value, index, printer)
@@ -1145,8 +1129,7 @@ export class UnionConvertor extends BaseArgConvertor {
             if (!(it instanceof UndefinedConvertor)) {
                 const varName = `${value}ForIdx${index}`
                 
-                // [cj-log][UnionConvertor] 仅日志：成员类型信息
-                try { console.log(`[cj-log][UnionConvertor] member index=${index} type=${printer.getNodeName(it.idlType)} var=${varName}`) } catch {}
+                // 关闭冗余调试日志
                 
                 // 🔄 完全回滚：恢复原始的联合类型处理逻辑
                 statements.push(
