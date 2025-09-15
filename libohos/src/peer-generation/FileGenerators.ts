@@ -302,6 +302,38 @@ export function copyFile(from: string, to: string) {
         fs.mkdirSync(path.dirname(to), { recursive: true })
     }
     
+    // 特殊处理需要修改为 idlize.peers 包的文件
+    const peersFiles = ['NativePeerNode.cj', 'PeerNode.cj', 'ComponentBase.cj']
+    if (peersFiles.includes(path.basename(from))) {
+        let content = fs.readFileSync(from, 'utf8')
+        
+        // 修改包声明和导入
+        if (path.basename(from) === 'NativePeerNode.cj') {
+            // NativePeerNode.cj 需要特殊的导入
+            content = content.replace(
+                /package idlize\n\nimport Interop\.\*/,
+                `package idlize.peers
+import idlize.commonPara.*
+
+import idlize.ArkUINativeModule
+
+import Interop.*`
+            )
+        } else {
+            // 其他文件使用通用修改
+            content = content.replace(
+                /package idlize\n/,
+                `package idlize.peers
+import idlize.commonPara.*
+
+`
+            )
+        }
+        
+        fs.writeFileSync(to, content, 'utf8')
+        return
+    }
+    
     // 特殊处理 CallbacksChecker.cj 文件，应用枚举修复
     if (path.basename(from) === 'CallbacksChecker.cj') {
         let content = fs.readFileSync(from, 'utf8')

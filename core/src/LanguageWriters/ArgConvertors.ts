@@ -682,8 +682,14 @@ export class TupleConvertor extends AggregateConvertor {
     }
     convertorSerialize(param: string, value: string, printer: LanguageWriter): LanguageStatement {
         const stmts: LanguageStatement[] = this.memberConvertors.flatMap((it, index) => {
+            // 对于 Cangjie 语言，判断是否为真正的元组类型
+            const typeName = printer.getNodeName(this.idlType);
+            const isRealTuple = typeName.includes(',');
+            const tupleAccess = printer.language === Language.CJ && isRealTuple
+                ? printer.makeString(`${value}[${index}]`)
+                : printer.makeTupleAccess(value, index);
             return [
-                printer.makeAssign(`${value}_${index}`, undefined, printer.makeTupleAccess(value, index), true),
+                printer.makeAssign(`${value}_${index}`, undefined, tupleAccess, true),
                 it.convertorSerialize(param, `${value}_${index}`, printer)
             ]
         })
