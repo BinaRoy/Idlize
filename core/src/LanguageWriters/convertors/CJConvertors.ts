@@ -222,6 +222,28 @@ export class CJTypeNameConvertor implements NodeConvertor<string>, IdlNameConver
         if (decl) {
             return idl.getNamespacesPathFor(decl).map(ns => ns.name).join().concat(name[name.length - 1].concat(maybeTypeArguments))
         }
+        
+        // 🔧 HACK: 对于无法解析的类型，检查是否为元组类型模式
+        // 这样可以避免将元组类型错误地转换为 Any
+        if (type.name && type.name.startsWith('Tuple_')) {
+            const match = type.name.match(/^Tuple_(.+)$/)
+            if (match) {
+                const tokens = match[1].split('_').filter(Boolean)
+                const elementTypes = tokens.map((tok: string) => {
+                    const t = tok.toLowerCase()
+                    if (t === 'number' || t === 'float64') return 'Float64'
+                    if (t === 'int32') return 'Int32'
+                    if (t === 'int64') return 'Int64'
+                    if (t === 'boolean' || t === 'bool') return 'Bool'
+                    if (t === 'string') return 'String'
+                    return tok // 枚举或自定义类型，保持原样
+                })
+                const nativeTupleSyntax = `(${elementTypes.join(', ')})`
+                this.dbg(() => console.log(`[CJTypeNameConvertor] HACK: Converting unresolved Tuple type ${type.name} to native syntax: ${nativeTupleSyntax}`))
+                return nativeTupleSyntax
+            }
+        }
+        
         return this.convert(idl.IDLCustomObjectType)
     }
     convertTypeParameter(type: idl.IDLTypeParameterType): string {
@@ -400,3 +422,5 @@ export class CJInteropArgConvertor extends InteropArgConvertor {
 export function removePoints(s: string) {
     return s.split(/[\.\-]/g).join('_')
 }
+
+

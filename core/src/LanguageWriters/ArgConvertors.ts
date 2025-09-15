@@ -1011,6 +1011,21 @@ export class CustomTypeConvertor extends BaseArgConvertor {
         ))
     }
     convertorDeserialize(bufferName: string, deserializerName: string, assigneer: ExpressionAssigner, writer: LanguageWriter): LanguageStatement {
+        // 🔧 HACK: 如果 customTypeName 是元组语法，直接使用它而不是通过 makeCast
+        if (this.customTypeName.startsWith('(') && this.customTypeName.endsWith(')')) {
+            // 对于 CJ 语言，直接使用元组语法作为类型
+            if (writer.language === Language.CJ) {
+                // 直接创建类型转换表达式，避免通过 makeCast 的类型检查
+                const readCall = writer.makeMethodCall(`${deserializerName}`,
+                    "readCustomObject",
+                    [writer.makeString(`"${this.customTypeName}"`)])
+                
+                // 使用字符串模板直接生成 CJ 类型转换语法
+                const castExpr = writer.makeString(`match (${readCall.asString()} as ${this.customTypeName}) { case Some(x) => x; case None => throw Exception("Cast is not succeeded")}`)
+                return assigneer(castExpr)
+            }
+        }
+        
         const type = writer.language === Language.CPP
             ? this.nativeType()
             : this.idlType
@@ -1783,3 +1798,4 @@ export function createOutArgConvertor(library: PeerLibrary, type: idl.IDLType|un
     }
     return undefined
 }
+
