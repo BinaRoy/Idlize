@@ -1584,10 +1584,20 @@ class CJComponentFileVisitor implements ComponentFileVisitor {
         }
 
         printer.writeClass(componentClassName, (writer) => {
+            // 判断是否为父类组件，需要添加open关键字
+            const isParentComponent = isCommonMethod(peer.originalClassName!) || 
+                                    peer.originalClassName === "ScrollableCommonMethod" ||
+                                    peer.originalClassName === "ContainerSpanAttribute"
+            
+            // 父类使用 protected open，子类使用 protected
+            const modifiers = isParentComponent ? 
+                [MethodModifier.PROTECTED, MethodModifier.OPEN] : 
+                [MethodModifier.PROTECTED]
+            
             writer.writeMethodImplementation(
                 new Method('getPeer',
                     new MethodSignature(createReferenceType(peerClassName), []
-                    ), [MethodModifier.PROTECTED], []),
+                    ), modifiers, []),
                 writer => {
                     writer.print('if (let Some(peer) <- this.peer) {')
                     writer.pushIndent()

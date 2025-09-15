@@ -22,12 +22,11 @@ public func Ark%COMPONENT_NAME%(
         %COMPONENT_CLASS_NAME%()
     })
     NodeAttach<%PEER_CLASS_NAME%>(
-        { => %PEER_CLASS_NAME%.create(receiver, 0) },
+        { => %PEER_CLASS_NAME%.create(receiver, flags: 0) },
         { => 
             style?(receiver)
             content_?()
             receiver.applyAttributesFinish()
-        },
-        Option.None
+        }
     )
 }

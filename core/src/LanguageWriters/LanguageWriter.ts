@@ -347,7 +347,8 @@ export enum MethodModifier {
     SETTER,
     FREE, // not a member of interface/class
     FORCE_CONTEXT, // If method implementation will need VM context, synthetic
-    OVERRIDE
+    OVERRIDE,
+    OPEN
 }
 
 export enum ClassModifier {
@@ -728,6 +729,8 @@ export abstract class LanguageWriter {
             case MethodModifier.PRIVATE:   return "private ";
             case MethodModifier.PROTECTED: return "protected ";
             case MethodModifier.STATIC:    return "static ";
+            case MethodModifier.OVERRIDE:  return "override ";
+            case MethodModifier.OPEN:      return "open ";
             default: return ""; // or throw to catch unexpected values early
         }
     }
