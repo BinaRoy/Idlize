@@ -645,7 +645,6 @@ class CJComponentFileVisitor implements ComponentFileVisitor {
                 })
                 console.log(`[ComponentsPrinter] perParamConversions for ${method.name}: ${convSummaries.join('; ')}`)
             } catch {}
-
             if (hasOverloads) {
                 console.log(`[ComponentsPrinter] Method ${method.name} has overloads`);
             }
@@ -669,7 +668,7 @@ class CJComponentFileVisitor implements ComponentFileVisitor {
                 }
             } else {
                 const params = this.buildParameterList(perParamConversions, method, writer, componentName);
-                this.printSingleMethodImplementation(method, params, argNames, peerClassName, returnTypeName, writer);
+                this.printSingleMethodImplementation(method, params, argNames, peerClassName, returnTypeName, writer, perParamConversions);
             }
         })
     }
@@ -797,7 +796,7 @@ class CJComponentFileVisitor implements ComponentFileVisitor {
         const returnTypeName = writer.getNodeName(method.signature.returnType);
         
         const params = this.buildOverloadParameterList(allConversions, method, overloadIndex, overloadAlt, writer, componentName);
-        this.printSingleMethodImplementation(method, params, argNames, peerClassName, returnTypeName, writer);
+        this.printSingleMethodImplementation(method, params, argNames, peerClassName, returnTypeName, writer, allConversions);
     }
     
     /**
@@ -1121,7 +1120,8 @@ class CJComponentFileVisitor implements ComponentFileVisitor {
         argNames: string[], 
         peerClassName: string, 
         returnTypeName: string, 
-        writer: LanguageWriter
+        writer: LanguageWriter,
+        perParamConversions?: TypeConversionResult[]
     ): void {
         const paramsStr = params.join(', ');
         // 统一组件方法返回类型为 This，避免出现声明为 Unit 却返回 this 的不一致
@@ -1142,11 +1142,68 @@ class CJComponentFileVisitor implements ComponentFileVisitor {
         writer.print(`public func ${writer.escapeKeyword(exposedMethodName)}(${paramsStr}): ${effectiveReturnTypeName} {`);
         writer.pushIndent();
         
-        // 为基础类型参数添加Some()包装，以匹配Peer层的Option<T>期望
+        // 根据IDL类型决定是否添加Some()包装
         const wrappedArgs = argNames.map((argName, index) => {
             const paramType = method.signature?.args?.[index];
-            if (paramType && this.isBasicTypeForOptionWrapping(paramType)) {
-                return `Some(${argName})`;
+            if (paramType) {
+                // 检查IDL中是否标记为可选参数
+                const isOptional = method.signature?.isArgOptional?.(index) || false;
+                
+                // 检查是否是联合类型包含undefined
+                let isUnionWithUndefined = false;
+                if (idl.isUnionType(paramType)) {
+                    const unionTypes = (paramType as any).types;
+                    
+                    isUnionWithUndefined = unionTypes.some((t: any) => 
+                        t.kind === 'undefined' || t.name === 'undefined' || t.toString?.().includes('undefined')
+                    );
+                }
+                
+                // 检查类型名称是否包含undefined或OptionalType
+                const typeName = this.getTypeDisplayName(paramType);
+                const hasUndefinedInName = typeName.includes('undefined') || typeName.includes('Undefined');
+                const isOptionalType = typeName === 'OptionalType' || typeName.includes('OptionalType');
+                
+                // ✅ 使用perParamConversions的结果来检测Component层参数类型
+                const componentConversion = perParamConversions?.[index];
+                const componentCjType = componentConversion?.cjType;
+                const componentTypeDisplayName = componentCjType ? 
+                    (typeof componentCjType === 'string' ? componentCjType : this.getTypeDisplayName(componentCjType as idl.IDLType)) : 
+                    'undefined';
+                
+                // 更全面的Option<T>检测
+                const componentIsOptionType = componentCjType && (
+                    componentTypeDisplayName.includes('Option<') ||
+                    componentTypeDisplayName === 'OptionalType' ||
+                    (componentCjType as any).kind === 'OptionalType'
+                );
+                
+                // 获取Peer层期望的参数类型
+                const peerParamType = this.getPeerParameterType(method, index);
+                const peerExpectsOption = peerParamType && (
+                    peerParamType.includes('Option<') || 
+                    peerParamType === 'OptionalType'
+                );
+                
+                
+                // 如果Component层参数已经是Option<T>格式，直接传递，不添加Some()包装
+                if (componentIsOptionType) {
+                    return argName;
+                }
+                
+                // 如果Peer层期望Option<T>类型，但Component层不是Option<T>，需要添加Some()包装
+                if (peerExpectsOption && !componentIsOptionType) {
+                    return `Some(${argName})`;
+                }
+                
+                // 如果IDL中标记为可选参数、联合类型包含undefined、类型名称包含undefined、或是OptionalType，且Peer层不期望Option<T>，添加Some()包装
+                if ((isOptional || isUnionWithUndefined || hasUndefinedInName || isOptionalType) && !peerExpectsOption) {
+                    return `Some(${argName})`;
+                }
+                
+                
+                // 其他情况直接传递
+                return argName;
             }
             return argName;
         });
@@ -1666,6 +1723,41 @@ class CJComponentFileVisitor implements ComponentFileVisitor {
             return componentClassName.slice(0, -9) + 'Peer';
         }
         return componentClassName + 'Peer';
+    }
+
+    /**
+     * 获取Peer层期望的参数类型
+     */
+    private getPeerParameterType(method: any, paramIndex: number): string | null {
+        try {
+            const paramType = method.signature?.args?.[paramIndex];
+            if (!paramType) return null;
+            
+            const paramName = method.signature?.argName?.(paramIndex) || `param${paramIndex}`;
+            const isOptional = method.signature?.isArgOptional?.(paramIndex) || false;
+            
+            
+            // 使用CJTypeMapper转换参数类型
+            const conversion = this.typeMapper.convertParameterType(paramType, paramName, isOptional);
+            
+            
+            // 如果有重载，选择第一个重载的类型
+            if (conversion.overloads && conversion.overloads.length > 0) {
+                const firstOverload = conversion.overloads[0];
+                const result = typeof firstOverload.cjType === 'string' ? firstOverload.cjType : this.getTypeDisplayName(firstOverload.cjType as idl.IDLType);
+                return result;
+            }
+            
+            // 返回转换后的类型
+            if (conversion.cjType) {
+                const result = typeof conversion.cjType === 'string' ? conversion.cjType : this.getTypeDisplayName(conversion.cjType as idl.IDLType);
+                return result;
+            }
+            
+            return null;
+        } catch (error) {
+            return null;
+        }
     }
 
 

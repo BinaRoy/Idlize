@@ -669,6 +669,24 @@ export class CJTypeMapper {
                 console.log(`[CJTypeMapper] Direct mapping: ComponentInfo -> ComponentInfo`);
                 return { cjType: 'ComponentInfo', defaultValue: '""' };
             }
+            
+            // ✅ 新增：处理复杂Interface类型
+            if (typeName.endsWith('InterfaceDTS') || typeName.endsWith('DTS')) {
+                console.log(`[CJTypeMapper] Direct mapping: ${typeName} -> ${typeName}`);
+                return { cjType: typeName, defaultValue: '""' };
+            }
+            
+            // ✅ 新增：处理ArrayRef类型
+            if (typeName.includes('ArrayRef')) {
+                console.log(`[CJTypeMapper] Direct mapping: ${typeName} -> ${typeName}`);
+                return { cjType: typeName, defaultValue: '""' };
+            }
+            
+            // ✅ 新增：处理其他复杂类型
+            if (typeName.includes('Class-') || typeName.includes('Struct-')) {
+                console.log(`[CJTypeMapper] Direct mapping: ${typeName} -> ${typeName}`);
+                return { cjType: typeName, defaultValue: '""' };
+            }
         }
 
         // 首先尝试枚举映射 - 检查是否是 Literal_ 或 Union_ 类型
@@ -1182,6 +1200,11 @@ export class CJTypeMapper {
 
     public getTypeDisplayName(type: idl.IDLType): string {
         try {
+            // ✅ 优先检查是否是OptionalType
+            if ((type as any).kind === 'OptionalType') {
+                return 'OptionalType';
+            }
+            
             let name: string | undefined
             // 尝试多种方式获取类型名称
             if (type.toString && typeof type.toString === 'function') {
