@@ -1437,12 +1437,12 @@ class CJComponentFileVisitor implements ComponentFileVisitor {
         // 使用与回调类型管理器相同的组件名清理逻辑
         const sanitizedComponentName = componentName.replace(/(Attribute|Component)$/,'')
         
-        // Style 回调类型定义
+        // Style 回调类型定义 - 修复：使用实际的组件类型而不是不存在的接口
         const styleCallbackName = `On${sanitizedComponentName}StyleCallback`
-        const styleCallbackDef = `public type ${styleCallbackName} = (attributes: ${componentName}AttributeInterfaces) -> Unit`
+        const styleCallbackDef = `public type ${styleCallbackName} = (attributes: Ark${sanitizedComponentName}Component) -> Unit`
         definitions.push(styleCallbackDef)
         
-        // Content 回调类型定义
+        // Content 回调类型定义保持不变
         const contentCallbackName = `On${sanitizedComponentName}ContentCallback`
         const contentCallbackDef = `public type ${contentCallbackName} = () -> Unit`
         definitions.push(contentCallbackDef)
