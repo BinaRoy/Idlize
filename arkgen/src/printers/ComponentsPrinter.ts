@@ -1778,20 +1778,6 @@ class CJComponentFileVisitor implements ComponentFileVisitor {
         this.callbackManager.clearComponentCallbacks(componentName)
         // 预扫描所有方法以收集回调类型（传入typeRewriter确保类型一致性，避免预扫描和实际处理阶段类型差异）
         this.callbackManager.prescanMethods(peer.methods, componentName, this.typeMapper, this)
-        
-        // 打印回调类型定义（当前阶段：仍然在组件内就地声明，确保类型可用；后续将统一迁移至 cores/Common.cj）
-        const callbackDefinitions = this.callbackManager.getCallbackDefinitions(componentName)
-        
-        // 调试信息：显示获取到的回调类型定义
-        console.log(`[ComponentsPrinter] Callback definitions for ${componentName}:`, callbackDefinitions)
-        
-        // 添加构建函数专用的回调类型定义（仅当组件有构建函数时）
-        const buildFunctionCallbacks = this.shouldGenerateBuildFunction(peer) ? 
-            this.generateBuildFunctionCallbackDefinitions(componentName) : []
-        
-        // 合并并去重回调定义
-        const allCallbackDefinitions = [...callbackDefinitions, ...buildFunctionCallbacks]
-        const uniqueDefinitions = [...new Set(allCallbackDefinitions)]
         // Gather and MERGE possible sources for class-level directive
         const ifaceName = component.interfaceDeclaration?.name
         const classMeta = mergeMetas([
@@ -1803,10 +1789,6 @@ class CJComponentFileVisitor implements ComponentFileVisitor {
         // Emit directive only if the input provided any tags
         if (classMeta) {
             printer.print(renderDirective(classMeta))
-        }
-
-        for (const def of uniqueDefinitions) {
-            printer.print(def)
         }
 
         printer.writeClass(componentClassName, (writer) => {
@@ -1856,6 +1838,32 @@ class CJComponentFileVisitor implements ComponentFileVisitor {
             writer.popIndent()
             writer.print('}')
         }, parentComponentClassName, undefined)
+
+        // 延迟写入回调定义：在所有方法处理完成后再获取并写入
+        // 这确保了在实际方法处理阶段生成的带后缀1的回调类型定义也会被写入
+        const callbackDefinitions = this.callbackManager.getCallbackDefinitions(componentName)
+        
+        // 调试信息：显示获取到的回调类型定义
+        console.log(`[ComponentsPrinter] Delayed callback definitions for ${componentName}:`, callbackDefinitions)
+        
+        // 添加构建函数专用的回调类型定义（仅当组件有构建函数时）
+        const buildFunctionCallbacks = this.shouldGenerateBuildFunction(peer) ? 
+            this.generateBuildFunctionCallbackDefinitions(componentName) : []
+        
+        // 合并并去重回调定义
+        const allCallbackDefinitions = [...callbackDefinitions, ...buildFunctionCallbacks]
+        const uniqueDefinitions = [...new Set(allCallbackDefinitions)]
+        
+        // 调试信息：显示合并后的类型定义数量
+        console.log(`[ComponentsPrinter] Total callback definitions (${componentName}): ${callbackDefinitions.length} + ${buildFunctionCallbacks.length} = ${allCallbackDefinitions.length}`)
+        console.log(`[ComponentsPrinter] After deduplication: ${uniqueDefinitions.length}`)
+        console.log(`[ComponentsPrinter] Unique definitions:`, uniqueDefinitions)
+        
+        // 现在写入所有回调定义（包括实际方法处理阶段新生成的）
+        for (const def of uniqueDefinitions) {
+            console.log(`[ComponentsPrinter] Writing definition: ${def}`)
+            printer.print(def)
+        }
 
         return [{
             collector: imports,

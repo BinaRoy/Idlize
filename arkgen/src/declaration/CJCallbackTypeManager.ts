@@ -166,27 +166,11 @@ export class CJCallbackTypeManager {
                 }
             }
             
-            // TextPicker 特定回调
-            if (componentName === 'TextPicker') {
-                if (methodName === 'onAccept') {
-                    return '(value: String, index: Float64) -> Unit'
-                }
-                if (methodName === 'onCancel') {
-                    return '() -> Unit'
-                }
-                if (methodName === 'onChange') {
-                    return '(value: Array<String>, index: Array<Int32>) -> Unit'
-                }
-                if (methodName === 'onScrollStop') {
-                    return '(value: Array<String>, index: Array<Int32>) -> Unit'
-                }
-            }
+            // 移除硬编码规则 - 使用动态智能转换，与实际处理阶段保持一致
+            // 这样即使 .d.ts 文件变化，也能动态适应，无需修改代码
         }
         
-        // 特殊情况：处理已有类型名但需要重新命名的情况
-        if (methodName === 'onScrollStop' && paramName === 'callback_') {
-            return '(value: Array<String>, index: Array<Int32>) -> Unit'
-        }
+        // 特殊情况的硬编码规则也已移除 - 使用动态转换
         
         // 对于重写后的已命名回调类型，根据类型名推导签名
         if (paramName === 'callback_' && methodName === 'onScrollStop') {
@@ -771,31 +755,11 @@ export class CJCallbackTypeManager {
                 console.log(`[CJCallbackTypeManager] IDL param[${idx}]: ${name}, kind: ${paramType.kind}, name: ${paramType.name}`)
             }
             
-            // 检查IDL类型是否为回调类型
-            let isCallbackType = false
-            let callbackSignature = ''
-            
-            // 1. 检查IDL引用类型名称中是否包含Callback
+            // 跳过IDL回调类型在预扫描阶段的处理
+            // 让实际处理阶段使用动态智能转换来处理所有回调类型
             if (paramType.kind === 'ReferenceType' && paramType.name && paramType.name.includes('Callback')) {
-                isCallbackType = true
-                // 根据IDL回调类型名称生成对应的函数签名
-                callbackSignature = this.generateDefaultCallbackSignature(name, method.name, componentName)
-                // 特殊处理：对于特定IDL回调类型，使用专用签名
-                if (paramType.name === 'Callback_Number_Void') {
-                    callbackSignature = '(select: Float64) -> Unit'
-                }
-                console.log(`[CJCallbackTypeManager] Found IDL callback type: ${paramType.name} -> ${callbackSignature}`)
-            }
-            
-            if (isCallbackType && callbackSignature) {
-                // 应用类型收敛（如果提供了 typeRewriter）
-                let processedSignature = callbackSignature
-                if (typeRewriter) {
-                    processedSignature = typeRewriter.rewriteTypeName(callbackSignature)
-                }
-                
-                console.log(`[CJCallbackTypeManager] Found callback type in prescan: ${componentName}.${method.name}(${name}: ${processedSignature})`)
-                this.processCallbackType(name, processedSignature, method.name, componentName)
+                console.log(`[CJCallbackTypeManager] Skipping IDL callback type in prescan: ${paramType.name}, will be handled in actual processing stage`)
+                return // 跳过处理
             }
         })
 
@@ -824,21 +788,20 @@ export class CJCallbackTypeManager {
                 }
             }
             
-            // 只处理尚未被IDL回调处理识别的类型
-            const alreadyProcessed = this.callbackAliasBySignature.has(`${componentName}.${method.name}:${this.extractTypeOnlySignature(this.normalizeFunctionSignature(tName))}`)
+            // 跳过预扫描阶段的回调类型处理，让实际处理阶段使用动态转换
+            // 这样可以避免类型名冲突和不一致的问题
+            const isCallbackRelated = CJCallbackTypeManager.isFunctionType(tName) || 
+                                    this.isLikelyCallbackType(tName, name, method.name) ||
+                                    name.toLowerCase().includes('callback')
             
-            if (!alreadyProcessed) {
-                // 检查标准的函数类型格式
-                if (CJCallbackTypeManager.isFunctionType(tName)) {
-                    console.log(`[CJCallbackTypeManager] Found function type in prescan: ${componentName}.${method.name}(${name}: ${tName})`)
-                    this.processCallbackType(name, tName, method.name, componentName)
-                } 
-                // 特殊处理：检查是否为IDL函数类型
-                else if (this.isLikelyCallbackType(tName, name, method.name)) {
-                    console.log(`[CJCallbackTypeManager] Found likely callback type in prescan: ${componentName}.${method.name}(${name}: ${tName})`)
-                    this.processCallbackType(name, tName, method.name, componentName)
-                }
+            if (isCallbackRelated) {
+                console.log(`[CJCallbackTypeManager] Skipping callback-related type in prescan: ${componentName}.${method.name}(${name}: ${tName}), will be handled dynamically`)
+                return // 跳过处理
             }
+            
+            // 其他非回调类型的处理保持不变
+            console.log(`[CJCallbackTypeManager] Processing non-callback type in prescan: ${componentName}.${method.name}(${name}: ${tName})`)
+            // 这里可以加入其他类型的处理逻辑
         })
     }
 
