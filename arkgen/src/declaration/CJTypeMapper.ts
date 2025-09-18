@@ -670,6 +670,32 @@ export class CJTypeMapper {
                 return { cjType: 'ComponentInfo', defaultValue: '""' };
             }
             
+            // ✅ 新增：优先处理Tuple类型 - 在DTS处理之前
+            if (typeName.includes('Tuple_')) {
+                console.log(`[CJTypeMapper] Processing Tuple type in direct mapping: ${typeName}`);
+                const match = typeName.match(/^Tuple_(.+)$/);
+                if (match) {
+                    const tokens = match[1].split('_').filter(Boolean);
+                    const elementTypes = tokens.map(tok => {
+                        const t = tok.toLowerCase();
+                        if (t === 'number' || t === 'float64') return 'Float64';
+                        if (t === 'int32') return 'Int32';
+                        if (t === 'int64') return 'Int64';
+                        if (t === 'boolean' || t === 'bool') return 'Bool';
+                        if (t === 'string') return 'String';
+                        return tok; // 枚举或自定义类型
+                    });
+                    
+                    const nativeTupleType = `(${elementTypes.join(', ')})`;
+                    console.log(`[CJTypeMapper] Tuple direct mapping: ${typeName} -> ${nativeTupleType}`);
+                    
+                    return {
+                        cjType: nativeTupleType,
+                        defaultValue: this.getTupleDefaultValue(elementTypes)
+                    };
+                }
+            }
+            
             // ✅ 新增：处理复杂Interface类型
             if (typeName.endsWith('InterfaceDTS') || typeName.endsWith('DTS')) {
                 console.log(`[CJTypeMapper] Direct mapping: ${typeName} -> ${typeName}`);
@@ -1304,6 +1330,24 @@ export class CJTypeMapper {
             const typeName = this.getTypeDisplayName(baseType);
             console.log(`[CJTypeMapper] Converting tuple type: ${typeName}`);
             
+            // 处理原始数组类型 (kind === 'arrayType')
+            if ((baseType as any).kind === 'arrayType') {
+                const elements = (baseType as any).elements || [];
+                console.log(`[CJTypeMapper] Processing array tuple with ${elements.length} elements`);
+                
+                const elementTypes = elements.map((element: idl.IDLType) => {
+                    return this.convertTupleElementType(element);
+                });
+                
+                const nativeTupleType = `(${elementTypes.join(', ')})`;
+                console.log(`[CJTypeMapper] Array tuple -> native tuple ${nativeTupleType}`);
+                
+                return {
+                    cjType: nativeTupleType,
+                    defaultValue: this.getTupleDefaultValue(elementTypes)
+                };
+            }
+            
             // 如果是 Tuple_* 引用类型，提取元素类型
             if (typeName.includes('Tuple_')) {
                 const match = typeName.match(/^Tuple_(.+)$/);
@@ -1338,6 +1382,68 @@ export class CJTypeMapper {
         }
     }
 
+    /**
+     * 转换tuple中的单个元素类型
+     */
+    private convertTupleElementType(element: idl.IDLType): string {
+        try {
+            // 处理基本类型
+            if (element === idl.IDLBooleanType || (element as any) === 'boolean') {
+                return 'Bool';
+            }
+            if (element === idl.IDLNumberType || (element as any) === 'number') {
+                return 'Float64';
+            }
+            if (element === idl.IDLStringType || (element as any) === 'string') {
+                return 'String';
+            }
+            
+            // 处理引用类型
+            if (idl.isReferenceType(element)) {
+                const refType = element as idl.IDLReferenceType;
+                const typeName = refType.name;
+                
+                // 基本类型映射
+                switch (typeName.toLowerCase()) {
+                    case 'number':
+                    case 'float64':
+                        return 'Float64';
+                    case 'int32':
+                        return 'Int32';
+                    case 'int64':
+                        return 'Int64';
+                    case 'boolean':
+                    case 'bool':
+                        return 'Bool';
+                    case 'string':
+                        return 'String';
+                    default:
+                        // 枚举和自定义类型直接使用原名
+                        return typeName;
+                }
+            }
+            
+            // 处理其他情况
+            const typeName = this.getTypeDisplayName(element);
+            console.log(`[CJTypeMapper] Processing tuple element type: ${typeName}`);
+            
+            // 基本类型字符串映射
+            switch (typeName.toLowerCase()) {
+                case 'number':
+                    return 'Float64';
+                case 'boolean':
+                    return 'Bool';
+                case 'string':
+                    return 'String';
+                default:
+                    return typeName;
+            }
+        } catch (error) {
+            console.log(`[CJTypeMapper] Error converting tuple element: ${error}`);
+            return this.getTypeDisplayName(element);
+        }
+    }
+
     private getTupleDefaultValue(elementTypes: string[]): string {
         const defaults = elementTypes.map(type => {
             switch (type) {
@@ -1346,7 +1452,14 @@ export class CJTypeMapper {
                 case 'Int64': return '0';
                 case 'Bool': return 'false';
                 case 'String': return '""';
-                default: return `${type}()`;
+                // 处理枚举类型，使用第一个枚举值或默认构造函数
+                case 'EnumDTS': return 'EnumDTS.ELEM_0';
+                default: 
+                    // 对于其他枚举或自定义类型，尝试使用默认构造函数
+                    if (type.endsWith('DTS') || type.endsWith('Enum')) {
+                        return `${type}.ELEM_0`; // 假设枚举的第一个值
+                    }
+                    return `${type}()`;
             }
         });
         return `(${defaults.join(', ')})`;
