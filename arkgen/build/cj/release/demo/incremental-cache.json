@@ -1,0 +1,22 @@
+{
+  "packageInformation": {
+    "demo": {
+      "rootPackageName": "demo",
+      "fileNameHash": "8167627214311357870",
+      "timeStamp": 1758115160,
+      "isBuilt": false,
+      "exeName": "main",
+      "hasSubPkgs": true
+    },
+    "demo.src": {
+      "rootPackageName": "demo",
+      "fileNameHash": "-3280242939919072064",
+      "timeStamp": 1758115184,
+      "isBuilt": false,
+      "exeName": "",
+      "hasSubPkgs": false
+    }
+  },
+  "jsonHash": "-164204304032752143",
+  "rootPackageName": "demo"
+}

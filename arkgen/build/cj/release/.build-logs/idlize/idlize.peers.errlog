@@ -1,0 +1,89 @@
+[33mwarning[0m: unused variable:'name'
+  [36m==>[0m /home/gloria/idlize/testcase/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/peers/ComponentBase.cj:25:9:
+   [36m| [0m
+[36m25[0m [36m| [0m        name: String[0m
+   [36m| [0m        [33m^^^^ unused variable[0m
+   [36m| [0m
+   [36m#[0m [0mnote[0m: this warning can be suppressed by setting the compiler option `-Woff unused`
+
+[33mwarning[0m: unused variable:'attrs'
+  [36m==>[0m /home/gloria/idlize/testcase/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/peers/ComponentBase.cj:30:41:
+   [36m| [0m
+[36m30[0m [36m| [0m    protected open func applyAttributes(attrs: Object): Unit { throw Exception("not implemented") }[0m
+   [36m| [0m                                        [33m^^^^^ unused variable[0m
+   [36m| [0m
+   [36m#[0m [0mnote[0m: this warning can be suppressed by setting the compiler option `-Woff unused`
+
+[33mwarning[0m: unused variable:'id'
+  [36m==>[0m /home/gloria/idlize/testcase/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/peers/PeerNode.cj:34:32:
+   [36m| [0m
+[36m34[0m [36m| [0m    PeerNode(peerPtr: pointer, id: Int32, name: String, flags: Int32) {[0m
+   [36m| [0m                               [33m^^ unused variable[0m
+   [36m| [0m
+   [36m#[0m [0mnote[0m: this warning can be suppressed by setting the compiler option `-Woff unused`
+
+[33mwarning[0m: unused variable:'name'
+  [36m==>[0m /home/gloria/idlize/testcase/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/peers/PeerNode.cj:34:43:
+   [36m| [0m
+[36m34[0m [36m| [0m    PeerNode(peerPtr: pointer, id: Int32, name: String, flags: Int32) {[0m
+   [36m| [0m                                          [33m^^^^ unused variable[0m
+   [36m| [0m
+   [36m#[0m [0mnote[0m: this warning can be suppressed by setting the compiler option `-Woff unused`
+
+[33mwarning[0m: unused variable:'flags'
+  [36m==>[0m /home/gloria/idlize/testcase/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/peers/PeerNode.cj:34:57:
+   [36m| [0m
+[36m34[0m [36m| [0m    PeerNode(peerPtr: pointer, id: Int32, name: String, flags: Int32) {[0m
+   [36m| [0m                                                        [33m^^^^^ unused variable[0m
+   [36m| [0m
+   [36m#[0m [0mnote[0m: this warning can be suppressed by setting the compiler option `-Woff unused`
+
+[33mwarning[0m: unused function:'applyAttributes'
+  [36m==>[0m /home/gloria/idlize/testcase/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/peers/PeerNode.cj:38:5:
+   [36m| [0m
+[36m38[0m [36m| [0m    func applyAttributes(attrs: HashMap<String, Object>): Unit {}[0m
+   [36m| [0m    [33m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ unused function[0m
+   [36m| [0m
+   [36m#[0m [0mnote[0m: this warning can be suppressed by setting the compiler option `-Woff unused`
+
+[33mwarning[0m: unused variable:'attrs'
+  [36m==>[0m /home/gloria/idlize/testcase/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/peers/PeerNode.cj:38:26:
+   [36m| [0m
+[36m38[0m [36m| [0m    func applyAttributes(attrs: HashMap<String, Object>): Unit {}[0m
+   [36m| [0m                         [33m^^^^^ unused variable[0m
+   [36m| [0m
+   [36m#[0m [0mnote[0m: this warning can be suppressed by setting the compiler option `-Woff unused`
+
+[33mwarning[0m: unused variable:'node'
+  [36m==>[0m /home/gloria/idlize/testcase/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/peers/NativePeerNode.cj:39:35:
+   [36m| [0m
+[36m39[0m [36m| [0m    public func insertChildBefore(node: NativePeerNode, sibling: NativePeerNode) {[0m
+   [36m| [0m                                  [33m^^^^ unused variable[0m
+   [36m| [0m
+   [36m#[0m [0mnote[0m: this warning can be suppressed by setting the compiler option `-Woff unused`
+
+[33mwarning[0m: unused variable:'sibling'
+  [36m==>[0m /home/gloria/idlize/testcase/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/peers/NativePeerNode.cj:39:57:
+   [36m| [0m
+[36m39[0m [36m| [0m    public func insertChildBefore(node: NativePeerNode, sibling: NativePeerNode) {[0m
+   [36m| [0m                                                        [33m^^^^^^^ unused variable[0m
+   [36m| [0m
+   [36m#[0m [0mnote[0m: this warning can be suppressed by setting the compiler option `-Woff unused`
+
+[33mwarning[0m: unused variable:'node'
+  [36m==>[0m /home/gloria/idlize/testcase/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/peers/NativePeerNode.cj:42:34:
+   [36m| [0m
+[36m42[0m [36m| [0m    public func insertChildAfter(node: NativePeerNode, sibling: NativePeerNode) {[0m
+   [36m| [0m                                 [33m^^^^ unused variable[0m
+   [36m| [0m
+   [36m#[0m [0mnote[0m: this warning can be suppressed by setting the compiler option `-Woff unused`
+
+[33mwarning[0m: unused variable:'sibling'
+  [36m==>[0m /home/gloria/idlize/testcase/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/peers/NativePeerNode.cj:42:56:
+   [36m| [0m
+[36m42[0m [36m| [0m    public func insertChildAfter(node: NativePeerNode, sibling: NativePeerNode) {[0m
+   [36m| [0m                                                       [33m^^^^^^^ unused variable[0m
+   [36m| [0m
+   [36m#[0m [0mnote[0m: this warning can be suppressed by setting the compiler option `-Woff unused`
+
+11 warnings generated, 11 warnings printed.

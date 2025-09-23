@@ -1,0 +1,47 @@
+/*
+ * Copyright (c) 2024-2025 Huawei Device Co., Ltd.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+
+// WARNING! THIS FILE IS AUTO-GENERATED, DO NOT MAKE CHANGES, THEY WILL BE LOST ON NEXT GENERATION!
+
+package idlize.commonPara
+
+
+import std.collection.*
+import Interop.*
+import KoalaRuntime.*
+import KoalaRuntime.memoize.*
+import std.time.DateTime
+
+public class EventEmulator {
+    private  static func emitClickEvent_serialize(node: UInt64, event: ClickEvent): Unit {
+        ArkUIGeneratedNativeModule._EventEmulator_emitClickEvent(node, MaterializedBase.toPeerPtr(event))
+    }
+    private  static func emitTextInputEvent_serialize(node: UInt64, text: String): Unit {
+        ArkUIGeneratedNativeModule._EventEmulator_emitTextInputEvent(node, text)
+    }
+    public  static func emitClickEvent(node: UInt64, event: ClickEvent): Unit {
+        let node_casted: UInt64 = node
+        let event_casted: ClickEvent = event
+        EventEmulator.emitClickEvent_serialize(node_casted, event_casted)
+        return
+    }
+    public  static func emitTextInputEvent(node: UInt64, text: String): Unit {
+        let node_casted: UInt64 = node
+        let text_casted: String = text
+        EventEmulator.emitTextInputEvent_serialize(node_casted, text_casted)
+        return
+    }
+}

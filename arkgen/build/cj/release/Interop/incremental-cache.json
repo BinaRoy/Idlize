@@ -1,0 +1,14 @@
+{
+  "packageInformation": {
+    "Interop": {
+      "rootPackageName": "Interop",
+      "fileNameHash": "-475042185033016702",
+      "timeStamp": 1758036450,
+      "isBuilt": true,
+      "exeName": "",
+      "hasSubPkgs": false
+    }
+  },
+  "jsonHash": "3544540374963421023",
+  "rootPackageName": "Interop"
+}

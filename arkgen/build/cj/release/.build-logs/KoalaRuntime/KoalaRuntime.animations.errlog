@@ -1,0 +1,161 @@
+[33mwarning[0m: unused variable:'LinearReversed'
+  [36m==>[0m /home/gloria/idlize/testcase/external/incremental-cj/runtime/src/animations/Easing.cj:34:16:
+   [36m| [0m
+[36m34[0m [36m| [0m    static let LinearReversed: EasingCurve = {value: Float64 => 1.0 - value}[0m
+   [36m| [0m               [33m^^^^^^^^^^^^^^ unused variable[0m
+   [36m| [0m
+   [36m#[0m [0mnote[0m: this warning can be suppressed by setting the compiler option `-Woff unused`
+
+[33mwarning[0m: unused variable:'EaseInSine'
+  [36m==>[0m /home/gloria/idlize/testcase/external/incremental-cj/runtime/src/animations/Easing.cj:35:16:
+   [36m| [0m
+[36m35[0m [36m| [0m    static let EaseInSine: EasingCurve = {value: Float64 => 1.0 - cos(value * PI / 2.0)}[0m
+   [36m| [0m               [33m^^^^^^^^^^ unused variable[0m
+   [36m| [0m
+   [36m#[0m [0mnote[0m: this warning can be suppressed by setting the compiler option `-Woff unused`
+
+[33mwarning[0m: unused variable:'EaseOutSine'
+  [36m==>[0m /home/gloria/idlize/testcase/external/incremental-cj/runtime/src/animations/Easing.cj:36:16:
+   [36m| [0m
+[36m36[0m [36m| [0m    static let EaseOutSine: EasingCurve = {value: Float64 => sin(value * PI / 2.0)}[0m
+   [36m| [0m               [33m^^^^^^^^^^^ unused variable[0m
+   [36m| [0m
+   [36m#[0m [0mnote[0m: this warning can be suppressed by setting the compiler option `-Woff unused`
+
+[33mwarning[0m: unused variable:'EaseInOutSine'
+  [36m==>[0m /home/gloria/idlize/testcase/external/incremental-cj/runtime/src/animations/Easing.cj:37:16:
+   [36m| [0m
+[36m37[0m [36m| [0m    static let EaseInOutSine: EasingCurve = {value: Float64 => (1.0 - cos(value * PI)) / 2.0}[0m
+   [36m| [0m               [33m^^^^^^^^^^^^^ unused variable[0m
+   [36m| [0m
+   [36m#[0m [0mnote[0m: this warning can be suppressed by setting the compiler option `-Woff unused`
+
+[33mwarning[0m: unused variable:'Ease'
+  [36m==>[0m /home/gloria/idlize/testcase/external/incremental-cj/runtime/src/animations/Easing.cj:38:16:
+   [36m| [0m
+[36m38[0m [36m| [0m    static let Ease = Easing.cubicBezier(0.25, 0.1, 0.25, 1.0) // https://cubic-bezier.com/#.25,.1,.25,1[0m
+   [36m| [0m               [33m^^^^ unused variable[0m
+   [36m| [0m
+   [36m#[0m [0mnote[0m: this warning can be suppressed by setting the compiler option `-Woff unused`
+
+[33mwarning[0m: unused variable:'EaseIn'
+  [36m==>[0m /home/gloria/idlize/testcase/external/incremental-cj/runtime/src/animations/Easing.cj:39:16:
+   [36m| [0m
+[36m39[0m [36m| [0m    static let EaseIn = Easing.cubicBezier(0.42, 0.0, 1.0, 1.0) // https://cubic-bezier.com/#.42,0,1,1[0m
+   [36m| [0m               [33m^^^^^^ unused variable[0m
+   [36m| [0m
+   [36m#[0m [0mnote[0m: this warning can be suppressed by setting the compiler option `-Woff unused`
+
+[33mwarning[0m: unused variable:'EaseOut'
+  [36m==>[0m /home/gloria/idlize/testcase/external/incremental-cj/runtime/src/animations/Easing.cj:40:16:
+   [36m| [0m
+[36m40[0m [36m| [0m    static let EaseOut = Easing.cubicBezier(0.0, 0.0, 0.58, 1.0) // https://cubic-bezier.com/#0,0,.58,1[0m
+   [36m| [0m               [33m^^^^^^^ unused variable[0m
+   [36m| [0m
+   [36m#[0m [0mnote[0m: this warning can be suppressed by setting the compiler option `-Woff unused`
+
+[33mwarning[0m: unused variable:'EaseInOut'
+  [36m==>[0m /home/gloria/idlize/testcase/external/incremental-cj/runtime/src/animations/Easing.cj:41:16:
+   [36m| [0m
+[36m41[0m [36m| [0m    static let EaseInOut = Easing.cubicBezier(0.42, 0.0, 0.58, 1.0) // https://cubic-bezier.com/#.42,0,.58,1[0m
+   [36m| [0m               [33m^^^^^^^^^ unused variable[0m
+   [36m| [0m
+   [36m#[0m [0mnote[0m: this warning can be suppressed by setting the compiler option `-Woff unused`
+
+[33mwarning[0m: unused variable:'ViscousFluid'
+  [36m==>[0m /home/gloria/idlize/testcase/external/incremental-cj/runtime/src/animations/Easing.cj:42:16:
+   [36m| [0m
+[36m42[0m [36m| [0m    static let ViscousFluid = Easing.viscousFluid()[0m
+   [36m| [0m               [33m^^^^^^^^^^^^ unused variable[0m
+   [36m| [0m
+   [36m#[0m [0mnote[0m: this warning can be suppressed by setting the compiler option `-Woff unused`
+
+[33mwarning[0m: unused variable:'Bubble'
+  [36m==>[0m /home/gloria/idlize/testcase/external/incremental-cj/runtime/src/animations/Easing.cj:43:16:
+   [36m| [0m
+[36m43[0m [36m| [0m    static let Bubble = Easing.cubicBezier(.32, 2.2, .72, 2.2) // https://cubic-bezier.com/#.32,2.2,.72,2.2[0m
+   [36m| [0m               [33m^^^^^^ unused variable[0m
+   [36m| [0m
+   [36m#[0m [0mnote[0m: this warning can be suppressed by setting the compiler option `-Woff unused`
+
+[33mwarning[0m: unused variable:'newValue'
+   [36m==>[0m /home/gloria/idlize/testcase/external/incremental-cj/runtime/src/animations/AnimatedState.cj:123:49:
+    [36m| [0m
+[36m123[0m [36m| [0m    var action: ?((newValue: Value) -> Unit) = {newValue: Value =>}[0m
+    [36m| [0m                                                [33m^^^^^^^^ unused variable[0m
+    [36m| [0m
+    [36m#[0m [0mnote[0m: this warning can be suppressed by setting the compiler option `-Woff unused`
+
+[33mwarning[0m: unused variable:'value'
+   [36m==>[0m /home/gloria/idlize/testcase/external/incremental-cj/runtime/src/animations/Easing.cj:176:54:
+    [36m| [0m
+[36m176[0m [36m| [0m                case EasingStepJump.Start => return {value: Float64 => 1.0}[0m
+    [36m| [0m                                                     [33m^^^^^ unused variable[0m
+    [36m| [0m
+    [36m#[0m [0mnote[0m: this warning can be suppressed by setting the compiler option `-Woff unused`
+
+[33mwarning[0m: unused variable:'value'
+   [36m==>[0m /home/gloria/idlize/testcase/external/incremental-cj/runtime/src/animations/Easing.cj:177:52:
+    [36m| [0m
+[36m177[0m [36m| [0m                case EasingStepJump.End => return {value: Float64 => 0.0}[0m
+    [36m| [0m                                                   [33m^^^^^ unused variable[0m
+    [36m| [0m
+    [36m#[0m [0mnote[0m: this warning can be suppressed by setting the compiler option `-Woff unused`
+
+[33mwarning[0m: unused variable:'value'
+   [36m==>[0m /home/gloria/idlize/testcase/external/incremental-cj/runtime/src/animations/Easing.cj:178:53:
+    [36m| [0m
+[36m178[0m [36m| [0m                case EasingStepJump.Both => return {value: Float64 => 0.5}[0m
+    [36m| [0m                                                    [33m^^^^^ unused variable[0m
+    [36m| [0m
+    [36m#[0m [0mnote[0m: this warning can be suppressed by setting the compiler option `-Woff unused`
+
+[33mwarning[0m: unused expression
+   [36m==>[0m /home/gloria/idlize/testcase/external/incremental-cj/runtime/src/animations/AnimatedState.cj:194:30:
+    [36m| [0m
+[36m194[0m [36m| [0m            if (let timer <- Some(timer)) {[0m
+    [36m| [0m                             [33m^^^^^^^^^^^ unused expression[0m
+    [36m| [0m
+    [36m#[0m [0mnote[0m: this warning can be suppressed by setting the compiler option `-Woff unused`
+
+[33mwarning[0m: unused variable:'time'
+   [36m==>[0m /home/gloria/idlize/testcase/external/incremental-cj/runtime/src/animations/TimeAnimation.cj:587:25:
+    [36m| [0m
+[36m587[0m [36m| [0m    public func onPause(time: UInt64): Unit {[0m
+    [36m| [0m                        [33m^^^^ unused variable[0m
+    [36m| [0m
+    [36m#[0m [0mnote[0m: this warning can be suppressed by setting the compiler option `-Woff unused`
+
+[33mwarning[0m: unused variable:'time'
+   [36m==>[0m /home/gloria/idlize/testcase/external/incremental-cj/runtime/src/animations/TimeAnimation.cj:632:26:
+    [36m| [0m
+[36m632[0m [36m| [0m    public func getValue(time: UInt64): Value {[0m
+    [36m| [0m                         [33m^^^^ unused variable[0m
+    [36m| [0m
+    [36m#[0m [0mnote[0m: this warning can be suppressed by setting the compiler option `-Woff unused`
+
+[33mwarning[0m: unused variable:'time'
+   [36m==>[0m /home/gloria/idlize/testcase/external/incremental-cj/runtime/src/animations/TimeAnimation.cj:636:25:
+    [36m| [0m
+[36m636[0m [36m| [0m    public func onStart(time: UInt64): Unit {[0m
+    [36m| [0m                        [33m^^^^ unused variable[0m
+    [36m| [0m
+    [36m#[0m [0mnote[0m: this warning can be suppressed by setting the compiler option `-Woff unused`
+
+[33mwarning[0m: unused variable:'time'
+   [36m==>[0m /home/gloria/idlize/testcase/external/incremental-cj/runtime/src/animations/TimeAnimation.cj:639:25:
+    [36m| [0m
+[36m639[0m [36m| [0m    public func onPause(time: UInt64): Unit {[0m
+    [36m| [0m                        [33m^^^^ unused variable[0m
+    [36m| [0m
+    [36m#[0m [0mnote[0m: this warning can be suppressed by setting the compiler option `-Woff unused`
+
+[33mwarning[0m: unused expression
+   [36m==>[0m /home/gloria/idlize/testcase/external/incremental-cj/runtime/src/animations/TimeAnimation.cj:697:36:
+    [36m| [0m
+[36m697[0m [36m| [0m        let onPause = if (let v <- this.isPauseRequested) {[0m
+    [36m| [0m                                   [33m^^^^^^^^^^^^^^^^^^^^^ unused expression[0m
+    [36m| [0m
+    [36m#[0m [0mnote[0m: this warning can be suppressed by setting the compiler option `-Woff unused`
+
+20 warnings generated, 20 warnings printed.

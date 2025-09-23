@@ -1,0 +1,73 @@
+[33mwarning[0m: unused function:'testCollectorAfterCallbacks'
+  [36m==>[0m /home/gloria/idlize/testcase/external/incremental-cj/runtime/src/core/testing.cj:33:1:
+   [36m| [0m
+[36m33[0m [36m| [0m  func testCollectorAfterCallbacks(expected: Array<String>): Unit {[0m
+   [36m| [0m [33m_[0m[33m^[0m
+[36m34[0m [36m| [0m[33m|[0m     testCollector()[0m
+   [36m| [0m[33m|[0m ...[0m
+[36m37[0m [36m| [0m[33m|[0m }[0m
+   [36m| [0m[33m|[0m[33m_[0m[33m^ unused function[0m
+   [36m| [0m
+   [36m#[0m [0mnote[0m: this warning can be suppressed by setting the compiler option `-Woff unused`
+
+[33mwarning[0m: unused function:'testCollectorBeforeCallbacks'
+  [36m==>[0m /home/gloria/idlize/testcase/external/incremental-cj/runtime/src/core/testing.cj:40:1:
+   [36m| [0m
+[36m40[0m [36m| [0m  func testCollectorBeforeCallbacks(expected: Array<String>): Unit {[0m
+   [36m| [0m [33m_[0m[33m^[0m
+[36m41[0m [36m| [0m[33m|[0m     testCollector(expected)[0m
+   [36m| [0m[33m|[0m ...[0m
+[36m44[0m [36m| [0m[33m|[0m }[0m
+   [36m| [0m[33m|[0m[33m_[0m[33m^ unused function[0m
+   [36m| [0m
+   [36m#[0m [0mnote[0m: this warning can be suppressed by setting the compiler option `-Woff unused`
+
+[33mwarning[0m: unused function:'testPrepareOnStart'
+  [36m==>[0m /home/gloria/idlize/testcase/external/incremental-cj/runtime/src/core/testing.cj:66:1:
+   [36m| [0m
+[36m66[0m [36m| [0m  func testPrepareOnStart(): Unit {[0m
+   [36m| [0m [33m_[0m[33m^[0m
+[36m67[0m [36m| [0m[33m|[0m     GlobalStateManager.reset()[0m
+   [36m| [0m[33m|[0m ...[0m
+[36m69[0m [36m| [0m[33m|[0m }[0m
+   [36m| [0m[33m|[0m[33m_[0m[33m^ unused function[0m
+   [36m| [0m
+   [36m#[0m [0mnote[0m: this warning can be suppressed by setting the compiler option `-Woff unused`
+
+[33mwarning[0m: unused function:'testRoot'
+  [36m==>[0m /home/gloria/idlize/testcase/external/incremental-cj/runtime/src/core/testing.cj:72:1:
+   [36m| [0m
+[36m72[0m [36m| [0m  func testRoot(content: () -> Unit): ComputableState<TestNode> {[0m
+   [36m| [0m [33m_[0m[33m^[0m
+[36m73[0m [36m| [0m[33m|[0m     let root = memoRoot(TestNode("root"), content)[0m
+   [36m| [0m[33m|[0m ...[0m
+[36m76[0m [36m| [0m[33m|[0m }[0m
+   [36m| [0m[33m|[0m[33m_[0m[33m^ unused function[0m
+   [36m| [0m
+   [36m#[0m [0mnote[0m: this warning can be suppressed by setting the compiler option `-Woff unused`
+
+[33mwarning[0m: unused variable:'old'
+  [36m==>[0m /home/gloria/idlize/testcase/external/incremental-cj/runtime/src/core/StateManager.cj:79:13:
+   [36m| [0m
+[36m79[0m [36m| [0m        let old = frozen[0m
+   [36m| [0m            [33m^^^ unused variable[0m
+   [36m| [0m
+   [36m#[0m [0mnote[0m: this warning can be suppressed by setting the compiler option `-Woff unused`
+
+[33mwarning[0m: unused variable:'scope'
+   [36m==>[0m /home/gloria/idlize/testcase/external/incremental-cj/runtime/src/core/ScopeImpl.cj:115:13:
+    [36m| [0m
+[36m115[0m [36m| [0m        let scope = GlobalStateManager.currentScope[0m
+    [36m| [0m            [33m^^^^^ unused variable[0m
+    [36m| [0m
+    [36m#[0m [0mnote[0m: this warning can be suppressed by setting the compiler option `-Woff unused`
+
+[33mwarning[0m: unused variable:'stored'
+   [36m==>[0m /home/gloria/idlize/testcase/external/incremental-cj/runtime/src/core/ScopeImpl.cj:278:17:
+    [36m| [0m
+[36m278[0m [36m| [0m            let stored = GlobalStateManager.currentScope[0m
+    [36m| [0m                [33m^^^^^^ unused variable[0m
+    [36m| [0m
+    [36m#[0m [0mnote[0m: this warning can be suppressed by setting the compiler option `-Woff unused`
+
+7 warnings generated, 7 warnings printed.

@@ -1,0 +1,1521 @@
+[31merror[0m: '_CheckboxAttribute_setOnChangeEvent_select' is not a member of class 'ArkUIGeneratedNativeModule'
+   [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/peers/ArkCheckboxAttributePeer.cj:120:36:
+    [36m| [0m
+[36m120[0m [36m| [0m        ArkUIGeneratedNativeModule._CheckboxAttribute_setOnChangeEvent_select(this.peer.ptr, thisSerializer.asBuffer(), thisSerializer.length())[0m
+    [36m| [0m                                   [31m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ [0m
+    [36m| [0m
+
+[31merror[0m: '_TestAttribute_setTestUnionBooleanStringNumberUndefined' is not a member of class 'ArkUIGeneratedNativeModule'
+   [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/peers/ArkTestAttributePeer.cj:138:36:
+    [36m| [0m
+[36m138[0m [36m| [0m        ArkUIGeneratedNativeModule._TestAttribute_setTestUnionBooleanStringNumberUndefined(this.peer.ptr, thisSerializer.asBuffer(), thisSerializer.length())[0m
+    [36m| [0m                                   [31m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ [0m
+    [36m| [0m
+
+[31merror[0m: undeclared identifier 'value0'
+   [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/peers/ArkTestAttributePeer.cj:209:29:
+    [36m| [0m
+[36m209[0m [36m| [0m        let value_0 = value.value0[0m
+    [36m| [0m                            [31m^^^^^^ [0m
+    [36m| [0m
+
+[31merror[0m: undeclared identifier 'value1'
+   [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/peers/ArkTestAttributePeer.cj:211:29:
+    [36m| [0m
+[36m211[0m [36m| [0m        let value_1 = value.value1[0m
+    [36m| [0m                            [31m^^^^^^ [0m
+    [36m| [0m
+
+[31merror[0m: undeclared identifier 'value0'
+   [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/peers/ArkTestAttributePeer.cj:218:29:
+    [36m| [0m
+[36m218[0m [36m| [0m        let value_0 = value.value0[0m
+    [36m| [0m                            [31m^^^^^^ [0m
+    [36m| [0m
+
+[31merror[0m: undeclared identifier 'value1'
+   [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/peers/ArkTestAttributePeer.cj:220:29:
+    [36m| [0m
+[36m220[0m [36m| [0m        let value_1 = value.value1[0m
+    [36m| [0m                            [31m^^^^^^ [0m
+    [36m| [0m
+
+[31merror[0m: undeclared identifier 'value2'
+   [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/peers/ArkTestAttributePeer.cj:222:29:
+    [36m| [0m
+[36m222[0m [36m| [0m        let value_2 = value.value2[0m
+    [36m| [0m                            [31m^^^^^^ [0m
+    [36m| [0m
+
+[31merror[0m: undeclared identifier 'value0'
+   [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/peers/ArkTestAttributePeer.cj:229:29:
+    [36m| [0m
+[36m229[0m [36m| [0m        let value_0 = value.value0[0m
+    [36m| [0m                            [31m^^^^^^ [0m
+    [36m| [0m
+
+[31merror[0m: undeclared identifier 'value1'
+   [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/peers/ArkTestAttributePeer.cj:231:29:
+    [36m| [0m
+[36m231[0m [36m| [0m        let value_1 = value.value1[0m
+    [36m| [0m                            [31m^^^^^^ [0m
+    [36m| [0m
+
+[31merror[0m: undeclared identifier 'value2'
+   [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/peers/ArkTestAttributePeer.cj:233:29:
+    [36m| [0m
+[36m233[0m [36m| [0m        let value_2 = value.value2[0m
+    [36m| [0m                            [31m^^^^^^ [0m
+    [36m| [0m
+
+[31merror[0m: undeclared identifier 'value3'
+   [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/peers/ArkTestAttributePeer.cj:235:29:
+    [36m| [0m
+[36m235[0m [36m| [0m        let value_3 = value.value3[0m
+    [36m| [0m                            [31m^^^^^^ [0m
+    [36m| [0m
+
+[31merror[0m: '_TextInputAttribute_setOnChangeEvent_text' is not a member of class 'ArkUIGeneratedNativeModule'
+  [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/peers/ArkTextInputAttributePeer.cj:66:36:
+   [36m| [0m
+[36m66[0m [36m| [0m        ArkUIGeneratedNativeModule._TextInputAttribute_setOnChangeEvent_text(this.peer.ptr, thisSerializer.asBuffer(), thisSerializer.length())[0m
+   [36m| [0m                                   [31m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ [0m
+   [36m| [0m
+
+[31merror[0m: '_TextPickerAttribute_setOnChangeEvent_selected' is not a member of class 'ArkUIGeneratedNativeModule'
+   [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/peers/ArkTextPickerAttributePeer.cj:140:36:
+    [36m| [0m
+[36m140[0m [36m| [0m        ArkUIGeneratedNativeModule._TextPickerAttribute_setOnChangeEvent_selected(this.peer.ptr, thisSerializer.asBuffer(), thisSerializer.length())[0m
+    [36m| [0m                                   [31m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ [0m
+    [36m| [0m
+
+[31merror[0m: '_TextPickerAttribute_setOnChangeEvent_value' is not a member of class 'ArkUIGeneratedNativeModule'
+   [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/peers/ArkTextPickerAttributePeer.cj:146:36:
+    [36m| [0m
+[36m146[0m [36m| [0m        ArkUIGeneratedNativeModule._TextPickerAttribute_setOnChangeEvent_value(this.peer.ptr, thisSerializer.asBuffer(), thisSerializer.length())[0m
+    [36m| [0m                                   [31m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ [0m
+    [36m| [0m
+
+[31merror[0m: undeclared identifier 'ArkUINativeModule'
+  [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/peers/NativePeerNode.cj:26:40:
+   [36m| [0m
+[36m26[0m [36m| [0m        return NativePeerNode(peerPtr, ArkUINativeModule._GetNodeFinalizer())[0m
+   [36m| [0m                                       [31m^ [0m
+   [36m| [0m
+
+[31merror[0m: undeclared identifier 'ArkUINativeModule'
+  [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/peers/NativePeerNode.cj:30:9:
+   [36m| [0m
+[36m30[0m [36m| [0m        ArkUINativeModule._DisposeNode(this.ptr)[0m
+   [36m| [0m        [31m^ [0m
+   [36m| [0m
+
+[31merror[0m: undeclared identifier 'ArkUINativeModule'
+  [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/peers/NativePeerNode.cj:34:9:
+   [36m| [0m
+[36m34[0m [36m| [0m        ArkUINativeModule._AddChild(this.ptr, node.ptr)[0m
+   [36m| [0m        [31m^ [0m
+   [36m| [0m
+
+[31merror[0m: undeclared identifier 'ArkUINativeModule'
+  [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/peers/NativePeerNode.cj:37:9:
+   [36m| [0m
+[36m37[0m [36m| [0m        ArkUINativeModule._RemoveChild(this.ptr, node.ptr)[0m
+   [36m| [0m        [31m^ [0m
+   [36m| [0m
+
+[31merror[0m: undeclared identifier 'ArkUINativeModule'
+  [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/peers/NativePeerNode.cj:46:9:
+   [36m| [0m
+[36m46[0m [36m| [0m        ArkUINativeModule._InsertChildAt(this.ptr, node.ptr, position)[0m
+   [36m| [0m        [31m^ [0m
+   [36m| [0m
+
+[31merror[0m: undeclared identifier 'ArkUINativeModule'
+  [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/peers/NativePeerNode.cj:50:9:
+   [36m| [0m
+[36m50[0m [36m| [0m        ArkUINativeModule._DumpTreeNode(this.ptr)[0m
+   [36m| [0m        [31m^ [0m
+   [36m| [0m
+
+20 errors generated, 20 errors printed.
+Error: failed to compile package `idlize.peers`, return code is 1
+[31merror[0m: undeclared type name 'ComponentBase'
+  [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkCommonMethod.cj:31:47:
+   [36m| [0m
+[36m31[0m [36m| [0mpublic open class ArkCommonMethodComponent <: ComponentBase {[0m
+   [36m| [0m                                              [31m^ [0m
+   [36m| [0m
+
+[31merror[0m: undeclared type name 'ComponentBase'
+  [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkComponentRoot.cj:30:48:
+   [36m| [0m
+[36m30[0m [36m| [0mpublic open class ArkComponentRootComponent <: ComponentBase {[0m
+   [36m| [0m                                               [31m^ [0m
+   [36m| [0m
+
+[31merror[0m: undeclared type name 'ComponentBase'
+  [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkCustomLayoutRoot.cj:30:51:
+   [36m| [0m
+[36m30[0m [36m| [0mpublic open class ArkCustomLayoutRootComponent <: ComponentBase {[0m
+   [36m| [0m                                                  [31m^ [0m
+   [36m| [0m
+
+[31merror[0m: undeclared type name 'ComponentBase'
+  [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkRoot.cj:30:39:
+   [36m| [0m
+[36m30[0m [36m| [0mpublic open class ArkRootComponent <: ComponentBase {[0m
+   [36m| [0m                                      [31m^ [0m
+   [36m| [0m
+
+[31merror[0m: undeclared type name 'BlankAttributeInterfaces'
+  [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkBlank.cj:29:37:
+   [36m| [0m
+[36m29[0m [36m| [0mpublic type OnBlankStyleCallback = (attributes: BlankAttributeInterfaces) -> Unit[0m
+   [36m| [0m                                    [31m^ [0m
+   [36m| [0m
+
+[31merror[0m: 'Unknown type' is not a type
+  [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkBlank.cj:29:36:
+   [36m| [0m
+[36m29[0m [36m| [0mpublic type OnBlankStyleCallback = (attributes: BlankAttributeInterfaces) -> Unit[0m
+   [36m| [0m                                   [31m^ [0m
+   [36m| [0m
+
+[31merror[0m: undeclared type name 'ButtonAttributeInterfaces'
+  [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkButton.cj:29:38:
+   [36m| [0m
+[36m29[0m [36m| [0mpublic type OnButtonStyleCallback = (attributes: ButtonAttributeInterfaces) -> Unit[0m
+   [36m| [0m                                     [31m^ [0m
+   [36m| [0m
+
+[31merror[0m: 'Unknown type' is not a type
+  [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkButton.cj:29:37:
+   [36m| [0m
+[36m29[0m [36m| [0mpublic type OnButtonStyleCallback = (attributes: ButtonAttributeInterfaces) -> Unit[0m
+   [36m| [0m                                    [31m^ [0m
+   [36m| [0m
+
+[31merror[0m: undeclared type name 'CheckboxAttributeInterfaces'
+  [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkCheckbox.cj:29:40:
+   [36m| [0m
+[36m29[0m [36m| [0mpublic type OnCheckboxStyleCallback = (attributes: CheckboxAttributeInterfaces) -> Unit[0m
+   [36m| [0m                                       [31m^ [0m
+   [36m| [0m
+
+[31merror[0m: 'Unknown type' is not a type
+  [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkCheckbox.cj:29:39:
+   [36m| [0m
+[36m29[0m [36m| [0mpublic type OnCheckboxStyleCallback = (attributes: CheckboxAttributeInterfaces) -> Unit[0m
+   [36m| [0m                                      [31m^ [0m
+   [36m| [0m
+
+[31merror[0m: undeclared type name 'ColumnAttributeInterfaces'
+  [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkColumn.cj:29:38:
+   [36m| [0m
+[36m29[0m [36m| [0mpublic type OnColumnStyleCallback = (attributes: ColumnAttributeInterfaces) -> Unit[0m
+   [36m| [0m                                     [31m^ [0m
+   [36m| [0m
+
+[31merror[0m: 'Unknown type' is not a type
+  [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkColumn.cj:29:37:
+   [36m| [0m
+[36m29[0m [36m| [0mpublic type OnColumnStyleCallback = (attributes: ColumnAttributeInterfaces) -> Unit[0m
+   [36m| [0m                                    [31m^ [0m
+   [36m| [0m
+
+[31merror[0m: undeclared type name 'CommonMethodAttributeInterfaces'
+  [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkCommonMethod.cj:29:44:
+   [36m| [0m
+[36m29[0m [36m| [0mpublic type OnCommonMethodStyleCallback = (attributes: CommonMethodAttributeInterfaces) -> Unit[0m
+   [36m| [0m                                           [31m^ [0m
+   [36m| [0m
+
+[31merror[0m: 'Unknown type' is not a type
+  [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkCommonMethod.cj:29:43:
+   [36m| [0m
+[36m29[0m [36m| [0mpublic type OnCommonMethodStyleCallback = (attributes: CommonMethodAttributeInterfaces) -> Unit[0m
+   [36m| [0m                                          [31m^ [0m
+   [36m| [0m
+
+[31merror[0m: undeclared type name 'ComponentRootAttributeInterfaces'
+  [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkComponentRoot.cj:28:45:
+   [36m| [0m
+[36m28[0m [36m| [0mpublic type OnComponentRootStyleCallback = (attributes: ComponentRootAttributeInterfaces) -> Unit[0m
+   [36m| [0m                                            [31m^ [0m
+   [36m| [0m
+
+[31merror[0m: 'Unknown type' is not a type
+  [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkComponentRoot.cj:28:44:
+   [36m| [0m
+[36m28[0m [36m| [0mpublic type OnComponentRootStyleCallback = (attributes: ComponentRootAttributeInterfaces) -> Unit[0m
+   [36m| [0m                                           [31m^ [0m
+   [36m| [0m
+
+[31merror[0m: undeclared type name 'CustomLayoutRootAttributeInterfaces'
+  [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkCustomLayoutRoot.cj:28:48:
+   [36m| [0m
+[36m28[0m [36m| [0mpublic type OnCustomLayoutRootStyleCallback = (attributes: CustomLayoutRootAttributeInterfaces) -> Unit[0m
+   [36m| [0m                                               [31m^ [0m
+   [36m| [0m
+
+[31merror[0m: 'Unknown type' is not a type
+  [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkCustomLayoutRoot.cj:28:47:
+   [36m| [0m
+[36m28[0m [36m| [0mpublic type OnCustomLayoutRootStyleCallback = (attributes: CustomLayoutRootAttributeInterfaces) -> Unit[0m
+   [36m| [0m                                              [31m^ [0m
+   [36m| [0m
+
+[31merror[0m: undeclared type name 'ListAttributeInterfaces'
+  [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkList.cj:29:36:
+   [36m| [0m
+[36m29[0m [36m| [0mpublic type OnListStyleCallback = (attributes: ListAttributeInterfaces) -> Unit[0m
+   [36m| [0m                                   [31m^ [0m
+   [36m| [0m
+
+[31merror[0m: 'Unknown type' is not a type
+  [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkList.cj:29:35:
+   [36m| [0m
+[36m29[0m [36m| [0mpublic type OnListStyleCallback = (attributes: ListAttributeInterfaces) -> Unit[0m
+   [36m| [0m                                  [31m^ [0m
+   [36m| [0m
+
+[31merror[0m: undeclared type name 'NavigationAttributeInterfaces'
+  [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkNavigation.cj:29:42:
+   [36m| [0m
+[36m29[0m [36m| [0mpublic type OnNavigationStyleCallback = (attributes: NavigationAttributeInterfaces) -> Unit[0m
+   [36m| [0m                                         [31m^ [0m
+   [36m| [0m
+
+[31merror[0m: 'Unknown type' is not a type
+  [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkNavigation.cj:29:41:
+   [36m| [0m
+[36m29[0m [36m| [0mpublic type OnNavigationStyleCallback = (attributes: NavigationAttributeInterfaces) -> Unit[0m
+   [36m| [0m                                        [31m^ [0m
+   [36m| [0m
+
+[31merror[0m: undeclared type name 'RootAttributeInterfaces'
+  [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkRoot.cj:28:36:
+   [36m| [0m
+[36m28[0m [36m| [0mpublic type OnRootStyleCallback = (attributes: RootAttributeInterfaces) -> Unit[0m
+   [36m| [0m                                   [31m^ [0m
+   [36m| [0m
+
+[31merror[0m: 'Unknown type' is not a type
+  [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkRoot.cj:28:35:
+   [36m| [0m
+[36m28[0m [36m| [0mpublic type OnRootStyleCallback = (attributes: RootAttributeInterfaces) -> Unit[0m
+   [36m| [0m                                  [31m^ [0m
+   [36m| [0m
+
+[31merror[0m: undeclared type name 'ScrollableCommonMethodAttributeInterfaces'
+  [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkScrollableCommonMethod.cj:29:54:
+   [36m| [0m
+[36m29[0m [36m| [0mpublic type OnScrollableCommonMethodStyleCallback = (attributes: ScrollableCommonMethodAttributeInterfaces) -> Unit[0m
+   [36m| [0m                                                     [31m^ [0m
+   [36m| [0m
+
+[31merror[0m: 'Unknown type' is not a type
+  [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkScrollableCommonMethod.cj:29:53:
+   [36m| [0m
+[36m29[0m [36m| [0mpublic type OnScrollableCommonMethodStyleCallback = (attributes: ScrollableCommonMethodAttributeInterfaces) -> Unit[0m
+   [36m| [0m                                                    [31m^ [0m
+   [36m| [0m
+
+[31merror[0m: undeclared type name 'TestAttributeInterfaces'
+  [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkTest.cj:28:36:
+   [36m| [0m
+[36m28[0m [36m| [0mpublic type OnTestStyleCallback = (attributes: TestAttributeInterfaces) -> Unit[0m
+   [36m| [0m                                   [31m^ [0m
+   [36m| [0m
+
+[31merror[0m: 'Unknown type' is not a type
+  [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkTest.cj:28:35:
+   [36m| [0m
+[36m28[0m [36m| [0mpublic type OnTestStyleCallback = (attributes: TestAttributeInterfaces) -> Unit[0m
+   [36m| [0m                                  [31m^ [0m
+   [36m| [0m
+
+[31merror[0m: undeclared type name 'TextInputAttributeInterfaces'
+  [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkTextInput.cj:29:41:
+   [36m| [0m
+[36m29[0m [36m| [0mpublic type OnTextInputStyleCallback = (attributes: TextInputAttributeInterfaces) -> Unit[0m
+   [36m| [0m                                        [31m^ [0m
+   [36m| [0m
+
+[31merror[0m: 'Unknown type' is not a type
+  [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkTextInput.cj:29:40:
+   [36m| [0m
+[36m29[0m [36m| [0mpublic type OnTextInputStyleCallback = (attributes: TextInputAttributeInterfaces) -> Unit[0m
+   [36m| [0m                                       [31m^ [0m
+   [36m| [0m
+
+[31merror[0m: undeclared type name 'TextPickerAttributeInterfaces'
+  [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkTextPicker.cj:29:42:
+   [36m| [0m
+[36m29[0m [36m| [0mpublic type OnTextPickerStyleCallback = (attributes: TextPickerAttributeInterfaces) -> Unit[0m
+   [36m| [0m                                         [31m^ [0m
+   [36m| [0m
+
+[31merror[0m: 'Unknown type' is not a type
+  [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkTextPicker.cj:29:41:
+   [36m| [0m
+[36m29[0m [36m| [0mpublic type OnTextPickerStyleCallback = (attributes: TextPickerAttributeInterfaces) -> Unit[0m
+   [36m| [0m                                        [31m^ [0m
+   [36m| [0m
+
+[31merror[0m: undeclared type name 'ArkBlankPeer'
+  [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkBlank.cj:32:32:
+   [36m| [0m
+[36m32[0m [36m| [0m    protected  func getPeer(): ArkBlankPeer {[0m
+   [36m| [0m                               [31m^ [0m
+   [36m| [0m
+
+[31merror[0m: undeclared type name 'ArkBlankPeer'
+  [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkBlank.cj:34:35:
+   [36m| [0m
+[36m34[0m [36m| [0m            return match (peer as ArkBlankPeer) { case Some(x) => x; case None => throw Exception("Cast is not succeeded")}[0m
+   [36m| [0m                                  [31m^ [0m
+   [36m| [0m
+
+[31merror[0m: undeclared type name 'ArkBlankPeer'
+  [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkBlank.cj:76:16:
+   [36m| [0m
+[36m76[0m [36m| [0m    NodeAttach<ArkBlankPeer>([0m
+   [36m| [0m               [31m^ [0m
+   [36m| [0m
+[34mnote[0m: which is expanded as follows
+   [36m| [0m
+   [36m| [0m/* 67.20 */    NodeAttach < ArkBlankPeer >({ => let __memo_param_value_style = __memo_param_style.getValue()[0m
+   [36m| [0m                            [34m^^^^^^^^^^^^ [0m
+   [36m| [0m
+[34mnote[0m: the error occurs after the macro is expanded
+  [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkBlank.cj:67:1:
+   [36m| [0m
+[36m67[0m [36m| [0m  @Memo[0m
+   [36m| [0m [34m_[0m[34m^[0m
+[36m68[0m [36m| [0m[34m|[0m public func ArkBlank([0m
+   [36m| [0m[34m|[0m ...[0m
+[36m85[0m [36m| [0m[34m|[0m }[0m
+   [36m| [0m[34m|[0m[34m_[0m[34m^[0m
+   [36m| [0m
+[34mnote[0m: the code after the macro is expanded as follows
+    [36m| [0m
+    [36m| [0m  /* 67.1 */public func ArkBlank(style: Option < OnBlankStyleCallback >, content_: Option < OnBlankContentCallback >, min!: Float64 = 0.0): Unit {[0m
+    [36m| [0m [34m_[0m[34m^[0m
+    [36m| [0m[34m|[0m /* 67.2 */    let __memo_key = getCallsiteKey()[0m
+    [36m| [0m[34m|[0m /* 67.3 */    let __memo_scope = getMemoScope < Unit >(__memo_key, 3)[0m
+    [36m| [0m[34m|[0m /* 67.4 */    let __memo_param_style = getParameter(__memo_scope, 0, style, "style")[0m
+    [36m| [0m[34m|[0m /* 67.5 */    let __memo_param_content_ = getParameter(__memo_scope, 1, content_, "content_")[0m
+    [36m| [0m[34m|[0m /* 67.6 */    let __memo_param_min = getParameter(__memo_scope, 2, min, "min")[0m
+    [36m| [0m[34m|[0m /* 67.7 */    let __memo_param_value_style = __memo_param_style.getValue()[0m
+    [36m| [0m[34m|[0m /* 67.8 */    let __memo_param_value_content_ = __memo_param_content_.getValue()[0m
+    [36m| [0m[34m|[0m /* 67.9 */    let __memo_param_value_min = __memo_param_min.getValue()[0m
+    [36m| [0m[34m|[0m /* 67.10 */    if(__memo_scope.isUnchanged()) {[0m
+    [36m| [0m[34m|[0m /* 67.11 */        return __memo_scope.getCached()[0m
+    [36m| [0m[34m|[0m /* 67.12 */    }[0m
+    [36m| [0m[34m|[0m /* 67.13 */    let receiver = remember < ArkBlankComponent >({ => let __memo_param_value_style = __memo_param_style.getValue()[0m
+    [36m| [0m[34m|[0m /* 67.14 */        [0m
+    [36m| [0m[34m|[0m /* 67.15 */        let __memo_param_value_content_ = __memo_param_content_.getValue()[0m
+    [36m| [0m[34m|[0m /* 67.16 */        [0m
+    [36m| [0m[34m|[0m /* 67.17 */        let __memo_param_value_min = __memo_param_min.getValue()[0m
+    [36m| [0m[34m|[0m /* 67.18 */        [0m
+    [36m| [0m[34m|[0m /* 67.19 */    ArkBlankComponent() })[0m
+    [36m| [0m[34m|[0m /* 67.20 */    NodeAttach < ArkBlankPeer >({ => let __memo_param_value_style = __memo_param_style.getValue()[0m
+    [36m| [0m[34m|[0m /* 67.21 */        [0m
+    [36m| [0m[34m|[0m /* 67.22 */        let __memo_param_value_content_ = __memo_param_content_.getValue()[0m
+    [36m| [0m[34m|[0m /* 67.23 */        [0m
+    [36m| [0m[34m|[0m /* 67.24 */        let __memo_param_value_min = __memo_param_min.getValue()[0m
+    [36m| [0m[34m|[0m /* 67.25 */        [0m
+    [36m| [0m[34m|[0m /* 67.26 */    ArkBlankPeer.create(receiver, 0) }, { => let __memo_param_value_style = __memo_param_style.getValue()[0m
+    [36m| [0m[34m|[0m /* 67.27 */        [0m
+    [36m| [0m[34m|[0m /* 67.28 */        let __memo_param_value_content_ = __memo_param_content_.getValue()[0m
+    [36m| [0m[34m|[0m /* 67.29 */        [0m
+    [36m| [0m[34m|[0m /* 67.30 */        let __memo_param_value_min = __memo_param_min.getValue()[0m
+    [36m| [0m[34m|[0m /* 67.31 */        [0m
+    [36m| [0m[34m|[0m /* 67.32 */        __memo_param_value_style?(receiver)[0m
+    [36m| [0m[34m|[0m /* 67.33 */        __memo_param_value_content_?()[0m
+    [36m| [0m[34m|[0m /* 67.34 */    receiver.applyAttributesFinish() }, Option.None)[0m
+    [36m| [0m[34m|[0m /* 67.35 */    return __memo_scope.recache(MEMO_UNIT)[0m
+    [36m| [0m[34m|[0m /* 67.36 */}[0m
+    [36m| [0m[34m|[0m /* 67.37 */[0m
+    [36m| [0m[34m|[0m[34m_[0m[34m__________^[0m
+    [36m| [0m
+
+[31merror[0m: undeclared type name 'ArkButtonPeer'
+  [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkButton.cj:32:32:
+   [36m| [0m
+[36m32[0m [36m| [0m    protected  func getPeer(): ArkButtonPeer {[0m
+   [36m| [0m                               [31m^ [0m
+   [36m| [0m
+
+[31merror[0m: undeclared type name 'ArkButtonPeer'
+  [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkButton.cj:34:35:
+   [36m| [0m
+[36m34[0m [36m| [0m            return match (peer as ArkButtonPeer) { case Some(x) => x; case None => throw Exception("Cast is not succeeded")}[0m
+   [36m| [0m                                  [31m^ [0m
+   [36m| [0m
+
+[31merror[0m: undeclared type name 'ArkButtonPeer'
+  [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkButton.cj:85:16:
+   [36m| [0m
+[36m85[0m [36m| [0m    NodeAttach<ArkButtonPeer>([0m
+   [36m| [0m               [31m^ [0m
+   [36m| [0m
+[34mnote[0m: which is expanded as follows
+   [36m| [0m
+   [36m| [0m/* 77.16 */    NodeAttach < ArkButtonPeer >({ => let __memo_param_value_style = __memo_param_style.getValue()[0m
+   [36m| [0m                            [34m^^^^^^^^^^^^^ [0m
+   [36m| [0m
+[34mnote[0m: the error occurs after the macro is expanded
+  [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkButton.cj:77:1:
+   [36m| [0m
+[36m77[0m [36m| [0m  @Memo[0m
+   [36m| [0m [34m_[0m[34m^[0m
+[36m78[0m [36m| [0m[34m|[0m public func ArkButton([0m
+   [36m| [0m[34m|[0m ...[0m
+[36m94[0m [36m| [0m[34m|[0m }[0m
+   [36m| [0m[34m|[0m[34m_[0m[34m^[0m
+   [36m| [0m
+[34mnote[0m: the code after the macro is expanded as follows
+    [36m| [0m
+    [36m| [0m  /* 77.1 */public func ArkButton(style: Option < OnButtonStyleCallback >, content_: Option < OnButtonContentCallback >): Unit {[0m
+    [36m| [0m [34m_[0m[34m^[0m
+    [36m| [0m[34m|[0m /* 77.2 */    let __memo_key = getCallsiteKey()[0m
+    [36m| [0m[34m|[0m /* 77.3 */    let __memo_scope = getMemoScope < Unit >(__memo_key, 2)[0m
+    [36m| [0m[34m|[0m /* 77.4 */    let __memo_param_style = getParameter(__memo_scope, 0, style, "style")[0m
+    [36m| [0m[34m|[0m /* 77.5 */    let __memo_param_content_ = getParameter(__memo_scope, 1, content_, "content_")[0m
+    [36m| [0m[34m|[0m /* 77.6 */    let __memo_param_value_style = __memo_param_style.getValue()[0m
+    [36m| [0m[34m|[0m /* 77.7 */    let __memo_param_value_content_ = __memo_param_content_.getValue()[0m
+    [36m| [0m[34m|[0m /* 77.8 */    if(__memo_scope.isUnchanged()) {[0m
+    [36m| [0m[34m|[0m /* 77.9 */        return __memo_scope.getCached()[0m
+    [36m| [0m[34m|[0m /* 77.10 */    }[0m
+    [36m| [0m[34m|[0m /* 77.11 */    let receiver = remember < ArkButtonComponent >({ => let __memo_param_value_style = __memo_param_style.getValue()[0m
+    [36m| [0m[34m|[0m /* 77.12 */        [0m
+    [36m| [0m[34m|[0m /* 77.13 */        let __memo_param_value_content_ = __memo_param_content_.getValue()[0m
+    [36m| [0m[34m|[0m /* 77.14 */        [0m
+    [36m| [0m[34m|[0m /* 77.15 */    ArkButtonComponent() })[0m
+    [36m| [0m[34m|[0m /* 77.16 */    NodeAttach < ArkButtonPeer >({ => let __memo_param_value_style = __memo_param_style.getValue()[0m
+    [36m| [0m[34m|[0m /* 77.17 */        [0m
+    [36m| [0m[34m|[0m /* 77.18 */        let __memo_param_value_content_ = __memo_param_content_.getValue()[0m
+    [36m| [0m[34m|[0m /* 77.19 */        [0m
+    [36m| [0m[34m|[0m /* 77.20 */    ArkButtonPeer.create(receiver, 0) }, { => let __memo_param_value_style = __memo_param_style.getValue()[0m
+    [36m| [0m[34m|[0m /* 77.21 */        [0m
+    [36m| [0m[34m|[0m /* 77.22 */        let __memo_param_value_content_ = __memo_param_content_.getValue()[0m
+    [36m| [0m[34m|[0m /* 77.23 */        [0m
+    [36m| [0m[34m|[0m /* 77.24 */        __memo_param_value_style?(receiver)[0m
+    [36m| [0m[34m|[0m /* 77.25 */        __memo_param_value_content_?()[0m
+    [36m| [0m[34m|[0m /* 77.26 */    receiver.applyAttributesFinish() }, Option.None)[0m
+    [36m| [0m[34m|[0m /* 77.27 */    return __memo_scope.recache(MEMO_UNIT)[0m
+    [36m| [0m[34m|[0m /* 77.28 */}[0m
+    [36m| [0m[34m|[0m /* 77.29 */[0m
+    [36m| [0m[34m|[0m[34m_[0m[34m__________^[0m
+    [36m| [0m
+
+[31merror[0m: undeclared type name 'ArkCheckboxPeer'
+  [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkCheckbox.cj:32:32:
+   [36m| [0m
+[36m32[0m [36m| [0m    protected  func getPeer(): ArkCheckboxPeer {[0m
+   [36m| [0m                               [31m^ [0m
+   [36m| [0m
+
+[31merror[0m: undeclared type name 'ArkCheckboxPeer'
+  [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkCheckbox.cj:34:35:
+   [36m| [0m
+[36m34[0m [36m| [0m            return match (peer as ArkCheckboxPeer) { case Some(x) => x; case None => throw Exception("Cast is not succeeded")}[0m
+   [36m| [0m                                  [31m^ [0m
+   [36m| [0m
+
+[31merror[0m: undeclared type name 'OnCheckboxChangeCallback'
+  [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkCheckbox.cj:68:37:
+   [36m| [0m
+[36m68[0m [36m| [0m    public func onChange(callback_: OnCheckboxChangeCallback): This {[0m
+   [36m| [0m                                    [31m^ [0m
+   [36m| [0m
+
+[31merror[0m: undeclared type name 'OnCheckboxSelectCallback'
+  [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkCheckbox.cj:77:36:
+   [36m| [0m
+[36m77[0m [36m| [0m    public func onSelect(callback: OnCheckboxSelectCallback): This {[0m
+   [36m| [0m                                   [31m^ [0m
+   [36m| [0m
+
+[31merror[0m: undeclared type name 'ArkCheckboxPeer'
+   [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkCheckbox.cj:110:16:
+    [36m| [0m
+[36m110[0m [36m| [0m    NodeAttach<ArkCheckboxPeer>([0m
+    [36m| [0m               [31m^ [0m
+    [36m| [0m
+[34mnote[0m: which is expanded as follows
+    [36m| [0m
+    [36m| [0m/* 101.20 */    NodeAttach < ArkCheckboxPeer >({ => let __memo_param_value_style = __memo_param_style.getValue()[0m
+    [36m| [0m                             [34m^^^^^^^^^^^^^^^ [0m
+    [36m| [0m
+[34mnote[0m: the error occurs after the macro is expanded
+   [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkCheckbox.cj:101:1:
+    [36m| [0m
+[36m101[0m [36m| [0m  @Memo[0m
+    [36m| [0m [34m_[0m[34m^[0m
+[36m102[0m [36m| [0m[34m|[0m public func ArkCheckbox([0m
+    [36m| [0m[34m|[0m ...[0m
+[36m119[0m [36m| [0m[34m|[0m }[0m
+    [36m| [0m[34m|[0m[34m_[0m[34m^[0m
+    [36m| [0m
+[34mnote[0m: the code after the macro is expanded as follows
+    [36m| [0m
+    [36m| [0m  /* 101.1 */public func ArkCheckbox(style: Option < OnCheckboxStyleCallback >, content_: Option < OnCheckboxContentCallback >, options!: Option < CheckboxOptions >= Option.None): Unit {[0m
+    [36m| [0m [34m_[0m[34m^[0m
+    [36m| [0m[34m|[0m /* 101.2 */    let __memo_key = getCallsiteKey()[0m
+    [36m| [0m[34m|[0m /* 101.3 */    let __memo_scope = getMemoScope < Unit >(__memo_key, 3)[0m
+    [36m| [0m[34m|[0m /* 101.4 */    let __memo_param_style = getParameter(__memo_scope, 0, style, "style")[0m
+    [36m| [0m[34m|[0m /* 101.5 */    let __memo_param_content_ = getParameter(__memo_scope, 1, content_, "content_")[0m
+    [36m| [0m[34m|[0m /* 101.6 */    let __memo_param_options = getParameter(__memo_scope, 2, options, "options")[0m
+    [36m| [0m[34m|[0m /* 101.7 */    let __memo_param_value_style = __memo_param_style.getValue()[0m
+    [36m| [0m[34m|[0m /* 101.8 */    let __memo_param_value_content_ = __memo_param_content_.getValue()[0m
+    [36m| [0m[34m|[0m /* 101.9 */    let __memo_param_value_options = __memo_param_options.getValue()[0m
+    [36m| [0m[34m|[0m /* 101.10 */    if(__memo_scope.isUnchanged()) {[0m
+    [36m| [0m[34m|[0m /* 101.11 */        return __memo_scope.getCached()[0m
+    [36m| [0m[34m|[0m /* 101.12 */    }[0m
+    [36m| [0m[34m|[0m /* 101.13 */    let receiver = remember < ArkCheckboxComponent >({ => let __memo_param_value_style = __memo_param_style.getValue()[0m
+    [36m| [0m[34m|[0m /* 101.14 */        [0m
+    [36m| [0m[34m|[0m /* 101.15 */        let __memo_param_value_content_ = __memo_param_content_.getValue()[0m
+    [36m| [0m[34m|[0m /* 101.16 */        [0m
+    [36m| [0m[34m|[0m /* 101.17 */        let __memo_param_value_options = __memo_param_options.getValue()[0m
+    [36m| [0m[34m|[0m /* 101.18 */        [0m
+    [36m| [0m[34m|[0m /* 101.19 */    ArkCheckboxComponent() })[0m
+    [36m| [0m[34m|[0m /* 101.20 */    NodeAttach < ArkCheckboxPeer >({ => let __memo_param_value_style = __memo_param_style.getValue()[0m
+    [36m| [0m[34m|[0m /* 101.21 */        [0m
+    [36m| [0m[34m|[0m /* 101.22 */        let __memo_param_value_content_ = __memo_param_content_.getValue()[0m
+    [36m| [0m[34m|[0m /* 101.23 */        [0m
+    [36m| [0m[34m|[0m /* 101.24 */        let __memo_param_value_options = __memo_param_options.getValue()[0m
+    [36m| [0m[34m|[0m /* 101.25 */        [0m
+    [36m| [0m[34m|[0m /* 101.26 */    ArkCheckboxPeer.create(receiver, 0) }, { => let __memo_param_value_style = __memo_param_style.getValue()[0m
+    [36m| [0m[34m|[0m /* 101.27 */        [0m
+    [36m| [0m[34m|[0m /* 101.28 */        let __memo_param_value_content_ = __memo_param_content_.getValue()[0m
+    [36m| [0m[34m|[0m /* 101.29 */        [0m
+    [36m| [0m[34m|[0m /* 101.30 */        let __memo_param_value_options = __memo_param_options.getValue()[0m
+    [36m| [0m[34m|[0m /* 101.31 */        [0m
+    [36m| [0m[34m|[0m /* 101.32 */        __memo_param_value_style?(receiver)[0m
+    [36m| [0m[34m|[0m /* 101.33 */        __memo_param_value_content_?()[0m
+    [36m| [0m[34m|[0m /* 101.34 */    receiver.applyAttributesFinish() }, Option.None)[0m
+    [36m| [0m[34m|[0m /* 101.35 */    return __memo_scope.recache(MEMO_UNIT)[0m
+    [36m| [0m[34m|[0m /* 101.36 */}[0m
+    [36m| [0m[34m|[0m /* 101.37 */[0m
+    [36m| [0m[34m|[0m[34m_[0m[34m___________^[0m
+    [36m| [0m
+
+[31merror[0m: undeclared type name 'ArkColumnPeer'
+  [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkColumn.cj:32:32:
+   [36m| [0m
+[36m32[0m [36m| [0m    protected  func getPeer(): ArkColumnPeer {[0m
+   [36m| [0m                               [31m^ [0m
+   [36m| [0m
+
+[31merror[0m: undeclared type name 'ArkColumnPeer'
+  [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkColumn.cj:34:35:
+   [36m| [0m
+[36m34[0m [36m| [0m            return match (peer as ArkColumnPeer) { case Some(x) => x; case None => throw Exception("Cast is not succeeded")}[0m
+   [36m| [0m                                  [31m^ [0m
+   [36m| [0m
+
+[31merror[0m: undeclared type name 'ArkColumnPeer'
+  [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkColumn.cj:75:16:
+   [36m| [0m
+[36m75[0m [36m| [0m    NodeAttach<ArkColumnPeer>([0m
+   [36m| [0m               [31m^ [0m
+   [36m| [0m
+[34mnote[0m: which is expanded as follows
+   [36m| [0m
+   [36m| [0m/* 67.16 */    NodeAttach < ArkColumnPeer >({ => let __memo_param_value_style = __memo_param_style.getValue()[0m
+   [36m| [0m                            [34m^^^^^^^^^^^^^ [0m
+   [36m| [0m
+[34mnote[0m: the error occurs after the macro is expanded
+  [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkColumn.cj:67:1:
+   [36m| [0m
+[36m67[0m [36m| [0m  @Memo[0m
+   [36m| [0m [34m_[0m[34m^[0m
+[36m68[0m [36m| [0m[34m|[0m public func ArkColumn([0m
+   [36m| [0m[34m|[0m ...[0m
+[36m84[0m [36m| [0m[34m|[0m }[0m
+   [36m| [0m[34m|[0m[34m_[0m[34m^[0m
+   [36m| [0m
+[34mnote[0m: the code after the macro is expanded as follows
+   [36m| [0m
+   [36m| [0m  /* 67.1 */public func ArkColumn(style: Option < OnColumnStyleCallback >, content_: Option < OnColumnContentCallback >): Unit {[0m
+   [36m| [0m [34m_[0m[34m^[0m
+   [36m| [0m[34m|[0m /* 67.2 */    let __memo_key = getCallsiteKey()[0m
+   [36m| [0m[34m|[0m /* 67.3 */    let __memo_scope = getMemoScope < Unit >(__memo_key, 2)[0m
+   [36m| [0m[34m|[0m /* 67.4 */    let __memo_param_style = getParameter(__memo_scope, 0, style, "style")[0m
+   [36m| [0m[34m|[0m /* 67.5 */    let __memo_param_content_ = getParameter(__memo_scope, 1, content_, "content_")[0m
+   [36m| [0m[34m|[0m /* 67.6 */    let __memo_param_value_style = __memo_param_style.getValue()[0m
+   [36m| [0m[34m|[0m /* 67.7 */    let __memo_param_value_content_ = __memo_param_content_.getValue()[0m
+   [36m| [0m[34m|[0m /* 67.8 */    if(__memo_scope.isUnchanged()) {[0m
+   [36m| [0m[34m|[0m /* 67.9 */        return __memo_scope.getCached()[0m
+   [36m| [0m[34m|[0m /* 67.10 */    }[0m
+   [36m| [0m[34m|[0m /* 67.11 */    let receiver = remember < ArkColumnComponent >({ => let __memo_param_value_style = __memo_param_style.getValue()[0m
+   [36m| [0m[34m|[0m /* 67.12 */        [0m
+   [36m| [0m[34m|[0m /* 67.13 */        let __memo_param_value_content_ = __memo_param_content_.getValue()[0m
+   [36m| [0m[34m|[0m /* 67.14 */        [0m
+   [36m| [0m[34m|[0m /* 67.15 */    ArkColumnComponent() })[0m
+   [36m| [0m[34m|[0m /* 67.16 */    NodeAttach < ArkColumnPeer >({ => let __memo_param_value_style = __memo_param_style.getValue()[0m
+   [36m| [0m[34m|[0m /* 67.17 */        [0m
+   [36m| [0m[34m|[0m /* 67.18 */        let __memo_param_value_content_ = __memo_param_content_.getValue()[0m
+   [36m| [0m[34m|[0m /* 67.19 */        [0m
+   [36m| [0m[34m|[0m /* 67.20 */    ArkColumnPeer.create(receiver, 0) }, { => let __memo_param_value_style = __memo_param_style.getValue()[0m
+   [36m| [0m[34m|[0m /* 67.21 */        [0m
+   [36m| [0m[34m|[0m /* 67.22 */        let __memo_param_value_content_ = __memo_param_content_.getValue()[0m
+   [36m| [0m[34m|[0m /* 67.23 */        [0m
+   [36m| [0m[34m|[0m /* 67.24 */        __memo_param_value_style?(receiver)[0m
+   [36m| [0m[34m|[0m /* 67.25 */        __memo_param_value_content_?()[0m
+   [36m| [0m[34m|[0m /* 67.26 */    receiver.applyAttributesFinish() }, Option.None)[0m
+   [36m| [0m[34m|[0m /* 67.27 */    return __memo_scope.recache(MEMO_UNIT)[0m
+   [36m| [0m[34m|[0m /* 67.28 */}[0m
+   [36m| [0m[34m|[0m /* 67.29 */[0m
+   [36m| [0m[34m|[0m[34m_[0m[34m__________^[0m
+   [36m| [0m
+
+[31merror[0m: undeclared type name 'ArkCommonMethodPeer'
+  [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkCommonMethod.cj:32:32:
+   [36m| [0m
+[36m32[0m [36m| [0m    protected  func getPeer(): ArkCommonMethodPeer {[0m
+   [36m| [0m                               [31m^ [0m
+   [36m| [0m
+
+[31merror[0m: undeclared type name 'ArkCommonMethodPeer'
+  [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkCommonMethod.cj:34:35:
+   [36m| [0m
+[36m34[0m [36m| [0m            return match (peer as ArkCommonMethodPeer) { case Some(x) => x; case None => throw Exception("Cast is not succeeded")}[0m
+   [36m| [0m                                  [31m^ [0m
+   [36m| [0m
+
+[31merror[0m: undeclared type name 'OnCommonMethodClickCallback'
+  [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkCommonMethod.cj:83:32:
+   [36m| [0m
+[36m83[0m [36m| [0m    public func onClick(event: OnCommonMethodClickCallback): This {[0m
+   [36m| [0m                               [31m^ [0m
+   [36m| [0m
+
+[31merror[0m: undeclared type name 'OnCommonMethodClickCallback'
+  [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkCommonMethod.cj:88:32:
+   [36m| [0m
+[36m88[0m [36m| [0m    public func onClick(event: OnCommonMethodClickCallback, distanceThreshold: Float64): This {[0m
+   [36m| [0m                               [31m^ [0m
+   [36m| [0m
+
+[31merror[0m: undeclared type name 'AttributeModifier'
+  [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkCommonMethod.cj:92:45:
+   [36m| [0m
+[36m92[0m [36m| [0m    public func attributeModifier(modifier: AttributeModifier<Object>) { throw Exception("not implemented") }[0m
+   [36m| [0m                                            [31m^ [0m
+   [36m| [0m
+
+[31merror[0m: undeclared type name 'ArkComponentRootPeer'
+  [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkComponentRoot.cj:31:32:
+   [36m| [0m
+[36m31[0m [36m| [0m    protected  func getPeer(): ArkComponentRootPeer {[0m
+   [36m| [0m                               [31m^ [0m
+   [36m| [0m
+
+[31merror[0m: undeclared type name 'ArkComponentRootPeer'
+  [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkComponentRoot.cj:33:35:
+   [36m| [0m
+[36m33[0m [36m| [0m            return match (peer as ArkComponentRootPeer) { case Some(x) => x; case None => throw Exception("Cast is not succeeded")}[0m
+   [36m| [0m                                  [31m^ [0m
+   [36m| [0m
+
+[31merror[0m: undeclared type name 'ArkCustomLayoutRootPeer'
+  [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkCustomLayoutRoot.cj:31:32:
+   [36m| [0m
+[36m31[0m [36m| [0m    protected  func getPeer(): ArkCustomLayoutRootPeer {[0m
+   [36m| [0m                               [31m^ [0m
+   [36m| [0m
+
+[31merror[0m: undeclared type name 'ArkCustomLayoutRootPeer'
+  [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkCustomLayoutRoot.cj:33:35:
+   [36m| [0m
+[36m33[0m [36m| [0m            return match (peer as ArkCustomLayoutRootPeer) { case Some(x) => x; case None => throw Exception("Cast is not succeeded")}[0m
+   [36m| [0m                                  [31m^ [0m
+   [36m| [0m
+
+[31merror[0m: undeclared type name 'ArkListPeer'
+  [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkList.cj:32:32:
+   [36m| [0m
+[36m32[0m [36m| [0m    protected  func getPeer(): ArkListPeer {[0m
+   [36m| [0m                               [31m^ [0m
+   [36m| [0m
+
+[31merror[0m: undeclared type name 'ArkListPeer'
+  [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkList.cj:34:35:
+   [36m| [0m
+[36m34[0m [36m| [0m            return match (peer as ArkListPeer) { case Some(x) => x; case None => throw Exception("Cast is not succeeded")}[0m
+   [36m| [0m                                  [31m^ [0m
+   [36m| [0m
+
+[31merror[0m: undeclared type name 'ArkListPeer'
+  [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkList.cj:74:16:
+   [36m| [0m
+[36m74[0m [36m| [0m    NodeAttach<ArkListPeer>([0m
+   [36m| [0m               [31m^ [0m
+   [36m| [0m
+[34mnote[0m: which is expanded as follows
+   [36m| [0m
+   [36m| [0m/* 66.16 */    NodeAttach < ArkListPeer >({ => let __memo_param_value_style = __memo_param_style.getValue()[0m
+   [36m| [0m                            [34m^^^^^^^^^^^ [0m
+   [36m| [0m
+[34mnote[0m: the error occurs after the macro is expanded
+  [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkList.cj:66:1:
+   [36m| [0m
+[36m66[0m [36m| [0m  @Memo[0m
+   [36m| [0m [34m_[0m[34m^[0m
+[36m67[0m [36m| [0m[34m|[0m public func ArkList([0m
+   [36m| [0m[34m|[0m ...[0m
+[36m83[0m [36m| [0m[34m|[0m }[0m
+   [36m| [0m[34m|[0m[34m_[0m[34m^[0m
+   [36m| [0m
+[34mnote[0m: the code after the macro is expanded as follows
+   [36m| [0m
+   [36m| [0m  /* 66.1 */public func ArkList(style: Option < OnListStyleCallback >, content_: Option < OnListContentCallback >): Unit {[0m
+   [36m| [0m [34m_[0m[34m^[0m
+   [36m| [0m[34m|[0m /* 66.2 */    let __memo_key = getCallsiteKey()[0m
+   [36m| [0m[34m|[0m /* 66.3 */    let __memo_scope = getMemoScope < Unit >(__memo_key, 2)[0m
+   [36m| [0m[34m|[0m /* 66.4 */    let __memo_param_style = getParameter(__memo_scope, 0, style, "style")[0m
+   [36m| [0m[34m|[0m /* 66.5 */    let __memo_param_content_ = getParameter(__memo_scope, 1, content_, "content_")[0m
+   [36m| [0m[34m|[0m /* 66.6 */    let __memo_param_value_style = __memo_param_style.getValue()[0m
+   [36m| [0m[34m|[0m /* 66.7 */    let __memo_param_value_content_ = __memo_param_content_.getValue()[0m
+   [36m| [0m[34m|[0m /* 66.8 */    if(__memo_scope.isUnchanged()) {[0m
+   [36m| [0m[34m|[0m /* 66.9 */        return __memo_scope.getCached()[0m
+   [36m| [0m[34m|[0m /* 66.10 */    }[0m
+   [36m| [0m[34m|[0m /* 66.11 */    let receiver = remember < ArkListComponent >({ => let __memo_param_value_style = __memo_param_style.getValue()[0m
+   [36m| [0m[34m|[0m /* 66.12 */        [0m
+   [36m| [0m[34m|[0m /* 66.13 */        let __memo_param_value_content_ = __memo_param_content_.getValue()[0m
+   [36m| [0m[34m|[0m /* 66.14 */        [0m
+   [36m| [0m[34m|[0m /* 66.15 */    ArkListComponent() })[0m
+   [36m| [0m[34m|[0m /* 66.16 */    NodeAttach < ArkListPeer >({ => let __memo_param_value_style = __memo_param_style.getValue()[0m
+   [36m| [0m[34m|[0m /* 66.17 */        [0m
+   [36m| [0m[34m|[0m /* 66.18 */        let __memo_param_value_content_ = __memo_param_content_.getValue()[0m
+   [36m| [0m[34m|[0m /* 66.19 */        [0m
+   [36m| [0m[34m|[0m /* 66.20 */    ArkListPeer.create(receiver, 0) }, { => let __memo_param_value_style = __memo_param_style.getValue()[0m
+   [36m| [0m[34m|[0m /* 66.21 */        [0m
+   [36m| [0m[34m|[0m /* 66.22 */        let __memo_param_value_content_ = __memo_param_content_.getValue()[0m
+   [36m| [0m[34m|[0m /* 66.23 */        [0m
+   [36m| [0m[34m|[0m /* 66.24 */        __memo_param_value_style?(receiver)[0m
+   [36m| [0m[34m|[0m /* 66.25 */        __memo_param_value_content_?()[0m
+   [36m| [0m[34m|[0m /* 66.26 */    receiver.applyAttributesFinish() }, Option.None)[0m
+   [36m| [0m[34m|[0m /* 66.27 */    return __memo_scope.recache(MEMO_UNIT)[0m
+   [36m| [0m[34m|[0m /* 66.28 */}[0m
+   [36m| [0m[34m|[0m /* 66.29 */[0m
+   [36m| [0m[34m|[0m[34m_[0m[34m__________^[0m
+   [36m| [0m
+
+[31merror[0m: undeclared type name 'ArkNavigationPeer'
+  [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkNavigation.cj:32:32:
+   [36m| [0m
+[36m32[0m [36m| [0m    protected  func getPeer(): ArkNavigationPeer {[0m
+   [36m| [0m                               [31m^ [0m
+   [36m| [0m
+
+[31merror[0m: undeclared type name 'ArkNavigationPeer'
+  [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkNavigation.cj:34:35:
+   [36m| [0m
+[36m34[0m [36m| [0m            return match (peer as ArkNavigationPeer) { case Some(x) => x; case None => throw Exception("Cast is not succeeded")}[0m
+   [36m| [0m                                  [31m^ [0m
+   [36m| [0m
+
+[31merror[0m: undeclared type name 'OnNavigationTitleModeChangeCallback'
+  [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkNavigation.cj:43:46:
+   [36m| [0m
+[36m43[0m [36m| [0m    public func onTitleModeChange(callback_: OnNavigationTitleModeChangeCallback): This {[0m
+   [36m| [0m                                             [31m^ [0m
+   [36m| [0m
+
+[31merror[0m: undeclared type name 'ArkNavigationPeer'
+  [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkNavigation.cj:75:16:
+   [36m| [0m
+[36m75[0m [36m| [0m    NodeAttach<ArkNavigationPeer>([0m
+   [36m| [0m               [31m^ [0m
+   [36m| [0m
+[34mnote[0m: which is expanded as follows
+   [36m| [0m
+   [36m| [0m/* 67.16 */    NodeAttach < ArkNavigationPeer >({ => let __memo_param_value_style = __memo_param_style.getValue()[0m
+   [36m| [0m                            [34m^^^^^^^^^^^^^^^^^ [0m
+   [36m| [0m
+[34mnote[0m: the error occurs after the macro is expanded
+  [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkNavigation.cj:67:1:
+   [36m| [0m
+[36m67[0m [36m| [0m  @Memo[0m
+   [36m| [0m [34m_[0m[34m^[0m
+[36m68[0m [36m| [0m[34m|[0m public func ArkNavigation([0m
+   [36m| [0m[34m|[0m ...[0m
+[36m84[0m [36m| [0m[34m|[0m }[0m
+   [36m| [0m[34m|[0m[34m_[0m[34m^[0m
+   [36m| [0m
+[34mnote[0m: the code after the macro is expanded as follows
+   [36m| [0m
+   [36m| [0m  /* 67.1 */public func ArkNavigation(style: Option < OnNavigationStyleCallback >, content_: Option < OnNavigationContentCallback >): Unit {[0m
+   [36m| [0m [34m_[0m[34m^[0m
+   [36m| [0m[34m|[0m /* 67.2 */    let __memo_key = getCallsiteKey()[0m
+   [36m| [0m[34m|[0m /* 67.3 */    let __memo_scope = getMemoScope < Unit >(__memo_key, 2)[0m
+   [36m| [0m[34m|[0m /* 67.4 */    let __memo_param_style = getParameter(__memo_scope, 0, style, "style")[0m
+   [36m| [0m[34m|[0m /* 67.5 */    let __memo_param_content_ = getParameter(__memo_scope, 1, content_, "content_")[0m
+   [36m| [0m[34m|[0m /* 67.6 */    let __memo_param_value_style = __memo_param_style.getValue()[0m
+   [36m| [0m[34m|[0m /* 67.7 */    let __memo_param_value_content_ = __memo_param_content_.getValue()[0m
+   [36m| [0m[34m|[0m /* 67.8 */    if(__memo_scope.isUnchanged()) {[0m
+   [36m| [0m[34m|[0m /* 67.9 */        return __memo_scope.getCached()[0m
+   [36m| [0m[34m|[0m /* 67.10 */    }[0m
+   [36m| [0m[34m|[0m /* 67.11 */    let receiver = remember < ArkNavigationComponent >({ => let __memo_param_value_style = __memo_param_style.getValue()[0m
+   [36m| [0m[34m|[0m /* 67.12 */        [0m
+   [36m| [0m[34m|[0m /* 67.13 */        let __memo_param_value_content_ = __memo_param_content_.getValue()[0m
+   [36m| [0m[34m|[0m /* 67.14 */        [0m
+   [36m| [0m[34m|[0m /* 67.15 */    ArkNavigationComponent() })[0m
+   [36m| [0m[34m|[0m /* 67.16 */    NodeAttach < ArkNavigationPeer >({ => let __memo_param_value_style = __memo_param_style.getValue()[0m
+   [36m| [0m[34m|[0m /* 67.17 */        [0m
+   [36m| [0m[34m|[0m /* 67.18 */        let __memo_param_value_content_ = __memo_param_content_.getValue()[0m
+   [36m| [0m[34m|[0m /* 67.19 */        [0m
+   [36m| [0m[34m|[0m /* 67.20 */    ArkNavigationPeer.create(receiver, 0) }, { => let __memo_param_value_style = __memo_param_style.getValue()[0m
+   [36m| [0m[34m|[0m /* 67.21 */        [0m
+   [36m| [0m[34m|[0m /* 67.22 */        let __memo_param_value_content_ = __memo_param_content_.getValue()[0m
+   [36m| [0m[34m|[0m /* 67.23 */        [0m
+   [36m| [0m[34m|[0m /* 67.24 */        __memo_param_value_style?(receiver)[0m
+   [36m| [0m[34m|[0m /* 67.25 */        __memo_param_value_content_?()[0m
+   [36m| [0m[34m|[0m /* 67.26 */    receiver.applyAttributesFinish() }, Option.None)[0m
+   [36m| [0m[34m|[0m /* 67.27 */    return __memo_scope.recache(MEMO_UNIT)[0m
+   [36m| [0m[34m|[0m /* 67.28 */}[0m
+   [36m| [0m[34m|[0m /* 67.29 */[0m
+   [36m| [0m[34m|[0m[34m_[0m[34m__________^[0m
+   [36m| [0m
+
+[31merror[0m: undeclared type name 'ArkRootPeer'
+  [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkRoot.cj:31:32:
+   [36m| [0m
+[36m31[0m [36m| [0m    protected  func getPeer(): ArkRootPeer {[0m
+   [36m| [0m                               [31m^ [0m
+   [36m| [0m
+
+[31merror[0m: undeclared type name 'ArkRootPeer'
+  [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkRoot.cj:33:35:
+   [36m| [0m
+[36m33[0m [36m| [0m            return match (peer as ArkRootPeer) { case Some(x) => x; case None => throw Exception("Cast is not succeeded")}[0m
+   [36m| [0m                                  [31m^ [0m
+   [36m| [0m
+
+[31merror[0m: undeclared type name 'ArkScrollableCommonMethodPeer'
+  [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkScrollableCommonMethod.cj:32:32:
+   [36m| [0m
+[36m32[0m [36m| [0m    protected  func getPeer(): ArkScrollableCommonMethodPeer {[0m
+   [36m| [0m                               [31m^ [0m
+   [36m| [0m
+
+[31merror[0m: undeclared type name 'ArkScrollableCommonMethodPeer'
+  [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkScrollableCommonMethod.cj:34:35:
+   [36m| [0m
+[36m34[0m [36m| [0m            return match (peer as ArkScrollableCommonMethodPeer) { case Some(x) => x; case None => throw Exception("Cast is not succeeded")}[0m
+   [36m| [0m                                  [31m^ [0m
+   [36m| [0m
+
+[31merror[0m: undeclared type name 'ArkTestPeer'
+  [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkTest.cj:31:32:
+   [36m| [0m
+[36m31[0m [36m| [0m    protected  func getPeer(): ArkTestPeer {[0m
+   [36m| [0m                               [31m^ [0m
+   [36m| [0m
+
+[31merror[0m: undeclared type name 'ArkTestPeer'
+  [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkTest.cj:33:35:
+   [36m| [0m
+[36m33[0m [36m| [0m            return match (peer as ArkTestPeer) { case Some(x) => x; case None => throw Exception("Cast is not succeeded")}[0m
+   [36m| [0m                                  [31m^ [0m
+   [36m| [0m
+
+[31merror[0m: undeclared type name 'ValueCallback'
+  [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkTest.cj:76:47:
+   [36m| [0m
+[36m76[0m [36m| [0m    public func testFunctionNumberVoid(value: ValueCallback): This {[0m
+   [36m| [0m                                              [31m^ [0m
+   [36m| [0m
+
+[31merror[0m: undeclared type name 'ArkTestPeer'
+   [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkTest.cj:232:16:
+    [36m| [0m
+[36m232[0m [36m| [0m    NodeAttach<ArkTestPeer>([0m
+    [36m| [0m               [31m^ [0m
+    [36m| [0m
+[34mnote[0m: which is expanded as follows
+    [36m| [0m
+    [36m| [0m/* 224.16 */    NodeAttach < ArkTestPeer >({ => let __memo_param_value_style = __memo_param_style.getValue()[0m
+    [36m| [0m                             [34m^^^^^^^^^^^ [0m
+    [36m| [0m
+[34mnote[0m: the error occurs after the macro is expanded
+   [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkTest.cj:224:1:
+    [36m| [0m
+[36m224[0m [36m| [0m  @Memo[0m
+    [36m| [0m [34m_[0m[34m^[0m
+[36m225[0m [36m| [0m[34m|[0m public func ArkTest([0m
+    [36m| [0m[34m|[0m ...[0m
+[36m241[0m [36m| [0m[34m|[0m }[0m
+    [36m| [0m[34m|[0m[34m_[0m[34m^[0m
+    [36m| [0m
+[34mnote[0m: the code after the macro is expanded as follows
+    [36m| [0m
+    [36m| [0m  /* 224.1 */public func ArkTest(style: Option < OnTestStyleCallback >, content_: Option < OnTestContentCallback >): Unit {[0m
+    [36m| [0m [34m_[0m[34m^[0m
+    [36m| [0m[34m|[0m /* 224.2 */    let __memo_key = getCallsiteKey()[0m
+    [36m| [0m[34m|[0m /* 224.3 */    let __memo_scope = getMemoScope < Unit >(__memo_key, 2)[0m
+    [36m| [0m[34m|[0m /* 224.4 */    let __memo_param_style = getParameter(__memo_scope, 0, style, "style")[0m
+    [36m| [0m[34m|[0m /* 224.5 */    let __memo_param_content_ = getParameter(__memo_scope, 1, content_, "content_")[0m
+    [36m| [0m[34m|[0m /* 224.6 */    let __memo_param_value_style = __memo_param_style.getValue()[0m
+    [36m| [0m[34m|[0m /* 224.7 */    let __memo_param_value_content_ = __memo_param_content_.getValue()[0m
+    [36m| [0m[34m|[0m /* 224.8 */    if(__memo_scope.isUnchanged()) {[0m
+    [36m| [0m[34m|[0m /* 224.9 */        return __memo_scope.getCached()[0m
+    [36m| [0m[34m|[0m /* 224.10 */    }[0m
+    [36m| [0m[34m|[0m /* 224.11 */    let receiver = remember < ArkTestComponent >({ => let __memo_param_value_style = __memo_param_style.getValue()[0m
+    [36m| [0m[34m|[0m /* 224.12 */        [0m
+    [36m| [0m[34m|[0m /* 224.13 */        let __memo_param_value_content_ = __memo_param_content_.getValue()[0m
+    [36m| [0m[34m|[0m /* 224.14 */        [0m
+    [36m| [0m[34m|[0m /* 224.15 */    ArkTestComponent() })[0m
+    [36m| [0m[34m|[0m /* 224.16 */    NodeAttach < ArkTestPeer >({ => let __memo_param_value_style = __memo_param_style.getValue()[0m
+    [36m| [0m[34m|[0m /* 224.17 */        [0m
+    [36m| [0m[34m|[0m /* 224.18 */        let __memo_param_value_content_ = __memo_param_content_.getValue()[0m
+    [36m| [0m[34m|[0m /* 224.19 */        [0m
+    [36m| [0m[34m|[0m /* 224.20 */    ArkTestPeer.create(receiver, 0) }, { => let __memo_param_value_style = __memo_param_style.getValue()[0m
+    [36m| [0m[34m|[0m /* 224.21 */        [0m
+    [36m| [0m[34m|[0m /* 224.22 */        let __memo_param_value_content_ = __memo_param_content_.getValue()[0m
+    [36m| [0m[34m|[0m /* 224.23 */        [0m
+    [36m| [0m[34m|[0m /* 224.24 */        __memo_param_value_style?(receiver)[0m
+    [36m| [0m[34m|[0m /* 224.25 */        __memo_param_value_content_?()[0m
+    [36m| [0m[34m|[0m /* 224.26 */    receiver.applyAttributesFinish() }, Option.None)[0m
+    [36m| [0m[34m|[0m /* 224.27 */    return __memo_scope.recache(MEMO_UNIT)[0m
+    [36m| [0m[34m|[0m /* 224.28 */}[0m
+    [36m| [0m[34m|[0m /* 224.29 */[0m
+    [36m| [0m[34m|[0m[34m_[0m[34m___________^[0m
+    [36m| [0m
+
+[31merror[0m: undeclared type name 'ArkTextInputPeer'
+  [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkTextInput.cj:32:32:
+   [36m| [0m
+[36m32[0m [36m| [0m    protected  func getPeer(): ArkTextInputPeer {[0m
+   [36m| [0m                               [31m^ [0m
+   [36m| [0m
+
+[31merror[0m: undeclared type name 'ArkTextInputPeer'
+  [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkTextInput.cj:34:35:
+   [36m| [0m
+[36m34[0m [36m| [0m            return match (peer as ArkTextInputPeer) { case Some(x) => x; case None => throw Exception("Cast is not succeeded")}[0m
+   [36m| [0m                                  [31m^ [0m
+   [36m| [0m
+
+[31merror[0m: undeclared type name 'OnTextInputCopyCallback'
+  [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkTextInput.cj:53:35:
+   [36m| [0m
+[36m53[0m [36m| [0m    public func onCopy(callback_: OnTextInputCopyCallback): This {[0m
+   [36m| [0m                                  [31m^ [0m
+   [36m| [0m
+
+[31merror[0m: undeclared type name 'OnTextInputTextCallback'
+  [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkTextInput.cj:57:34:
+   [36m| [0m
+[36m57[0m [36m| [0m    public func onText(callback: OnTextInputTextCallback): This {[0m
+   [36m| [0m                                 [31m^ [0m
+   [36m| [0m
+
+[31merror[0m: undeclared type name 'ArkTextInputPeer'
+  [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkTextInput.cj:90:16:
+   [36m| [0m
+[36m90[0m [36m| [0m    NodeAttach<ArkTextInputPeer>([0m
+   [36m| [0m               [31m^ [0m
+   [36m| [0m
+[34mnote[0m: which is expanded as follows
+    [36m| [0m
+    [36m| [0m/* 81.20 */    NodeAttach < ArkTextInputPeer >({ => let __memo_param_value_style = __memo_param_style.getValue()[0m
+    [36m| [0m                            [34m^^^^^^^^^^^^^^^^ [0m
+    [36m| [0m
+[34mnote[0m: the error occurs after the macro is expanded
+  [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkTextInput.cj:81:1:
+   [36m| [0m
+[36m81[0m [36m| [0m  @Memo[0m
+   [36m| [0m [34m_[0m[34m^[0m
+[36m82[0m [36m| [0m[34m|[0m public func ArkTextInput([0m
+   [36m| [0m[34m|[0m ...[0m
+[36m99[0m [36m| [0m[34m|[0m }[0m
+   [36m| [0m[34m|[0m[34m_[0m[34m^[0m
+   [36m| [0m
+[34mnote[0m: the code after the macro is expanded as follows
+    [36m| [0m
+    [36m| [0m  /* 81.1 */public func ArkTextInput(style: Option < OnTextInputStyleCallback >, content_: Option < OnTextInputContentCallback >, value!: Option < TextInputOptions >= Option.None): Unit {[0m
+    [36m| [0m [34m_[0m[34m^[0m
+    [36m| [0m[34m|[0m /* 81.2 */    let __memo_key = getCallsiteKey()[0m
+    [36m| [0m[34m|[0m /* 81.3 */    let __memo_scope = getMemoScope < Unit >(__memo_key, 3)[0m
+    [36m| [0m[34m|[0m /* 81.4 */    let __memo_param_style = getParameter(__memo_scope, 0, style, "style")[0m
+    [36m| [0m[34m|[0m /* 81.5 */    let __memo_param_content_ = getParameter(__memo_scope, 1, content_, "content_")[0m
+    [36m| [0m[34m|[0m /* 81.6 */    let __memo_param_value = getParameter(__memo_scope, 2, value, "value")[0m
+    [36m| [0m[34m|[0m /* 81.7 */    let __memo_param_value_style = __memo_param_style.getValue()[0m
+    [36m| [0m[34m|[0m /* 81.8 */    let __memo_param_value_content_ = __memo_param_content_.getValue()[0m
+    [36m| [0m[34m|[0m /* 81.9 */    let __memo_param_value_value = __memo_param_value.getValue()[0m
+    [36m| [0m[34m|[0m /* 81.10 */    if(__memo_scope.isUnchanged()) {[0m
+    [36m| [0m[34m|[0m /* 81.11 */        return __memo_scope.getCached()[0m
+    [36m| [0m[34m|[0m /* 81.12 */    }[0m
+    [36m| [0m[34m|[0m /* 81.13 */    let receiver = remember < ArkTextInputComponent >({ => let __memo_param_value_style = __memo_param_style.getValue()[0m
+    [36m| [0m[34m|[0m /* 81.14 */        [0m
+    [36m| [0m[34m|[0m /* 81.15 */        let __memo_param_value_content_ = __memo_param_content_.getValue()[0m
+    [36m| [0m[34m|[0m /* 81.16 */        [0m
+    [36m| [0m[34m|[0m /* 81.17 */        let __memo_param_value_value = __memo_param_value.getValue()[0m
+    [36m| [0m[34m|[0m /* 81.18 */        [0m
+    [36m| [0m[34m|[0m /* 81.19 */    ArkTextInputComponent() })[0m
+    [36m| [0m[34m|[0m /* 81.20 */    NodeAttach < ArkTextInputPeer >({ => let __memo_param_value_style = __memo_param_style.getValue()[0m
+    [36m| [0m[34m|[0m /* 81.21 */        [0m
+    [36m| [0m[34m|[0m /* 81.22 */        let __memo_param_value_content_ = __memo_param_content_.getValue()[0m
+    [36m| [0m[34m|[0m /* 81.23 */        [0m
+    [36m| [0m[34m|[0m /* 81.24 */        let __memo_param_value_value = __memo_param_value.getValue()[0m
+    [36m| [0m[34m|[0m /* 81.25 */        [0m
+    [36m| [0m[34m|[0m /* 81.26 */    ArkTextInputPeer.create(receiver, 0) }, { => let __memo_param_value_style = __memo_param_style.getValue()[0m
+    [36m| [0m[34m|[0m /* 81.27 */        [0m
+    [36m| [0m[34m|[0m /* 81.28 */        let __memo_param_value_content_ = __memo_param_content_.getValue()[0m
+    [36m| [0m[34m|[0m /* 81.29 */        [0m
+    [36m| [0m[34m|[0m /* 81.30 */        let __memo_param_value_value = __memo_param_value.getValue()[0m
+    [36m| [0m[34m|[0m /* 81.31 */        [0m
+    [36m| [0m[34m|[0m /* 81.32 */        __memo_param_value_style?(receiver)[0m
+    [36m| [0m[34m|[0m /* 81.33 */        __memo_param_value_content_?()[0m
+    [36m| [0m[34m|[0m /* 81.34 */    receiver.applyAttributesFinish() }, Option.None)[0m
+    [36m| [0m[34m|[0m /* 81.35 */    return __memo_scope.recache(MEMO_UNIT)[0m
+    [36m| [0m[34m|[0m /* 81.36 */}[0m
+    [36m| [0m[34m|[0m /* 81.37 */[0m
+    [36m| [0m[34m|[0m[34m_[0m[34m__________^[0m
+    [36m| [0m
+
+[31merror[0m: undeclared type name 'ArkTextPickerPeer'
+  [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkTextPicker.cj:32:32:
+   [36m| [0m
+[36m32[0m [36m| [0m    protected  func getPeer(): ArkTextPickerPeer {[0m
+   [36m| [0m                               [31m^ [0m
+   [36m| [0m
+
+[31merror[0m: undeclared type name 'ArkTextPickerPeer'
+  [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkTextPicker.cj:34:35:
+   [36m| [0m
+[36m34[0m [36m| [0m            return match (peer as ArkTextPickerPeer) { case Some(x) => x; case None => throw Exception("Cast is not succeeded")}[0m
+   [36m| [0m                                  [31m^ [0m
+   [36m| [0m
+
+[31merror[0m: undeclared type name 'OnTextPickerAcceptCallback'
+  [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkTextPicker.cj:73:37:
+   [36m| [0m
+[36m73[0m [36m| [0m    public func onAccept(callback_: OnTextPickerAcceptCallback): This {[0m
+   [36m| [0m                                    [31m^ [0m
+   [36m| [0m
+
+[31merror[0m: undeclared type name 'OnTextPickerCancelCallback'
+  [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkTextPicker.cj:78:37:
+   [36m| [0m
+[36m78[0m [36m| [0m    public func onCancel(callback_: OnTextPickerCancelCallback): This {[0m
+   [36m| [0m                                    [31m^ [0m
+   [36m| [0m
+
+[31merror[0m: undeclared type name 'OnTextPickerChangeCallback'
+  [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkTextPicker.cj:83:37:
+   [36m| [0m
+[36m83[0m [36m| [0m    public func onChange(callback_: OnTextPickerChangeCallback): This {[0m
+   [36m| [0m                                    [31m^ [0m
+   [36m| [0m
+
+[31merror[0m: undeclared type name 'OnTextPickerSelectedCallback'
+   [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkTextPicker.cj:107:38:
+    [36m| [0m
+[36m107[0m [36m| [0m    public func onSelected(callback: OnTextPickerSelectedCallback): This {[0m
+    [36m| [0m                                     [31m^ [0m
+    [36m| [0m
+
+[31merror[0m: undeclared type name 'OnTextPickerValueCallback'
+   [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkTextPicker.cj:111:35:
+    [36m| [0m
+[36m111[0m [36m| [0m    public func onValue(callback: OnTextPickerValueCallback): This {[0m
+    [36m| [0m                                  [31m^ [0m
+    [36m| [0m
+
+[31merror[0m: undeclared type name 'ArkTextPickerPeer'
+   [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkTextPicker.cj:144:16:
+    [36m| [0m
+[36m144[0m [36m| [0m    NodeAttach<ArkTextPickerPeer>([0m
+    [36m| [0m               [31m^ [0m
+    [36m| [0m
+[34mnote[0m: which is expanded as follows
+    [36m| [0m
+    [36m| [0m/* 135.20 */    NodeAttach < ArkTextPickerPeer >({ => let __memo_param_value_style = __memo_param_style.getValue()[0m
+    [36m| [0m                             [34m^^^^^^^^^^^^^^^^^ [0m
+    [36m| [0m
+[34mnote[0m: the error occurs after the macro is expanded
+   [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkTextPicker.cj:135:1:
+    [36m| [0m
+[36m135[0m [36m| [0m  @Memo[0m
+    [36m| [0m [34m_[0m[34m^[0m
+[36m136[0m [36m| [0m[34m|[0m public func ArkTextPicker([0m
+    [36m| [0m[34m|[0m ...[0m
+[36m153[0m [36m| [0m[34m|[0m }[0m
+    [36m| [0m[34m|[0m[34m_[0m[34m^[0m
+    [36m| [0m
+[34mnote[0m: the code after the macro is expanded as follows
+    [36m| [0m
+    [36m| [0m  /* 135.1 */public func ArkTextPicker(style: Option < OnTextPickerStyleCallback >, content_: Option < OnTextPickerContentCallback >, options!: Option < TextPickerOptions >= Option.None): Unit {[0m
+    [36m| [0m [34m_[0m[34m^[0m
+    [36m| [0m[34m|[0m /* 135.2 */    let __memo_key = getCallsiteKey()[0m
+    [36m| [0m[34m|[0m /* 135.3 */    let __memo_scope = getMemoScope < Unit >(__memo_key, 3)[0m
+    [36m| [0m[34m|[0m /* 135.4 */    let __memo_param_style = getParameter(__memo_scope, 0, style, "style")[0m
+    [36m| [0m[34m|[0m /* 135.5 */    let __memo_param_content_ = getParameter(__memo_scope, 1, content_, "content_")[0m
+    [36m| [0m[34m|[0m /* 135.6 */    let __memo_param_options = getParameter(__memo_scope, 2, options, "options")[0m
+    [36m| [0m[34m|[0m /* 135.7 */    let __memo_param_value_style = __memo_param_style.getValue()[0m
+    [36m| [0m[34m|[0m /* 135.8 */    let __memo_param_value_content_ = __memo_param_content_.getValue()[0m
+    [36m| [0m[34m|[0m /* 135.9 */    let __memo_param_value_options = __memo_param_options.getValue()[0m
+    [36m| [0m[34m|[0m /* 135.10 */    if(__memo_scope.isUnchanged()) {[0m
+    [36m| [0m[34m|[0m /* 135.11 */        return __memo_scope.getCached()[0m
+    [36m| [0m[34m|[0m /* 135.12 */    }[0m
+    [36m| [0m[34m|[0m /* 135.13 */    let receiver = remember < ArkTextPickerComponent >({ => let __memo_param_value_style = __memo_param_style.getValue()[0m
+    [36m| [0m[34m|[0m /* 135.14 */        [0m
+    [36m| [0m[34m|[0m /* 135.15 */        let __memo_param_value_content_ = __memo_param_content_.getValue()[0m
+    [36m| [0m[34m|[0m /* 135.16 */        [0m
+    [36m| [0m[34m|[0m /* 135.17 */        let __memo_param_value_options = __memo_param_options.getValue()[0m
+    [36m| [0m[34m|[0m /* 135.18 */        [0m
+    [36m| [0m[34m|[0m /* 135.19 */    ArkTextPickerComponent() })[0m
+    [36m| [0m[34m|[0m /* 135.20 */    NodeAttach < ArkTextPickerPeer >({ => let __memo_param_value_style = __memo_param_style.getValue()[0m
+    [36m| [0m[34m|[0m /* 135.21 */        [0m
+    [36m| [0m[34m|[0m /* 135.22 */        let __memo_param_value_content_ = __memo_param_content_.getValue()[0m
+    [36m| [0m[34m|[0m /* 135.23 */        [0m
+    [36m| [0m[34m|[0m /* 135.24 */        let __memo_param_value_options = __memo_param_options.getValue()[0m
+    [36m| [0m[34m|[0m /* 135.25 */        [0m
+    [36m| [0m[34m|[0m /* 135.26 */    ArkTextPickerPeer.create(receiver, 0) }, { => let __memo_param_value_style = __memo_param_style.getValue()[0m
+    [36m| [0m[34m|[0m /* 135.27 */        [0m
+    [36m| [0m[34m|[0m /* 135.28 */        let __memo_param_value_content_ = __memo_param_content_.getValue()[0m
+    [36m| [0m[34m|[0m /* 135.29 */        [0m
+    [36m| [0m[34m|[0m /* 135.30 */        let __memo_param_value_options = __memo_param_options.getValue()[0m
+    [36m| [0m[34m|[0m /* 135.31 */        [0m
+    [36m| [0m[34m|[0m /* 135.32 */        __memo_param_value_style?(receiver)[0m
+    [36m| [0m[34m|[0m /* 135.33 */        __memo_param_value_content_?()[0m
+    [36m| [0m[34m|[0m /* 135.34 */    receiver.applyAttributesFinish() }, Option.None)[0m
+    [36m| [0m[34m|[0m /* 135.35 */    return __memo_scope.recache(MEMO_UNIT)[0m
+    [36m| [0m[34m|[0m /* 135.36 */}[0m
+    [36m| [0m[34m|[0m /* 135.37 */[0m
+    [36m| [0m[34m|[0m[34m_[0m[34m___________^[0m
+    [36m| [0m
+
+[31merror[0m: 'peer' is not a member of class 'ArkBlankComponent'
+  [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkBlank.cj:33:36:
+   [36m| [0m
+[36m33[0m [36m| [0m        if (let Some(peer) <- this.peer) {[0m
+   [36m| [0m                                   [31m^^^^ [0m
+   [36m| [0m
+
+[31merror[0m: enum pattern is not matched
+  [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkBlank.cj:33:17:
+   [36m| [0m
+[36m33[0m [36m| [0m        if (let Some(peer) <- this.peer) {[0m
+   [36m| [0m                [31m^ [0m
+   [36m| [0m
+
+[31merror[0m: undeclared identifier 'peer'
+  [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkBlank.cj:34:27:
+   [36m| [0m
+[36m34[0m [36m| [0m            return match (peer as ArkBlankPeer) { case Some(x) => x; case None => throw Exception("Cast is not succeeded")}[0m
+   [36m| [0m                          [31m^ [0m
+   [36m| [0m
+
+[31merror[0m: 'peer' is not a member of class 'ArkButtonComponent'
+  [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkButton.cj:33:36:
+   [36m| [0m
+[36m33[0m [36m| [0m        if (let Some(peer) <- this.peer) {[0m
+   [36m| [0m                                   [31m^^^^ [0m
+   [36m| [0m
+
+[31merror[0m: enum pattern is not matched
+  [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkButton.cj:33:17:
+   [36m| [0m
+[36m33[0m [36m| [0m        if (let Some(peer) <- this.peer) {[0m
+   [36m| [0m                [31m^ [0m
+   [36m| [0m
+
+[31merror[0m: undeclared identifier 'peer'
+  [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkButton.cj:34:27:
+   [36m| [0m
+[36m34[0m [36m| [0m            return match (peer as ArkButtonPeer) { case Some(x) => x; case None => throw Exception("Cast is not succeeded")}[0m
+   [36m| [0m                          [31m^ [0m
+   [36m| [0m
+
+[31merror[0m: 'peer' is not a member of class 'ArkCheckboxComponent'
+  [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkCheckbox.cj:33:36:
+   [36m| [0m
+[36m33[0m [36m| [0m        if (let Some(peer) <- this.peer) {[0m
+   [36m| [0m                                   [31m^^^^ [0m
+   [36m| [0m
+
+[31merror[0m: enum pattern is not matched
+  [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkCheckbox.cj:33:17:
+   [36m| [0m
+[36m33[0m [36m| [0m        if (let Some(peer) <- this.peer) {[0m
+   [36m| [0m                [31m^ [0m
+   [36m| [0m
+
+[31merror[0m: undeclared identifier 'peer'
+  [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkCheckbox.cj:34:27:
+   [36m| [0m
+[36m34[0m [36m| [0m            return match (peer as ArkCheckboxPeer) { case Some(x) => x; case None => throw Exception("Cast is not succeeded")}[0m
+   [36m| [0m                          [31m^ [0m
+   [36m| [0m
+
+[31merror[0m: 'peer' is not a member of class 'ArkColumnComponent'
+  [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkColumn.cj:33:36:
+   [36m| [0m
+[36m33[0m [36m| [0m        if (let Some(peer) <- this.peer) {[0m
+   [36m| [0m                                   [31m^^^^ [0m
+   [36m| [0m
+
+[31merror[0m: enum pattern is not matched
+  [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkColumn.cj:33:17:
+   [36m| [0m
+[36m33[0m [36m| [0m        if (let Some(peer) <- this.peer) {[0m
+   [36m| [0m                [31m^ [0m
+   [36m| [0m
+
+[31merror[0m: undeclared identifier 'peer'
+  [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkColumn.cj:34:27:
+   [36m| [0m
+[36m34[0m [36m| [0m            return match (peer as ArkColumnPeer) { case Some(x) => x; case None => throw Exception("Cast is not succeeded")}[0m
+   [36m| [0m                          [31m^ [0m
+   [36m| [0m
+
+[31merror[0m: 'peer' is not a member of class 'ArkCommonMethodComponent'
+  [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkCommonMethod.cj:33:36:
+   [36m| [0m
+[36m33[0m [36m| [0m        if (let Some(peer) <- this.peer) {[0m
+   [36m| [0m                                   [31m^^^^ [0m
+   [36m| [0m
+
+[31merror[0m: enum pattern is not matched
+  [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkCommonMethod.cj:33:17:
+   [36m| [0m
+[36m33[0m [36m| [0m        if (let Some(peer) <- this.peer) {[0m
+   [36m| [0m                [31m^ [0m
+   [36m| [0m
+
+[31merror[0m: undeclared identifier 'peer'
+  [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkCommonMethod.cj:34:27:
+   [36m| [0m
+[36m34[0m [36m| [0m            return match (peer as ArkCommonMethodPeer) { case Some(x) => x; case None => throw Exception("Cast is not succeeded")}[0m
+   [36m| [0m                          [31m^ [0m
+   [36m| [0m
+
+[31merror[0m: 'applyAttributesFinish' is not a member of class 'Object'
+  [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkCommonMethod.cj:95:15:
+   [36m| [0m
+[36m95[0m [36m| [0m        super.applyAttributesFinish()[0m
+   [36m| [0m              [31m^^^^^^^^^^^^^^^^^^^^^ [0m
+   [36m| [0m
+
+[31merror[0m: 'peer' is not a member of class 'ArkComponentRootComponent'
+  [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkComponentRoot.cj:32:36:
+   [36m| [0m
+[36m32[0m [36m| [0m        if (let Some(peer) <- this.peer) {[0m
+   [36m| [0m                                   [31m^^^^ [0m
+   [36m| [0m
+
+[31merror[0m: enum pattern is not matched
+  [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkComponentRoot.cj:32:17:
+   [36m| [0m
+[36m32[0m [36m| [0m        if (let Some(peer) <- this.peer) {[0m
+   [36m| [0m                [31m^ [0m
+   [36m| [0m
+
+[31merror[0m: undeclared identifier 'peer'
+  [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkComponentRoot.cj:33:27:
+   [36m| [0m
+[36m33[0m [36m| [0m            return match (peer as ArkComponentRootPeer) { case Some(x) => x; case None => throw Exception("Cast is not succeeded")}[0m
+   [36m| [0m                          [31m^ [0m
+   [36m| [0m
+
+[31merror[0m: 'applyAttributesFinish' is not a member of class 'Object'
+  [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkComponentRoot.cj:38:15:
+   [36m| [0m
+[36m38[0m [36m| [0m        super.applyAttributesFinish()[0m
+   [36m| [0m              [31m^^^^^^^^^^^^^^^^^^^^^ [0m
+   [36m| [0m
+
+[31merror[0m: 'peer' is not a member of class 'ArkCustomLayoutRootComponent'
+  [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkCustomLayoutRoot.cj:32:36:
+   [36m| [0m
+[36m32[0m [36m| [0m        if (let Some(peer) <- this.peer) {[0m
+   [36m| [0m                                   [31m^^^^ [0m
+   [36m| [0m
+
+[31merror[0m: enum pattern is not matched
+  [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkCustomLayoutRoot.cj:32:17:
+   [36m| [0m
+[36m32[0m [36m| [0m        if (let Some(peer) <- this.peer) {[0m
+   [36m| [0m                [31m^ [0m
+   [36m| [0m
+
+[31merror[0m: undeclared identifier 'peer'
+  [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkCustomLayoutRoot.cj:33:27:
+   [36m| [0m
+[36m33[0m [36m| [0m            return match (peer as ArkCustomLayoutRootPeer) { case Some(x) => x; case None => throw Exception("Cast is not succeeded")}[0m
+   [36m| [0m                          [31m^ [0m
+   [36m| [0m
+
+[31merror[0m: 'applyAttributesFinish' is not a member of class 'Object'
+  [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkCustomLayoutRoot.cj:46:15:
+   [36m| [0m
+[36m46[0m [36m| [0m        super.applyAttributesFinish()[0m
+   [36m| [0m              [31m^^^^^^^^^^^^^^^^^^^^^ [0m
+   [36m| [0m
+
+[31merror[0m: 'peer' is not a member of class 'ArkListComponent'
+  [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkList.cj:33:36:
+   [36m| [0m
+[36m33[0m [36m| [0m        if (let Some(peer) <- this.peer) {[0m
+   [36m| [0m                                   [31m^^^^ [0m
+   [36m| [0m
+
+[31merror[0m: enum pattern is not matched
+  [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkList.cj:33:17:
+   [36m| [0m
+[36m33[0m [36m| [0m        if (let Some(peer) <- this.peer) {[0m
+   [36m| [0m                [31m^ [0m
+   [36m| [0m
+
+[31merror[0m: undeclared identifier 'peer'
+  [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkList.cj:34:27:
+   [36m| [0m
+[36m34[0m [36m| [0m            return match (peer as ArkListPeer) { case Some(x) => x; case None => throw Exception("Cast is not succeeded")}[0m
+   [36m| [0m                          [31m^ [0m
+   [36m| [0m
+
+[31merror[0m: 'peer' is not a member of class 'ArkNavigationComponent'
+  [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkNavigation.cj:33:36:
+   [36m| [0m
+[36m33[0m [36m| [0m        if (let Some(peer) <- this.peer) {[0m
+   [36m| [0m                                   [31m^^^^ [0m
+   [36m| [0m
+
+[31merror[0m: enum pattern is not matched
+  [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkNavigation.cj:33:17:
+   [36m| [0m
+[36m33[0m [36m| [0m        if (let Some(peer) <- this.peer) {[0m
+   [36m| [0m                [31m^ [0m
+   [36m| [0m
+
+[31merror[0m: undeclared identifier 'peer'
+  [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkNavigation.cj:34:27:
+   [36m| [0m
+[36m34[0m [36m| [0m            return match (peer as ArkNavigationPeer) { case Some(x) => x; case None => throw Exception("Cast is not succeeded")}[0m
+   [36m| [0m                          [31m^ [0m
+   [36m| [0m
+
+[31merror[0m: 'peer' is not a member of class 'ArkRootComponent'
+  [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkRoot.cj:32:36:
+   [36m| [0m
+[36m32[0m [36m| [0m        if (let Some(peer) <- this.peer) {[0m
+   [36m| [0m                                   [31m^^^^ [0m
+   [36m| [0m
+
+[31merror[0m: enum pattern is not matched
+  [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkRoot.cj:32:17:
+   [36m| [0m
+[36m32[0m [36m| [0m        if (let Some(peer) <- this.peer) {[0m
+   [36m| [0m                [31m^ [0m
+   [36m| [0m
+
+[31merror[0m: undeclared identifier 'peer'
+  [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkRoot.cj:33:27:
+   [36m| [0m
+[36m33[0m [36m| [0m            return match (peer as ArkRootPeer) { case Some(x) => x; case None => throw Exception("Cast is not succeeded")}[0m
+   [36m| [0m                          [31m^ [0m
+   [36m| [0m
+
+[31merror[0m: 'applyAttributesFinish' is not a member of class 'Object'
+  [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkRoot.cj:38:15:
+   [36m| [0m
+[36m38[0m [36m| [0m        super.applyAttributesFinish()[0m
+   [36m| [0m              [31m^^^^^^^^^^^^^^^^^^^^^ [0m
+   [36m| [0m
+
+[31merror[0m: 'peer' is not a member of class 'ArkScrollableCommonMethodComponent'
+  [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkScrollableCommonMethod.cj:33:36:
+   [36m| [0m
+[36m33[0m [36m| [0m        if (let Some(peer) <- this.peer) {[0m
+   [36m| [0m                                   [31m^^^^ [0m
+   [36m| [0m
+
+[31merror[0m: enum pattern is not matched
+  [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkScrollableCommonMethod.cj:33:17:
+   [36m| [0m
+[36m33[0m [36m| [0m        if (let Some(peer) <- this.peer) {[0m
+   [36m| [0m                [31m^ [0m
+   [36m| [0m
+
+[31merror[0m: undeclared identifier 'peer'
+  [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkScrollableCommonMethod.cj:34:27:
+   [36m| [0m
+[36m34[0m [36m| [0m            return match (peer as ArkScrollableCommonMethodPeer) { case Some(x) => x; case None => throw Exception("Cast is not succeeded")}[0m
+   [36m| [0m                          [31m^ [0m
+   [36m| [0m
+
+[31merror[0m: 'peer' is not a member of class 'ArkTestComponent'
+  [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkTest.cj:32:36:
+   [36m| [0m
+[36m32[0m [36m| [0m        if (let Some(peer) <- this.peer) {[0m
+   [36m| [0m                                   [31m^^^^ [0m
+   [36m| [0m
+
+[31merror[0m: enum pattern is not matched
+  [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkTest.cj:32:17:
+   [36m| [0m
+[36m32[0m [36m| [0m        if (let Some(peer) <- this.peer) {[0m
+   [36m| [0m                [31m^ [0m
+   [36m| [0m
+
+[31merror[0m: undeclared identifier 'peer'
+  [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkTest.cj:33:27:
+   [36m| [0m
+[36m33[0m [36m| [0m            return match (peer as ArkTestPeer) { case Some(x) => x; case None => throw Exception("Cast is not succeeded")}[0m
+   [36m| [0m                          [31m^ [0m
+   [36m| [0m
+
+[31merror[0m: 'peer' is not a member of class 'ArkTextInputComponent'
+  [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkTextInput.cj:33:36:
+   [36m| [0m
+[36m33[0m [36m| [0m        if (let Some(peer) <- this.peer) {[0m
+   [36m| [0m                                   [31m^^^^ [0m
+   [36m| [0m
+
+[31merror[0m: enum pattern is not matched
+  [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkTextInput.cj:33:17:
+   [36m| [0m
+[36m33[0m [36m| [0m        if (let Some(peer) <- this.peer) {[0m
+   [36m| [0m                [31m^ [0m
+   [36m| [0m
+
+[31merror[0m: undeclared identifier 'peer'
+  [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkTextInput.cj:34:27:
+   [36m| [0m
+[36m34[0m [36m| [0m            return match (peer as ArkTextInputPeer) { case Some(x) => x; case None => throw Exception("Cast is not succeeded")}[0m
+   [36m| [0m                          [31m^ [0m
+   [36m| [0m
+
+[31merror[0m: 'peer' is not a member of class 'ArkTextPickerComponent'
+  [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkTextPicker.cj:33:36:
+   [36m| [0m
+[36m33[0m [36m| [0m        if (let Some(peer) <- this.peer) {[0m
+   [36m| [0m                                   [31m^^^^ [0m
+   [36m| [0m
+
+[31merror[0m: enum pattern is not matched
+  [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkTextPicker.cj:33:17:
+   [36m| [0m
+[36m33[0m [36m| [0m        if (let Some(peer) <- this.peer) {[0m
+   [36m| [0m                [31m^ [0m
+   [36m| [0m
+
+[31merror[0m: undeclared identifier 'peer'
+  [36m==>[0m /home/gloria/idlize/idlize_with_wentao/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkTextPicker.cj:34:27:
+   [36m| [0m
+[36m34[0m [36m| [0m            return match (peer as ArkTextPickerPeer) { case Some(x) => x; case None => throw Exception("Cast is not succeeded")}[0m
+   [36m| [0m                          [31m^ [0m
+   [36m| [0m
+
+129 errors generated, 129 errors printed.
+Error: failed to compile package `idlize.components`, return code is 1
+Error: cjpm run failed

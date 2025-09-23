@@ -1,0 +1,2 @@
+[31merror[0m: expected at least one source code file when compiling source code
+Error: failed to compile package `demo.src`, return code is 1

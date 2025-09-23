@@ -1,0 +1,16 @@
+[package]
+  name = "demo"
+  version = "1.0.0"
+  description = "Cangjie framework demo module"
+  cjc-version = "0.59.6"
+  src-dir = "./src"
+  target-dir = "./build"
+  output-type = "static"
+  compile-option = "--error-count-limit all --warn-off parser"
+  link-option = ""
+  package-configuration = {}
+
+[dependencies]
+  Interop = { path = "/home/gloria/idlize/testcase/external/interop/src/cangjie" }
+  KoalaRuntime = { path = "/home/gloria/idlize/testcase/external/incremental-cj/runtime" }
+  idlize = { path = "out/cangjie/generated/sig/arkoala-cj/cjv2" }

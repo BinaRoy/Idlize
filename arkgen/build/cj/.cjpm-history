@@ -1,0 +1,329 @@
+{
+  "resolves": [
+    {
+      "rootPackageName": "Interop",
+      "modulePath": "/home/gloria/idlize/testcase/external/interop/src/cangjie",
+      "packagePath": "/home/gloria/idlize/testcase/external/interop/src/cangjie",
+      "fullName": "Interop",
+      "isMacroPackage": false,
+      "output-type": "static",
+      "compile-option": "",
+      "native-compile-option": "",
+      "customized-option": {},
+      "link-option": "",
+      "native-link-option": "",
+      "requires": [],
+      "std-requires": [
+        "std.binary",
+        "std.collection",
+        "std.math"
+      ],
+      "c_libs": {},
+      "hasTestFiles": false,
+      "hasProdFiles": true,
+      "hasTestsInProdFiles": false,
+      "accessLevel": "public"
+    },
+    {
+      "rootPackageName": "KoalaRuntime",
+      "modulePath": "/home/gloria/idlize/testcase/external/incremental-cj/runtime",
+      "packagePath": "/home/gloria/idlize/testcase/external/incremental-cj/runtime/src/memoize",
+      "fullName": "KoalaRuntime.memoize",
+      "isMacroPackage": true,
+      "output-type": "dynamic",
+      "compile-option": "",
+      "native-compile-option": "",
+      "customized-option": {},
+      "link-option": "",
+      "native-link-option": "",
+      "requires": [],
+      "std-requires": [
+        "std.ast",
+        "std.collection"
+      ],
+      "c_libs": {},
+      "hasTestFiles": false,
+      "hasProdFiles": true,
+      "hasTestsInProdFiles": false,
+      "accessLevel": "public"
+    },
+    {
+      "rootPackageName": "KoalaRuntime",
+      "modulePath": "/home/gloria/idlize/testcase/external/incremental-cj/runtime",
+      "packagePath": "/home/gloria/idlize/testcase/external/incremental-cj/runtime/src/tree",
+      "fullName": "KoalaRuntime.tree",
+      "isMacroPackage": false,
+      "output-type": "static",
+      "compile-option": "",
+      "native-compile-option": "",
+      "customized-option": {},
+      "link-option": "",
+      "native-link-option": "",
+      "requires": [],
+      "std-requires": [
+        "std.unittest"
+      ],
+      "c_libs": {},
+      "hasTestFiles": false,
+      "hasProdFiles": true,
+      "hasTestsInProdFiles": true,
+      "accessLevel": "public"
+    },
+    {
+      "rootPackageName": "KoalaRuntime",
+      "modulePath": "/home/gloria/idlize/testcase/external/incremental-cj/runtime",
+      "packagePath": "/home/gloria/idlize/testcase/external/incremental-cj/runtime/src/util",
+      "fullName": "KoalaRuntime.util",
+      "isMacroPackage": false,
+      "output-type": "static",
+      "compile-option": "",
+      "native-compile-option": "",
+      "customized-option": {},
+      "link-option": "",
+      "native-link-option": "",
+      "requires": [],
+      "std-requires": [
+        "std.math"
+      ],
+      "c_libs": {},
+      "hasTestFiles": true,
+      "hasProdFiles": true,
+      "hasTestsInProdFiles": false,
+      "accessLevel": "public"
+    },
+    {
+      "rootPackageName": "demo",
+      "modulePath": ".",
+      "packagePath": "/home/gloria/idlize/testcase/arkgen/out/cangjie/generated/sig/arkoala-cj/framework/cangjie",
+      "fullName": "demo",
+      "isMacroPackage": false,
+      "output-type": "executable",
+      "compile-option": "--error-count-limit all --warn-off all -L ./native/build-cangjie-native-dummy -l NativeBridgeCJ -L ./../external/incremental-cj/runtime/callsitekey -l",
+      "native-compile-option": "",
+      "customized-option": {},
+      "link-option": "",
+      "native-link-option": "",
+      "requires": [],
+      "std-requires": [],
+      "c_libs": {},
+      "hasTestFiles": false,
+      "hasProdFiles": true,
+      "hasTestsInProdFiles": false,
+      "accessLevel": "public"
+    },
+    {
+      "rootPackageName": "idlize",
+      "modulePath": "/home/gloria/idlize/testcase/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2",
+      "packagePath": "/home/gloria/idlize/testcase/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src",
+      "fullName": "idlize",
+      "isMacroPackage": false,
+      "output-type": "static",
+      "compile-option": "--error-count-limit all --warn-off parser",
+      "native-compile-option": "",
+      "customized-option": {},
+      "link-option": "",
+      "native-link-option": "",
+      "requires": [],
+      "std-requires": [],
+      "c_libs": {},
+      "hasTestFiles": false,
+      "hasProdFiles": true,
+      "hasTestsInProdFiles": false,
+      "accessLevel": "public"
+    },
+    {
+      "rootPackageName": "KoalaRuntime",
+      "modulePath": "/home/gloria/idlize/testcase/external/incremental-cj/runtime",
+      "packagePath": "/home/gloria/idlize/testcase/external/incremental-cj/runtime/src/core",
+      "fullName": "KoalaRuntime.core",
+      "isMacroPackage": false,
+      "output-type": "static",
+      "compile-option": "",
+      "native-compile-option": "",
+      "customized-option": {},
+      "link-option": "",
+      "native-link-option": "",
+      "requires": [
+        "KoalaRuntime.tree",
+        "KoalaRuntime.util"
+      ],
+      "std-requires": [
+        "std.collection",
+        "std.convert"
+      ],
+      "c_libs": {},
+      "hasTestFiles": true,
+      "hasProdFiles": true,
+      "hasTestsInProdFiles": false,
+      "accessLevel": "public"
+    },
+    {
+      "rootPackageName": "KoalaRuntime",
+      "modulePath": "/home/gloria/idlize/testcase/external/incremental-cj/runtime",
+      "packagePath": "/home/gloria/idlize/testcase/external/incremental-cj/runtime/src/animations",
+      "fullName": "KoalaRuntime.animations",
+      "isMacroPackage": false,
+      "output-type": "static",
+      "compile-option": "",
+      "native-compile-option": "",
+      "customized-option": {},
+      "link-option": "",
+      "native-link-option": "",
+      "requires": [
+        "KoalaRuntime.core",
+        "KoalaRuntime.util"
+      ],
+      "std-requires": [
+        "std.collection",
+        "std.math"
+      ],
+      "c_libs": {},
+      "hasTestFiles": true,
+      "hasProdFiles": true,
+      "hasTestsInProdFiles": false,
+      "accessLevel": "public"
+    },
+    {
+      "rootPackageName": "KoalaRuntime",
+      "modulePath": "/home/gloria/idlize/testcase/external/incremental-cj/runtime",
+      "packagePath": "/home/gloria/idlize/testcase/external/incremental-cj/runtime/src",
+      "fullName": "KoalaRuntime",
+      "isMacroPackage": false,
+      "output-type": "static",
+      "compile-option": "",
+      "native-compile-option": "",
+      "customized-option": {},
+      "link-option": "",
+      "native-link-option": "",
+      "requires": [
+        "KoalaRuntime.animations",
+        "KoalaRuntime.core",
+        "KoalaRuntime.tree",
+        "KoalaRuntime.util"
+      ],
+      "std-requires": [],
+      "c_libs": {},
+      "hasTestFiles": false,
+      "hasProdFiles": true,
+      "hasTestsInProdFiles": false,
+      "accessLevel": "public"
+    },
+    {
+      "rootPackageName": "idlize",
+      "modulePath": "/home/gloria/idlize/testcase/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2",
+      "packagePath": "/home/gloria/idlize/testcase/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/commonPara",
+      "fullName": "idlize.commonPara",
+      "isMacroPackage": false,
+      "output-type": "static",
+      "compile-option": "--error-count-limit all --warn-off parser",
+      "native-compile-option": "",
+      "customized-option": {},
+      "link-option": "",
+      "native-link-option": "",
+      "requires": [
+        "Interop",
+        "KoalaRuntime",
+        "KoalaRuntime.memoize"
+      ],
+      "std-requires": [
+        "std.collection",
+        "std.time"
+      ],
+      "c_libs": {},
+      "hasTestFiles": false,
+      "hasProdFiles": true,
+      "hasTestsInProdFiles": false,
+      "accessLevel": "public"
+    },
+    {
+      "rootPackageName": "idlize",
+      "modulePath": "/home/gloria/idlize/testcase/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2",
+      "packagePath": "/home/gloria/idlize/testcase/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/peers",
+      "fullName": "idlize.peers",
+      "isMacroPackage": false,
+      "output-type": "static",
+      "compile-option": "--error-count-limit all --warn-off parser",
+      "native-compile-option": "",
+      "customized-option": {},
+      "link-option": "",
+      "native-link-option": "",
+      "requires": [
+        "Interop",
+        "KoalaRuntime",
+        "KoalaRuntime.memoize",
+        "idlize.commonPara"
+      ],
+      "std-requires": [
+        "std.collection",
+        "std.time"
+      ],
+      "c_libs": {},
+      "hasTestFiles": false,
+      "hasProdFiles": true,
+      "hasTestsInProdFiles": false,
+      "accessLevel": "public"
+    },
+    {
+      "rootPackageName": "idlize",
+      "modulePath": "/home/gloria/idlize/testcase/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2",
+      "packagePath": "/home/gloria/idlize/testcase/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components",
+      "fullName": "idlize.components",
+      "isMacroPackage": false,
+      "output-type": "static",
+      "compile-option": "--error-count-limit all --warn-off parser",
+      "native-compile-option": "",
+      "customized-option": {},
+      "link-option": "",
+      "native-link-option": "",
+      "requires": [
+        "Interop",
+        "KoalaRuntime",
+        "KoalaRuntime.memoize",
+        "idlize.commonPara",
+        "idlize.peers"
+      ],
+      "std-requires": [
+        "std.collection",
+        "std.time"
+      ],
+      "c_libs": {},
+      "hasTestFiles": false,
+      "hasProdFiles": true,
+      "hasTestsInProdFiles": false,
+      "accessLevel": "public"
+    },
+    {
+      "rootPackageName": "demo",
+      "modulePath": ".",
+      "packagePath": "/home/gloria/idlize/testcase/arkgen/out/cangjie/generated/sig/arkoala-cj/framework/cangjie/src",
+      "fullName": "demo.src",
+      "isMacroPackage": false,
+      "output-type": "static",
+      "compile-option": "--error-count-limit all --warn-off all -L ./native/build-cangjie-native-dummy -l NativeBridgeCJ -L ./../external/incremental-cj/runtime/callsitekey -l",
+      "native-compile-option": "",
+      "customized-option": {},
+      "link-option": "",
+      "native-link-option": "",
+      "requires": [
+        "Interop",
+        "KoalaRuntime",
+        "KoalaRuntime.memoize",
+        "idlize.commonPara",
+        "idlize.components",
+        "idlize.peers"
+      ],
+      "std-requires": [
+        "std.collection",
+        "std.math",
+        "std.time"
+      ],
+      "c_libs": {},
+      "hasTestFiles": false,
+      "hasProdFiles": true,
+      "hasTestsInProdFiles": false,
+      "accessLevel": "public"
+    }
+  ],
+  "binDeps": {},
+  "crossBinDeps": {}
+}

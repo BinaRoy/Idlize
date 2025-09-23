@@ -1,0 +1,211 @@
+[33mwarning[0m: redundant modifier: 'public'
+  [36m==>[0m /home/gloria/idlize/testcase/external/interop/src/cangjie/MaterializedBase.cj:33:5:
+   [36m| [0m
+[36m32[0m [36m| [0mpublic interface MaterializedBase {[0m
+   [36m| [0m       [36m~~~~~~~~~ [0m
+[36m33[0m [36m| [0m    public func getPeer(): ?Finalizable[0m
+   [36m| [0m    [33m^^^^^^ interface member implies 'public'[0m
+   [36m| [0m
+   [36m#[0m [0mnote[0m: this warning can be suppressed by setting the compiler option `-Woff parser`
+
+[33mwarning[0m: redundant modifier: 'public'
+  [36m==>[0m /home/gloria/idlize/testcase/external/interop/src/cangjie/MaterializedBase.cj:35:5:
+   [36m| [0m
+[36m32[0m [36m| [0mpublic interface MaterializedBase {[0m
+   [36m| [0m       [36m~~~~~~~~~ [0m
+[36m33[0m [36m| [0m    public func getPeer(): ?Finalizable[0m
+   [36m| [0m...[0m
+[36m35[0m [36m| [0m    public static func toPeerPtr(value: Any): KPointer[0m
+   [36m| [0m    [33m^^^^^^ interface member implies 'public'[0m
+   [36m| [0m
+   [36m#[0m [0mnote[0m: this warning can be suppressed by setting the compiler option `-Woff parser`
+
+[33mwarning[0m: unused variable:'NOP'
+  [36m==>[0m /home/gloria/idlize/testcase/external/interop/src/cangjie/MaterializedBase.cj:28:16:
+   [36m| [0m
+[36m28[0m [36m| [0m    static var NOP = MaterializedBaseTag()[0m
+   [36m| [0m               [33m^^^ unused variable[0m
+   [36m| [0m
+   [36m#[0m [0mnote[0m: this warning can be suppressed by setting the compiler option `-Woff unused`
+
+[33mwarning[0m: unused function:'init'
+  [36m==>[0m /home/gloria/idlize/testcase/external/interop/src/cangjie/InteropTypes.cj:33:3:
+   [36m| [0m
+[36m33[0m [36m| [0m    init (length: Int32, data: CPointer<UInt8>, dispose: CPointer<CFunc<(CPointer<Unit>, Int32) -> Unit>>) {[0m
+   [36m| [0m [33m_[0m[33m__^[0m
+[36m34[0m [36m| [0m[33m|[0m     this.length = length[0m
+   [36m| [0m[33m|[0m ...[0m
+[36m37[0m [36m| [0m[33m|[0m   }[0m
+   [36m| [0m[33m|[0m[33m_[0m[33m__^ unused function[0m
+   [36m| [0m
+   [36m#[0m [0mnote[0m: this warning can be suppressed by setting the compiler option `-Woff unused`
+
+[33mwarning[0m: unused variable:'serializer'
+  [36m==>[0m /home/gloria/idlize/testcase/external/interop/src/cangjie/SerializerBase.cj:68:27:
+   [36m| [0m
+[36m68[0m [36m| [0m    public func serialize(serializer: SerializerBase, value: Object, kind: String): Unit {}[0m
+   [36m| [0m                          [33m^^^^^^^^^^ unused variable[0m
+   [36m| [0m
+   [36m#[0m [0mnote[0m: this warning can be suppressed by setting the compiler option `-Woff unused`
+
+[33mwarning[0m: unused variable:'value'
+  [36m==>[0m /home/gloria/idlize/testcase/external/interop/src/cangjie/SerializerBase.cj:68:55:
+   [36m| [0m
+[36m68[0m [36m| [0m    public func serialize(serializer: SerializerBase, value: Object, kind: String): Unit {}[0m
+   [36m| [0m                                                      [33m^^^^^ unused variable[0m
+   [36m| [0m
+   [36m#[0m [0mnote[0m: this warning can be suppressed by setting the compiler option `-Woff unused`
+
+[33mwarning[0m: unused variable:'kind'
+  [36m==>[0m /home/gloria/idlize/testcase/external/interop/src/cangjie/SerializerBase.cj:68:70:
+   [36m| [0m
+[36m68[0m [36m| [0m    public func serialize(serializer: SerializerBase, value: Object, kind: String): Unit {}[0m
+   [36m| [0m                                                                     [33m^^^^ unused variable[0m
+   [36m| [0m
+   [36m#[0m [0mnote[0m: this warning can be suppressed by setting the compiler option `-Woff unused`
+
+[33mwarning[0m: unused variable:'i'
+  [36m==>[0m /home/gloria/idlize/testcase/external/interop/src/cangjie/SerializerBase.cj:77:87:
+   [36m| [0m
+[36m77[0m [36m| [0m    private static var pool: ArrayList<SerializerBase> = ArrayList<SerializerBase>(8){i => SerializerBase()}[0m
+   [36m| [0m                                                                                      [33m^ unused variable[0m
+   [36m| [0m
+   [36m#[0m [0mnote[0m: this warning can be suppressed by setting the compiler option `-Woff unused`
+
+[33mwarning[0m: unused variable:'serializer'
+  [36m==>[0m /home/gloria/idlize/testcase/external/interop/src/cangjie/SerializerBase.cj:80:42:
+   [36m| [0m
+[36m80[0m [36m| [0m    static func registerCustomSerializer(serializer: CustomSerializer) {[0m
+   [36m| [0m                                         [33m^^^^^^^^^^ unused variable[0m
+   [36m| [0m
+   [36m#[0m [0mnote[0m: this warning can be suppressed by setting the compiler option `-Woff unused`
+
+[33mwarning[0m: unused variable:'kind'
+   [36m==>[0m /home/gloria/idlize/testcase/external/interop/src/cangjie/DeserializerBase.cj:129:34:
+    [36m| [0m
+[36m129[0m [36m| [0m    public func readCustomObject(kind: String): Object {[0m
+    [36m| [0m                                 [33m^^^^ unused variable[0m
+    [36m| [0m
+    [36m#[0m [0mnote[0m: this warning can be suppressed by setting the compiler option `-Woff unused`
+
+[33mwarning[0m: unused variable:'value'
+   [36m==>[0m /home/gloria/idlize/testcase/external/interop/src/cangjie/SerializerBase.cj:147:49:
+    [36m| [0m
+[36m147[0m [36m| [0m    public func writeCustomObject(kind: String, value: Any): Unit {[0m
+    [36m| [0m                                                [33m^^^^^ unused variable[0m
+    [36m| [0m
+    [36m#[0m [0mnote[0m: this warning can be suppressed by setting the compiler option `-Woff unused`
+
+[33mwarning[0m: unused variable:'current'
+   [36m==>[0m /home/gloria/idlize/testcase/external/interop/src/cangjie/SerializerBase.cj:148:13:
+    [36m| [0m
+[36m148[0m [36m| [0m        var current = SerializerBase.customSerializers[0m
+    [36m| [0m            [33m^^^^^^^ unused variable[0m
+    [36m| [0m
+    [36m#[0m [0mnote[0m: this warning can be suppressed by setting the compiler option `-Woff unused`
+
+[33mwarning[0m: unused variable:'hold'
+   [36m==>[0m /home/gloria/idlize/testcase/external/interop/src/cangjie/SerializerBase.cj:189:52:
+    [36m| [0m
+[36m189[0m [36m| [0m    public func holdAndWriteCallbackForPromiseVoid(hold: KPointer, release: KPointer, call: KPointer, callSync: KPointer): PromiseAndResourceId<Unit> {[0m
+    [36m| [0m                                                   [33m^^^^ unused variable[0m
+    [36m| [0m
+    [36m#[0m [0mnote[0m: this warning can be suppressed by setting the compiler option `-Woff unused`
+
+[33mwarning[0m: unused variable:'release'
+   [36m==>[0m /home/gloria/idlize/testcase/external/interop/src/cangjie/SerializerBase.cj:189:68:
+    [36m| [0m
+[36m189[0m [36m| [0m    public func holdAndWriteCallbackForPromiseVoid(hold: KPointer, release: KPointer, call: KPointer, callSync: KPointer): PromiseAndResourceId<Unit> {[0m
+    [36m| [0m                                                                   [33m^^^^^^^ unused variable[0m
+    [36m| [0m
+    [36m#[0m [0mnote[0m: this warning can be suppressed by setting the compiler option `-Woff unused`
+
+[33mwarning[0m: unused variable:'call'
+   [36m==>[0m /home/gloria/idlize/testcase/external/interop/src/cangjie/SerializerBase.cj:189:87:
+    [36m| [0m
+[36m189[0m [36m| [0m    public func holdAndWriteCallbackForPromiseVoid(hold: KPointer, release: KPointer, call: KPointer, callSync: KPointer): PromiseAndResourceId<Unit> {[0m
+    [36m| [0m                                                                                      [33m^^^^ unused variable[0m
+    [36m| [0m
+    [36m#[0m [0mnote[0m: this warning can be suppressed by setting the compiler option `-Woff unused`
+
+[33mwarning[0m: unused variable:'callSync'
+   [36m==>[0m /home/gloria/idlize/testcase/external/interop/src/cangjie/SerializerBase.cj:189:103:
+    [36m| [0m
+[36m189[0m [36m| [0m    public func holdAndWriteCallbackForPromiseVoid(hold: KPointer, release: KPointer, call: KPointer, callSync: KPointer): PromiseAndResourceId<Unit> {[0m
+    [36m| [0m                                                                                                      [33m^^^^^^^^ unused variable[0m
+    [36m| [0m
+    [36m#[0m [0mnote[0m: this warning can be suppressed by setting the compiler option `-Woff unused`
+
+[33mwarning[0m: unused variable:'hold'
+   [36m==>[0m /home/gloria/idlize/testcase/external/interop/src/cangjie/SerializerBase.cj:197:51:
+    [36m| [0m
+[36m197[0m [36m| [0m    public func holdAndWriteCallbackForPromise<T>(hold: KPointer, release: KPointer, call: KPointer): PromiseAndResourceId<T> {[0m
+    [36m| [0m                                                  [33m^^^^ unused variable[0m
+    [36m| [0m
+    [36m#[0m [0mnote[0m: this warning can be suppressed by setting the compiler option `-Woff unused`
+
+[33mwarning[0m: unused variable:'release'
+   [36m==>[0m /home/gloria/idlize/testcase/external/interop/src/cangjie/SerializerBase.cj:197:67:
+    [36m| [0m
+[36m197[0m [36m| [0m    public func holdAndWriteCallbackForPromise<T>(hold: KPointer, release: KPointer, call: KPointer): PromiseAndResourceId<T> {[0m
+    [36m| [0m                                                                  [33m^^^^^^^ unused variable[0m
+    [36m| [0m
+    [36m#[0m [0mnote[0m: this warning can be suppressed by setting the compiler option `-Woff unused`
+
+[33mwarning[0m: unused variable:'call'
+   [36m==>[0m /home/gloria/idlize/testcase/external/interop/src/cangjie/SerializerBase.cj:197:86:
+    [36m| [0m
+[36m197[0m [36m| [0m    public func holdAndWriteCallbackForPromise<T>(hold: KPointer, release: KPointer, call: KPointer): PromiseAndResourceId<T> {[0m
+    [36m| [0m                                                                                     [33m^^^^ unused variable[0m
+    [36m| [0m
+    [36m#[0m [0mnote[0m: this warning can be suppressed by setting the compiler option `-Woff unused`
+
+[33mwarning[0m: unused variable:'value'
+   [36m==>[0m /home/gloria/idlize/testcase/external/interop/src/cangjie/SerializerBase.cj:202:31:
+    [36m| [0m
+[36m202[0m [36m| [0m    public func writeFunction(value: Any): Unit {[0m
+    [36m| [0m                              [33m^^^^^ unused variable[0m
+    [36m| [0m
+    [36m#[0m [0mnote[0m: this warning can be suppressed by setting the compiler option `-Woff unused`
+
+[33mwarning[0m: unused variable:'value'
+   [36m==>[0m /home/gloria/idlize/testcase/external/interop/src/cangjie/SerializerBase.cj:297:30:
+    [36m| [0m
+[36m297[0m [36m| [0m    public func writeFloat32(value: Float32): Unit {[0m
+    [36m| [0m                             [33m^^^^^ unused variable[0m
+    [36m| [0m
+    [36m#[0m [0mnote[0m: this warning can be suppressed by setting the compiler option `-Woff unused`
+
+[33mwarning[0m: unused variable:'value'
+   [36m==>[0m /home/gloria/idlize/testcase/external/interop/src/cangjie/SerializerBase.cj:320:35:
+    [36m| [0m
+[36m320[0m [36m| [0m    public func writeMaterialized(value: Object): Unit {[0m
+    [36m| [0m                                  [33m^^^^^ unused variable[0m
+    [36m| [0m
+    [36m#[0m [0mnote[0m: this warning can be suppressed by setting the compiler option `-Woff unused`
+
+[33mwarning[0m: unused variable:'_buffer'
+   [36m==>[0m /home/gloria/idlize/testcase/external/interop/src/cangjie/SerializerBase.cj:334:29:
+    [36m| [0m
+[36m334[0m [36m| [0m    public func writeBuffer(_buffer: Array<UInt8>) {[0m
+    [36m| [0m                            [33m^^^^^^^ unused variable[0m
+    [36m| [0m
+    [36m#[0m [0mnote[0m: this warning can be suppressed by setting the compiler option `-Woff unused`
+
+[33mwarning[0m: unused variable:'value'
+   [36m==>[0m /home/gloria/idlize/testcase/external/interop/src/cangjie/SerializerBase.cj:360:55:
+    [36m| [0m
+[36m360[0m [36m| [0m    public func serialize(serializer: SerializerBase, value: Ark_CustomObject, kind: String): Unit {[0m
+    [36m| [0m                                                      [33m^^^^^ unused variable[0m
+    [36m| [0m
+    [36m#[0m [0mnote[0m: this warning can be suppressed by setting the compiler option `-Woff unused`
+
+[33mwarning[0m: unused variable:'kind'
+   [36m==>[0m /home/gloria/idlize/testcase/external/interop/src/cangjie/SerializerBase.cj:360:80:
+    [36m| [0m
+[36m360[0m [36m| [0m    public func serialize(serializer: SerializerBase, value: Ark_CustomObject, kind: String): Unit {[0m
+    [36m| [0m                                                                               [33m^^^^ unused variable[0m
+    [36m| [0m
+    [36m#[0m [0mnote[0m: this warning can be suppressed by setting the compiler option `-Woff unused`
+
+25 warnings generated, 25 warnings printed.

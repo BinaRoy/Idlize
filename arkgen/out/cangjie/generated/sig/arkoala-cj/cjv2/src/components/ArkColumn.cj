@@ -1,0 +1,71 @@
+/*
+ * Copyright (c) 2024-2025 Huawei Device Co., Ltd.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+
+// WARNING! THIS FILE IS AUTO-GENERATED, DO NOT MAKE CHANGES, THEY WILL BE LOST ON NEXT GENERATION!
+
+package idlize.components
+import idlize.commonPara.*
+
+import idlize.peers.*
+
+import std.collection.*
+import Interop.*
+import KoalaRuntime.*
+import KoalaRuntime.memoize.*
+import std.time.DateTime
+
+// @!APILevel[11, syscap: "SystemCapability.ArkUI.ArkUI.Full", form: true, crossplatform: true, atomicservice: true, noninterop: true]
+public type OnColumnStyleCallback = (attributes: ArkColumnComponent) -> Unit
+public type OnColumnContentCallback = () -> Unit
+public open class ArkColumnComponent <: ArkCommonMethodComponent {
+    protected  func getPeer(): ArkColumnPeer {
+        if (let Some(peer) <- this.peer) {
+            return match (peer as ArkColumnPeer) { case Some(x) => x; case None => throw Exception("Cast is not succeeded")}
+        } else { throw Exception()}
+    }
+    // @!APILevel[18, syscap: "SystemCapability.ArkUI.ArkUI.Full", form: true, crossplatform: true, atomicservice: true]
+    public func setColumnOptions(): This {
+        this.getPeer().columnOptionsAttribute()
+        return this
+    }
+    // @!APILevel[11, syscap: "SystemCapability.ArkUI.ArkUI.Full", form: true, crossplatform: true, atomicservice: true]
+    public func alignItems(value: HorizontalAlign): This {
+        this.getPeer().alignItemsAttribute(value)
+        return this
+    }
+    protected open func applyAttributesFinish(): Unit {
+        // we call this function outside of class, so need to make it protected
+        super.applyAttributesFinish()
+    }
+}
+@Memo
+public func ArkColumn(
+    style: Option<OnColumnStyleCallback>,
+    content_: Option<OnColumnContentCallback>
+): Unit {
+    let receiver = remember<ArkColumnComponent>({ => 
+        ArkColumnComponent()
+    })
+    NodeAttach<ArkColumnPeer>(
+        { => ArkColumnPeer.create(receiver, flags: 0) },
+        { => 
+            style?(receiver)
+            content_?()
+            receiver.applyAttributesFinish()
+        }
+    )
+}
+

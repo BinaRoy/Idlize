@@ -1,0 +1,69 @@
+# Copyright (c) 2024-2025 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+
+# WARNING! THIS FILE IS AUTO-GENERATED, DO NOT MAKE CHANGES, THEY WILL BE LOST ON NEXT GENERATION!
+
+declare_args() {
+    include_generated_sources = false
+}
+generated_sources = [
+    "implementation/root_modifier.cpp",
+    "implementation/component_root_modifier.cpp",
+    "implementation/custom_layout_root_modifier.cpp",
+    "implementation/blank_modifier.cpp",
+    "implementation/button_modifier.cpp",
+    "implementation/checkbox_modifier.cpp",
+    "implementation/column_modifier.cpp",
+    "implementation/common_method_modifier.cpp",
+    "implementation/scrollable_common_method_modifier.cpp",
+    "implementation/list_modifier.cpp",
+    "implementation/navigation_modifier.cpp",
+    "implementation/test_modifier.cpp",
+    "implementation/text_input_modifier.cpp",
+    "implementation/text_picker_modifier.cpp",
+    "implementation/animation_extender_accessor.cpp",
+    "implementation/content_modifier_helper_accessor.cpp",
+    "implementation/lazy_for_each_ops_accessor.cpp",
+    "implementation/system_ops_accessor.cpp",
+    "implementation/focus_controller_accessor.cpp",
+    "implementation/scene_accessor.cpp",
+    "implementation/restricted_worker_accessor.cpp",
+    "implementation/state_styles_ops_accessor.cpp",
+    "implementation/ui_context_atomic_service_bar_accessor.cpp",
+    "implementation/builder_node_ops_accessor.cpp",
+    "implementation/global_scope_ohos_arkui_component_snapshot_accessor.cpp",
+    "implementation/global_scope_ohos_arkui_performance_monitor_accessor.cpp",
+    "implementation/common_shape_accessor.cpp",
+    "implementation/base_shape_accessor.cpp",
+    "implementation/global_scope_ohos_font_accessor.cpp",
+    "implementation/global_scope_ohos_measure_utils_accessor.cpp",
+    "implementation/iui_context_accessor.cpp",
+    "implementation/nav_extender_accessor.cpp",
+    "implementation/search_ops_accessor.cpp",
+    "implementation/persistent_storage_backend_accessor.cpp",
+    "implementation/environment_backend_accessor.cpp",
+    "implementation/event_emulator_accessor.cpp",
+    "implementation/render_service_node_accessor.cpp",
+    "implementation/screenshot_service_accessor.cpp",
+    "implementation/text_field_ops_accessor.cpp",
+    "implementation/base_event_accessor.cpp",
+    "implementation/click_event_accessor.cpp",
+    "implementation/i_curve_accessor.cpp",
+    "implementation/draw_modifier_accessor.cpp",
+    "implementation/custom_dialog_controller_accessor.cpp",
+    "implementation/text_picker_dialog_accessor.cpp",
+    "implementation/color_filter_accessor.cpp",
+    "utility/converter.cpp",
+    "implementation/all_modifiers.cpp",
+]

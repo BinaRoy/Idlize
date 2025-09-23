@@ -1,0 +1,9 @@
+[33mwarning[0m: unreachable block in 'if' expression
+  [36m==>[0m /home/gloria/idlize/testcase/external/incremental-cj/runtime/src/memoize/visitor.cj:78:21:
+   [36m| [0m
+[36m78[0m [36m| [0m            if (let Some(_) <- throwable) {[0m
+   [36m| [0m                    [33m^^^^^^^ unreachable block in 'if' expression[0m
+   [36m| [0m
+   [36m#[0m [0mnote[0m: this warning can be suppressed by setting the compiler option `-Woff unused`
+
+1 warning generated, 1 warning printed.

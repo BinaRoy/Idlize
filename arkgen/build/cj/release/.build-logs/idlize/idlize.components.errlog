@@ -1,0 +1,629 @@
+[33mwarning[0m: unused variable:'__memo_param_value_style'
+   [36m| [0m
+   [36m| [0m/* 54.6 */    let __memo_param_value_style = __memo_param_style.getValue()[0m
+   [36m| [0m                  [33m^^^^^^^^^^^^^^^^^^^^^^^^ unused variable[0m
+   [36m| [0m
+   [36m#[0m [0mnote[0m: this warning can be suppressed by setting the compiler option `-Woff unused`
+[34mnote[0m: the code after the macro is expanded as follows
+   [36m| [0m
+   [36m| [0m  /* 54.1 */public func ArkColumn(style: Option < OnColumnStyleCallback >, content_: Option < OnColumnContentCallback >): Unit {[0m
+   [36m| [0m [34m_[0m[34m^[0m
+   [36m| [0m[34m|[0m /* 54.2 */    let __memo_key = getCallsiteKey()[0m
+   [36m| [0m[34m|[0m /* 54.3 */    let __memo_scope = getMemoScope < Unit >(__memo_key, 2)[0m
+   [36m| [0m[34m|[0m /* 54.4 */    let __memo_param_style = getParameter(__memo_scope, 0, style, "style")[0m
+   [36m| [0m[34m|[0m /* 54.5 */    let __memo_param_content_ = getParameter(__memo_scope, 1, content_, "content_")[0m
+   [36m| [0m[34m|[0m /* 54.6 */    let __memo_param_value_style = __memo_param_style.getValue()[0m
+   [36m| [0m[34m|[0m /* 54.7 */    let __memo_param_value_content_ = __memo_param_content_.getValue()[0m
+   [36m| [0m[34m|[0m /* 54.8 */    if(__memo_scope.isUnchanged()) {[0m
+   [36m| [0m[34m|[0m /* 54.9 */        return __memo_scope.getCached()[0m
+   [36m| [0m[34m|[0m /* 54.10 */    }[0m
+   [36m| [0m[34m|[0m /* 54.11 */    let receiver = remember < ArkColumnComponent >({ => let __memo_param_value_style = __memo_param_style.getValue()[0m
+   [36m| [0m[34m|[0m /* 54.12 */        [0m
+   [36m| [0m[34m|[0m /* 54.13 */        let __memo_param_value_content_ = __memo_param_content_.getValue()[0m
+   [36m| [0m[34m|[0m /* 54.14 */        [0m
+   [36m| [0m[34m|[0m /* 54.15 */    ArkColumnComponent() })[0m
+   [36m| [0m[34m|[0m /* 54.16 */    NodeAttach < ArkColumnPeer >({ => let __memo_param_value_style = __memo_param_style.getValue()[0m
+   [36m| [0m[34m|[0m /* 54.17 */        [0m
+   [36m| [0m[34m|[0m /* 54.18 */        let __memo_param_value_content_ = __memo_param_content_.getValue()[0m
+   [36m| [0m[34m|[0m /* 54.19 */        [0m
+   [36m| [0m[34m|[0m /* 54.20 */    ArkColumnPeer.create(receiver, flags: 0) }, { => let __memo_param_value_style = __memo_param_style.getValue()[0m
+   [36m| [0m[34m|[0m /* 54.21 */        [0m
+   [36m| [0m[34m|[0m /* 54.22 */        let __memo_param_value_content_ = __memo_param_content_.getValue()[0m
+   [36m| [0m[34m|[0m /* 54.23 */        [0m
+   [36m| [0m[34m|[0m /* 54.24 */        __memo_param_value_style?(receiver)[0m
+   [36m| [0m[34m|[0m /* 54.25 */        __memo_param_value_content_?()[0m
+   [36m| [0m[34m|[0m /* 54.26 */    receiver.applyAttributesFinish() })[0m
+   [36m| [0m[34m|[0m /* 54.27 */    return __memo_scope.recache(MEMO_UNIT)[0m
+   [36m| [0m[34m|[0m /* 54.28 */}[0m
+   [36m| [0m[34m|[0m /* 54.29 */[0m
+   [36m| [0m[34m|[0m[34m_[0m[34m__________^[0m
+   [36m| [0m
+[34mnote[0m: the warning occurs after the macro is expanded
+  [36m==>[0m /home/gloria/idlize/testcase/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkColumn.cj:54:1:
+   [36m| [0m
+[36m54[0m [36m| [0m  @Memo[0m
+   [36m| [0m [34m_[0m[34m^[0m
+[36m55[0m [36m| [0m[34m|[0m public func ArkColumn([0m
+   [36m| [0m[34m|[0m ...[0m
+[36m70[0m [36m| [0m[34m|[0m }[0m
+   [36m| [0m[34m|[0m[34m_[0m[34m^[0m
+   [36m| [0m
+
+[33mwarning[0m: unused variable:'__memo_param_value_content_'
+   [36m| [0m
+   [36m| [0m/* 54.7 */    let __memo_param_value_content_ = __memo_param_content_.getValue()[0m
+   [36m| [0m                  [33m^^^^^^^^^^^^^^^^^^^^^^^^^^^ unused variable[0m
+   [36m| [0m
+   [36m#[0m [0mnote[0m: this warning can be suppressed by setting the compiler option `-Woff unused`
+[34mnote[0m: the warning occurs after the macro is expanded
+  [36m==>[0m /home/gloria/idlize/testcase/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkColumn.cj:54:1:
+   [36m| [0m
+[36m54[0m [36m| [0m  @Memo[0m
+   [36m| [0m [34m_[0m[34m^[0m
+[36m55[0m [36m| [0m[34m|[0m public func ArkColumn([0m
+   [36m| [0m[34m|[0m ...[0m
+[36m70[0m [36m| [0m[34m|[0m }[0m
+   [36m| [0m[34m|[0m[34m_[0m[34m^[0m
+   [36m| [0m
+
+[33mwarning[0m: unused variable:'__memo_param_value_style'
+   [36m| [0m
+   [36m| [0m/* 54.11 */    let receiver = remember < ArkColumnComponent >({ => let __memo_param_value_style = __memo_param_style.getValue()[0m
+   [36m| [0m                                                                       [33m^^^^^^^^^^^^^^^^^^^^^^^^ unused variable[0m
+   [36m| [0m
+   [36m#[0m [0mnote[0m: this warning can be suppressed by setting the compiler option `-Woff unused`
+[34mnote[0m: the warning occurs after the macro is expanded
+  [36m==>[0m /home/gloria/idlize/testcase/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkColumn.cj:54:1:
+   [36m| [0m
+[36m54[0m [36m| [0m  @Memo[0m
+   [36m| [0m [34m_[0m[34m^[0m
+[36m55[0m [36m| [0m[34m|[0m public func ArkColumn([0m
+   [36m| [0m[34m|[0m ...[0m
+[36m70[0m [36m| [0m[34m|[0m }[0m
+   [36m| [0m[34m|[0m[34m_[0m[34m^[0m
+   [36m| [0m
+
+[33mwarning[0m: unused variable:'__memo_param_value_content_'
+   [36m| [0m
+   [36m| [0m/* 54.13 */        let __memo_param_value_content_ = __memo_param_content_.getValue()[0m
+   [36m| [0m                       [33m^^^^^^^^^^^^^^^^^^^^^^^^^^^ unused variable[0m
+   [36m| [0m
+   [36m#[0m [0mnote[0m: this warning can be suppressed by setting the compiler option `-Woff unused`
+[34mnote[0m: the warning occurs after the macro is expanded
+  [36m==>[0m /home/gloria/idlize/testcase/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkColumn.cj:54:1:
+   [36m| [0m
+[36m54[0m [36m| [0m  @Memo[0m
+   [36m| [0m [34m_[0m[34m^[0m
+[36m55[0m [36m| [0m[34m|[0m public func ArkColumn([0m
+   [36m| [0m[34m|[0m ...[0m
+[36m70[0m [36m| [0m[34m|[0m }[0m
+   [36m| [0m[34m|[0m[34m_[0m[34m^[0m
+   [36m| [0m
+
+[33mwarning[0m: unused variable:'__memo_param_value_style'
+   [36m| [0m
+   [36m| [0m/* 64.6 */    let __memo_param_value_style = __memo_param_style.getValue()[0m
+   [36m| [0m                  [33m^^^^^^^^^^^^^^^^^^^^^^^^ unused variable[0m
+   [36m| [0m
+   [36m#[0m [0mnote[0m: this warning can be suppressed by setting the compiler option `-Woff unused`
+[34mnote[0m: the code after the macro is expanded as follows
+   [36m| [0m
+   [36m| [0m  /* 64.1 */public func ArkButton(style: Option < OnButtonStyleCallback >, content_: Option < OnButtonContentCallback >): Unit {[0m
+   [36m| [0m [34m_[0m[34m^[0m
+   [36m| [0m[34m|[0m /* 64.2 */    let __memo_key = getCallsiteKey()[0m
+   [36m| [0m[34m|[0m /* 64.3 */    let __memo_scope = getMemoScope < Unit >(__memo_key, 2)[0m
+   [36m| [0m[34m|[0m /* 64.4 */    let __memo_param_style = getParameter(__memo_scope, 0, style, "style")[0m
+   [36m| [0m[34m|[0m /* 64.5 */    let __memo_param_content_ = getParameter(__memo_scope, 1, content_, "content_")[0m
+   [36m| [0m[34m|[0m /* 64.6 */    let __memo_param_value_style = __memo_param_style.getValue()[0m
+   [36m| [0m[34m|[0m /* 64.7 */    let __memo_param_value_content_ = __memo_param_content_.getValue()[0m
+   [36m| [0m[34m|[0m /* 64.8 */    if(__memo_scope.isUnchanged()) {[0m
+   [36m| [0m[34m|[0m /* 64.9 */        return __memo_scope.getCached()[0m
+   [36m| [0m[34m|[0m /* 64.10 */    }[0m
+   [36m| [0m[34m|[0m /* 64.11 */    let receiver = remember < ArkButtonComponent >({ => let __memo_param_value_style = __memo_param_style.getValue()[0m
+   [36m| [0m[34m|[0m /* 64.12 */        [0m
+   [36m| [0m[34m|[0m /* 64.13 */        let __memo_param_value_content_ = __memo_param_content_.getValue()[0m
+   [36m| [0m[34m|[0m /* 64.14 */        [0m
+   [36m| [0m[34m|[0m /* 64.15 */    ArkButtonComponent() })[0m
+   [36m| [0m[34m|[0m /* 64.16 */    NodeAttach < ArkButtonPeer >({ => let __memo_param_value_style = __memo_param_style.getValue()[0m
+   [36m| [0m[34m|[0m /* 64.17 */        [0m
+   [36m| [0m[34m|[0m /* 64.18 */        let __memo_param_value_content_ = __memo_param_content_.getValue()[0m
+   [36m| [0m[34m|[0m /* 64.19 */        [0m
+   [36m| [0m[34m|[0m /* 64.20 */    ArkButtonPeer.create(receiver, flags: 0) }, { => let __memo_param_value_style = __memo_param_style.getValue()[0m
+   [36m| [0m[34m|[0m /* 64.21 */        [0m
+   [36m| [0m[34m|[0m /* 64.22 */        let __memo_param_value_content_ = __memo_param_content_.getValue()[0m
+   [36m| [0m[34m|[0m /* 64.23 */        [0m
+   [36m| [0m[34m|[0m /* 64.24 */        __memo_param_value_style?(receiver)[0m
+   [36m| [0m[34m|[0m /* 64.25 */        __memo_param_value_content_?()[0m
+   [36m| [0m[34m|[0m /* 64.26 */    receiver.applyAttributesFinish() })[0m
+   [36m| [0m[34m|[0m /* 64.27 */    return __memo_scope.recache(MEMO_UNIT)[0m
+   [36m| [0m[34m|[0m /* 64.28 */}[0m
+   [36m| [0m[34m|[0m /* 64.29 */[0m
+   [36m| [0m[34m|[0m[34m_[0m[34m__________^[0m
+   [36m| [0m
+[34mnote[0m: the warning occurs after the macro is expanded
+  [36m==>[0m /home/gloria/idlize/testcase/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkButton.cj:64:1:
+   [36m| [0m
+[36m64[0m [36m| [0m  @Memo[0m
+   [36m| [0m [34m_[0m[34m^[0m
+[36m65[0m [36m| [0m[34m|[0m public func ArkButton([0m
+   [36m| [0m[34m|[0m ...[0m
+[36m80[0m [36m| [0m[34m|[0m }[0m
+   [36m| [0m[34m|[0m[34m_[0m[34m^[0m
+   [36m| [0m
+
+[33mwarning[0m: unused variable:'__memo_param_value_style'
+   [36m| [0m
+   [36m| [0m/* 54.16 */    NodeAttach < ArkColumnPeer >({ => let __memo_param_value_style = __memo_param_style.getValue()[0m
+   [36m| [0m                                                     [33m^^^^^^^^^^^^^^^^^^^^^^^^ unused variable[0m
+   [36m| [0m
+   [36m#[0m [0mnote[0m: this warning can be suppressed by setting the compiler option `-Woff unused`
+[34mnote[0m: the warning occurs after the macro is expanded
+  [36m==>[0m /home/gloria/idlize/testcase/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkColumn.cj:54:1:
+   [36m| [0m
+[36m54[0m [36m| [0m  @Memo[0m
+   [36m| [0m [34m_[0m[34m^[0m
+[36m55[0m [36m| [0m[34m|[0m public func ArkColumn([0m
+   [36m| [0m[34m|[0m ...[0m
+[36m70[0m [36m| [0m[34m|[0m }[0m
+   [36m| [0m[34m|[0m[34m_[0m[34m^[0m
+   [36m| [0m
+
+[33mwarning[0m: unused variable:'__memo_param_value_content_'
+   [36m| [0m
+   [36m| [0m/* 64.7 */    let __memo_param_value_content_ = __memo_param_content_.getValue()[0m
+   [36m| [0m                  [33m^^^^^^^^^^^^^^^^^^^^^^^^^^^ unused variable[0m
+   [36m| [0m
+   [36m#[0m [0mnote[0m: this warning can be suppressed by setting the compiler option `-Woff unused`
+[34mnote[0m: the warning occurs after the macro is expanded
+  [36m==>[0m /home/gloria/idlize/testcase/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkButton.cj:64:1:
+   [36m| [0m
+[36m64[0m [36m| [0m  @Memo[0m
+   [36m| [0m [34m_[0m[34m^[0m
+[36m65[0m [36m| [0m[34m|[0m public func ArkButton([0m
+   [36m| [0m[34m|[0m ...[0m
+[36m80[0m [36m| [0m[34m|[0m }[0m
+   [36m| [0m[34m|[0m[34m_[0m[34m^[0m
+   [36m| [0m
+
+[33mwarning[0m: unused variable:'__memo_param_value_content_'
+   [36m| [0m
+   [36m| [0m/* 54.18 */        let __memo_param_value_content_ = __memo_param_content_.getValue()[0m
+   [36m| [0m                       [33m^^^^^^^^^^^^^^^^^^^^^^^^^^^ unused variable[0m
+   [36m| [0m
+   [36m#[0m [0mnote[0m: this warning can be suppressed by setting the compiler option `-Woff unused`
+[34mnote[0m: the warning occurs after the macro is expanded
+  [36m==>[0m /home/gloria/idlize/testcase/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkColumn.cj:54:1:
+   [36m| [0m
+[36m54[0m [36m| [0m  @Memo[0m
+   [36m| [0m [34m_[0m[34m^[0m
+[36m55[0m [36m| [0m[34m|[0m public func ArkColumn([0m
+   [36m| [0m[34m|[0m ...[0m
+[36m70[0m [36m| [0m[34m|[0m }[0m
+   [36m| [0m[34m|[0m[34m_[0m[34m^[0m
+   [36m| [0m
+
+[33mwarning[0m: unused variable:'__memo_param_value_style'
+   [36m| [0m
+   [36m| [0m/* 64.11 */    let receiver = remember < ArkButtonComponent >({ => let __memo_param_value_style = __memo_param_style.getValue()[0m
+   [36m| [0m                                                                       [33m^^^^^^^^^^^^^^^^^^^^^^^^ unused variable[0m
+   [36m| [0m
+   [36m#[0m [0mnote[0m: this warning can be suppressed by setting the compiler option `-Woff unused`
+[34mnote[0m: the warning occurs after the macro is expanded
+  [36m==>[0m /home/gloria/idlize/testcase/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkButton.cj:64:1:
+   [36m| [0m
+[36m64[0m [36m| [0m  @Memo[0m
+   [36m| [0m [34m_[0m[34m^[0m
+[36m65[0m [36m| [0m[34m|[0m public func ArkButton([0m
+   [36m| [0m[34m|[0m ...[0m
+[36m80[0m [36m| [0m[34m|[0m }[0m
+   [36m| [0m[34m|[0m[34m_[0m[34m^[0m
+   [36m| [0m
+
+[33mwarning[0m: unused variable:'__memo_param_value_content_'
+   [36m| [0m
+   [36m| [0m/* 64.13 */        let __memo_param_value_content_ = __memo_param_content_.getValue()[0m
+   [36m| [0m                       [33m^^^^^^^^^^^^^^^^^^^^^^^^^^^ unused variable[0m
+   [36m| [0m
+   [36m#[0m [0mnote[0m: this warning can be suppressed by setting the compiler option `-Woff unused`
+[34mnote[0m: the warning occurs after the macro is expanded
+  [36m==>[0m /home/gloria/idlize/testcase/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkButton.cj:64:1:
+   [36m| [0m
+[36m64[0m [36m| [0m  @Memo[0m
+   [36m| [0m [34m_[0m[34m^[0m
+[36m65[0m [36m| [0m[34m|[0m public func ArkButton([0m
+   [36m| [0m[34m|[0m ...[0m
+[36m80[0m [36m| [0m[34m|[0m }[0m
+   [36m| [0m[34m|[0m[34m_[0m[34m^[0m
+   [36m| [0m
+
+[33mwarning[0m: unused variable:'__memo_param_value_style'
+   [36m| [0m
+   [36m| [0m/* 64.16 */    NodeAttach < ArkButtonPeer >({ => let __memo_param_value_style = __memo_param_style.getValue()[0m
+   [36m| [0m                                                     [33m^^^^^^^^^^^^^^^^^^^^^^^^ unused variable[0m
+   [36m| [0m
+   [36m#[0m [0mnote[0m: this warning can be suppressed by setting the compiler option `-Woff unused`
+[34mnote[0m: the warning occurs after the macro is expanded
+  [36m==>[0m /home/gloria/idlize/testcase/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkButton.cj:64:1:
+   [36m| [0m
+[36m64[0m [36m| [0m  @Memo[0m
+   [36m| [0m [34m_[0m[34m^[0m
+[36m65[0m [36m| [0m[34m|[0m public func ArkButton([0m
+   [36m| [0m[34m|[0m ...[0m
+[36m80[0m [36m| [0m[34m|[0m }[0m
+   [36m| [0m[34m|[0m[34m_[0m[34m^[0m
+   [36m| [0m
+
+[33mwarning[0m: unused variable:'__memo_param_value_content_'
+   [36m| [0m
+   [36m| [0m/* 64.18 */        let __memo_param_value_content_ = __memo_param_content_.getValue()[0m
+   [36m| [0m                       [33m^^^^^^^^^^^^^^^^^^^^^^^^^^^ unused variable[0m
+   [36m| [0m
+   [36m#[0m [0mnote[0m: this warning can be suppressed by setting the compiler option `-Woff unused`
+[34mnote[0m: the warning occurs after the macro is expanded
+  [36m==>[0m /home/gloria/idlize/testcase/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkButton.cj:64:1:
+   [36m| [0m
+[36m64[0m [36m| [0m  @Memo[0m
+   [36m| [0m [34m_[0m[34m^[0m
+[36m65[0m [36m| [0m[34m|[0m public func ArkButton([0m
+   [36m| [0m[34m|[0m ...[0m
+[36m80[0m [36m| [0m[34m|[0m }[0m
+   [36m| [0m[34m|[0m[34m_[0m[34m^[0m
+   [36m| [0m
+
+[33mwarning[0m: unused variable:'__memo_param_value_style'
+   [36m| [0m
+   [36m| [0m/* 88.7 */    let __memo_param_value_style = __memo_param_style.getValue()[0m
+   [36m| [0m                  [33m^^^^^^^^^^^^^^^^^^^^^^^^ unused variable[0m
+   [36m| [0m
+   [36m#[0m [0mnote[0m: this warning can be suppressed by setting the compiler option `-Woff unused`
+[34mnote[0m: the code after the macro is expanded as follows
+    [36m| [0m
+    [36m| [0m  /* 88.1 */public func ArkCheckbox(style: Option < OnCheckboxStyleCallback >, content_: Option < OnCheckboxContentCallback >, options!: Option < CheckboxOptions >= Option.None): Unit {[0m
+    [36m| [0m [34m_[0m[34m^[0m
+    [36m| [0m[34m|[0m /* 88.2 */    let __memo_key = getCallsiteKey()[0m
+    [36m| [0m[34m|[0m /* 88.3 */    let __memo_scope = getMemoScope < Unit >(__memo_key, 3)[0m
+    [36m| [0m[34m|[0m /* 88.4 */    let __memo_param_style = getParameter(__memo_scope, 0, style, "style")[0m
+    [36m| [0m[34m|[0m /* 88.5 */    let __memo_param_content_ = getParameter(__memo_scope, 1, content_, "content_")[0m
+    [36m| [0m[34m|[0m /* 88.6 */    let __memo_param_options = getParameter(__memo_scope, 2, options, "options")[0m
+    [36m| [0m[34m|[0m /* 88.7 */    let __memo_param_value_style = __memo_param_style.getValue()[0m
+    [36m| [0m[34m|[0m /* 88.8 */    let __memo_param_value_content_ = __memo_param_content_.getValue()[0m
+    [36m| [0m[34m|[0m /* 88.9 */    let __memo_param_value_options = __memo_param_options.getValue()[0m
+    [36m| [0m[34m|[0m /* 88.10 */    if(__memo_scope.isUnchanged()) {[0m
+    [36m| [0m[34m|[0m /* 88.11 */        return __memo_scope.getCached()[0m
+    [36m| [0m[34m|[0m /* 88.12 */    }[0m
+    [36m| [0m[34m|[0m /* 88.13 */    let receiver = remember < ArkCheckboxComponent >({ => let __memo_param_value_style = __memo_param_style.getValue()[0m
+    [36m| [0m[34m|[0m /* 88.14 */        [0m
+    [36m| [0m[34m|[0m /* 88.15 */        let __memo_param_value_content_ = __memo_param_content_.getValue()[0m
+    [36m| [0m[34m|[0m /* 88.16 */        [0m
+    [36m| [0m[34m|[0m /* 88.17 */        let __memo_param_value_options = __memo_param_options.getValue()[0m
+    [36m| [0m[34m|[0m /* 88.18 */        [0m
+    [36m| [0m[34m|[0m /* 88.19 */    ArkCheckboxComponent() })[0m
+    [36m| [0m[34m|[0m /* 88.20 */    NodeAttach < ArkCheckboxPeer >({ => let __memo_param_value_style = __memo_param_style.getValue()[0m
+    [36m| [0m[34m|[0m /* 88.21 */        [0m
+    [36m| [0m[34m|[0m /* 88.22 */        let __memo_param_value_content_ = __memo_param_content_.getValue()[0m
+    [36m| [0m[34m|[0m /* 88.23 */        [0m
+    [36m| [0m[34m|[0m /* 88.24 */        let __memo_param_value_options = __memo_param_options.getValue()[0m
+    [36m| [0m[34m|[0m /* 88.25 */        [0m
+    [36m| [0m[34m|[0m /* 88.26 */    ArkCheckboxPeer.create(receiver, flags: 0) }, { => let __memo_param_value_style = __memo_param_style.getValue()[0m
+    [36m| [0m[34m|[0m /* 88.27 */        [0m
+    [36m| [0m[34m|[0m /* 88.28 */        let __memo_param_value_content_ = __memo_param_content_.getValue()[0m
+    [36m| [0m[34m|[0m /* 88.29 */        [0m
+    [36m| [0m[34m|[0m /* 88.30 */        let __memo_param_value_options = __memo_param_options.getValue()[0m
+    [36m| [0m[34m|[0m /* 88.31 */        [0m
+    [36m| [0m[34m|[0m /* 88.32 */        __memo_param_value_style?(receiver)[0m
+    [36m| [0m[34m|[0m /* 88.33 */        __memo_param_value_content_?()[0m
+    [36m| [0m[34m|[0m /* 88.34 */    receiver.applyAttributesFinish() })[0m
+    [36m| [0m[34m|[0m /* 88.35 */    return __memo_scope.recache(MEMO_UNIT)[0m
+    [36m| [0m[34m|[0m /* 88.36 */}[0m
+    [36m| [0m[34m|[0m /* 88.37 */[0m
+    [36m| [0m[34m|[0m[34m_[0m[34m__________^[0m
+    [36m| [0m
+[34mnote[0m: the warning occurs after the macro is expanded
+   [36m==>[0m /home/gloria/idlize/testcase/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkCheckbox.cj:88:1:
+    [36m| [0m
+[36m88[0m  [36m| [0m  @Memo[0m
+    [36m| [0m [34m_[0m[34m^[0m
+[36m89[0m  [36m| [0m[34m|[0m public func ArkCheckbox([0m
+    [36m| [0m[34m|[0m ...[0m
+[36m105[0m [36m| [0m[34m|[0m }[0m
+    [36m| [0m[34m|[0m[34m_[0m[34m^[0m
+    [36m| [0m
+
+[33mwarning[0m: unused variable:'__memo_param_value_content_'
+   [36m| [0m
+   [36m| [0m/* 88.8 */    let __memo_param_value_content_ = __memo_param_content_.getValue()[0m
+   [36m| [0m                  [33m^^^^^^^^^^^^^^^^^^^^^^^^^^^ unused variable[0m
+   [36m| [0m
+   [36m#[0m [0mnote[0m: this warning can be suppressed by setting the compiler option `-Woff unused`
+[34mnote[0m: the warning occurs after the macro is expanded
+   [36m==>[0m /home/gloria/idlize/testcase/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkCheckbox.cj:88:1:
+    [36m| [0m
+[36m88[0m  [36m| [0m  @Memo[0m
+    [36m| [0m [34m_[0m[34m^[0m
+[36m89[0m  [36m| [0m[34m|[0m public func ArkCheckbox([0m
+    [36m| [0m[34m|[0m ...[0m
+[36m105[0m [36m| [0m[34m|[0m }[0m
+    [36m| [0m[34m|[0m[34m_[0m[34m^[0m
+    [36m| [0m
+
+[33mwarning[0m: unused variable:'__memo_param_value_options'
+   [36m| [0m
+   [36m| [0m/* 88.9 */    let __memo_param_value_options = __memo_param_options.getValue()[0m
+   [36m| [0m                  [33m^^^^^^^^^^^^^^^^^^^^^^^^^^ unused variable[0m
+   [36m| [0m
+   [36m#[0m [0mnote[0m: this warning can be suppressed by setting the compiler option `-Woff unused`
+[34mnote[0m: the warning occurs after the macro is expanded
+   [36m==>[0m /home/gloria/idlize/testcase/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkCheckbox.cj:88:1:
+    [36m| [0m
+[36m88[0m  [36m| [0m  @Memo[0m
+    [36m| [0m [34m_[0m[34m^[0m
+[36m89[0m  [36m| [0m[34m|[0m public func ArkCheckbox([0m
+    [36m| [0m[34m|[0m ...[0m
+[36m105[0m [36m| [0m[34m|[0m }[0m
+    [36m| [0m[34m|[0m[34m_[0m[34m^[0m
+    [36m| [0m
+
+[33mwarning[0m: unused variable:'modifier'
+  [36m==>[0m /home/gloria/idlize/testcase/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkCommonMethod.cj:96:35:
+   [36m| [0m
+[36m96[0m [36m| [0m    public func attributeModifier(modifier: AttributeModifier<Object>) { throw Exception("not implemented") }[0m
+   [36m| [0m                                  [33m^^^^^^^^ unused variable[0m
+   [36m| [0m
+   [36m#[0m [0mnote[0m: this warning can be suppressed by setting the compiler option `-Woff unused`
+
+[33mwarning[0m: unused variable:'__memo_param_value_style'
+    [36m| [0m
+    [36m| [0m/* 88.13 */    let receiver = remember < ArkCheckboxComponent >({ => let __memo_param_value_style = __memo_param_style.getValue()[0m
+    [36m| [0m                                                                         [33m^^^^^^^^^^^^^^^^^^^^^^^^ unused variable[0m
+    [36m| [0m
+    [36m#[0m [0mnote[0m: this warning can be suppressed by setting the compiler option `-Woff unused`
+[34mnote[0m: the warning occurs after the macro is expanded
+   [36m==>[0m /home/gloria/idlize/testcase/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkCheckbox.cj:88:1:
+    [36m| [0m
+[36m88[0m  [36m| [0m  @Memo[0m
+    [36m| [0m [34m_[0m[34m^[0m
+[36m89[0m  [36m| [0m[34m|[0m public func ArkCheckbox([0m
+    [36m| [0m[34m|[0m ...[0m
+[36m105[0m [36m| [0m[34m|[0m }[0m
+    [36m| [0m[34m|[0m[34m_[0m[34m^[0m
+    [36m| [0m
+
+[33mwarning[0m: unused variable:'__memo_param_value_content_'
+    [36m| [0m
+    [36m| [0m/* 88.15 */        let __memo_param_value_content_ = __memo_param_content_.getValue()[0m
+    [36m| [0m                       [33m^^^^^^^^^^^^^^^^^^^^^^^^^^^ unused variable[0m
+    [36m| [0m
+    [36m#[0m [0mnote[0m: this warning can be suppressed by setting the compiler option `-Woff unused`
+[34mnote[0m: the warning occurs after the macro is expanded
+   [36m==>[0m /home/gloria/idlize/testcase/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkCheckbox.cj:88:1:
+    [36m| [0m
+[36m88[0m  [36m| [0m  @Memo[0m
+    [36m| [0m [34m_[0m[34m^[0m
+[36m89[0m  [36m| [0m[34m|[0m public func ArkCheckbox([0m
+    [36m| [0m[34m|[0m ...[0m
+[36m105[0m [36m| [0m[34m|[0m }[0m
+    [36m| [0m[34m|[0m[34m_[0m[34m^[0m
+    [36m| [0m
+
+[33mwarning[0m: unused variable:'__memo_param_value_options'
+    [36m| [0m
+    [36m| [0m/* 88.17 */        let __memo_param_value_options = __memo_param_options.getValue()[0m
+    [36m| [0m                       [33m^^^^^^^^^^^^^^^^^^^^^^^^^^ unused variable[0m
+    [36m| [0m
+    [36m#[0m [0mnote[0m: this warning can be suppressed by setting the compiler option `-Woff unused`
+[34mnote[0m: the warning occurs after the macro is expanded
+   [36m==>[0m /home/gloria/idlize/testcase/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkCheckbox.cj:88:1:
+    [36m| [0m
+[36m88[0m  [36m| [0m  @Memo[0m
+    [36m| [0m [34m_[0m[34m^[0m
+[36m89[0m  [36m| [0m[34m|[0m public func ArkCheckbox([0m
+    [36m| [0m[34m|[0m ...[0m
+[36m105[0m [36m| [0m[34m|[0m }[0m
+    [36m| [0m[34m|[0m[34m_[0m[34m^[0m
+    [36m| [0m
+
+[33mwarning[0m: unused variable:'__memo_param_value_style'
+    [36m| [0m
+    [36m| [0m/* 88.20 */    NodeAttach < ArkCheckboxPeer >({ => let __memo_param_value_style = __memo_param_style.getValue()[0m
+    [36m| [0m                                                       [33m^^^^^^^^^^^^^^^^^^^^^^^^ unused variable[0m
+    [36m| [0m
+    [36m#[0m [0mnote[0m: this warning can be suppressed by setting the compiler option `-Woff unused`
+[34mnote[0m: the warning occurs after the macro is expanded
+   [36m==>[0m /home/gloria/idlize/testcase/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkCheckbox.cj:88:1:
+    [36m| [0m
+[36m88[0m  [36m| [0m  @Memo[0m
+    [36m| [0m [34m_[0m[34m^[0m
+[36m89[0m  [36m| [0m[34m|[0m public func ArkCheckbox([0m
+    [36m| [0m[34m|[0m ...[0m
+[36m105[0m [36m| [0m[34m|[0m }[0m
+    [36m| [0m[34m|[0m[34m_[0m[34m^[0m
+    [36m| [0m
+
+[33mwarning[0m: unused variable:'__memo_param_value_content_'
+    [36m| [0m
+    [36m| [0m/* 88.22 */        let __memo_param_value_content_ = __memo_param_content_.getValue()[0m
+    [36m| [0m                       [33m^^^^^^^^^^^^^^^^^^^^^^^^^^^ unused variable[0m
+    [36m| [0m
+    [36m#[0m [0mnote[0m: this warning can be suppressed by setting the compiler option `-Woff unused`
+[34mnote[0m: the warning occurs after the macro is expanded
+   [36m==>[0m /home/gloria/idlize/testcase/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkCheckbox.cj:88:1:
+    [36m| [0m
+[36m88[0m  [36m| [0m  @Memo[0m
+    [36m| [0m [34m_[0m[34m^[0m
+[36m89[0m  [36m| [0m[34m|[0m public func ArkCheckbox([0m
+    [36m| [0m[34m|[0m ...[0m
+[36m105[0m [36m| [0m[34m|[0m }[0m
+    [36m| [0m[34m|[0m[34m_[0m[34m^[0m
+    [36m| [0m
+
+[33mwarning[0m: unused variable:'__memo_param_value_options'
+    [36m| [0m
+    [36m| [0m/* 88.24 */        let __memo_param_value_options = __memo_param_options.getValue()[0m
+    [36m| [0m                       [33m^^^^^^^^^^^^^^^^^^^^^^^^^^ unused variable[0m
+    [36m| [0m
+    [36m#[0m [0mnote[0m: this warning can be suppressed by setting the compiler option `-Woff unused`
+[34mnote[0m: the warning occurs after the macro is expanded
+   [36m==>[0m /home/gloria/idlize/testcase/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkCheckbox.cj:88:1:
+    [36m| [0m
+[36m88[0m  [36m| [0m  @Memo[0m
+    [36m| [0m [34m_[0m[34m^[0m
+[36m89[0m  [36m| [0m[34m|[0m public func ArkCheckbox([0m
+    [36m| [0m[34m|[0m ...[0m
+[36m105[0m [36m| [0m[34m|[0m }[0m
+    [36m| [0m[34m|[0m[34m_[0m[34m^[0m
+    [36m| [0m
+
+[33mwarning[0m: unused variable:'__memo_param_value_options'
+    [36m| [0m
+    [36m| [0m/* 88.30 */        let __memo_param_value_options = __memo_param_options.getValue()[0m
+    [36m| [0m                       [33m^^^^^^^^^^^^^^^^^^^^^^^^^^ unused variable[0m
+    [36m| [0m
+    [36m#[0m [0mnote[0m: this warning can be suppressed by setting the compiler option `-Woff unused`
+[34mnote[0m: the warning occurs after the macro is expanded
+   [36m==>[0m /home/gloria/idlize/testcase/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkCheckbox.cj:88:1:
+    [36m| [0m
+[36m88[0m  [36m| [0m  @Memo[0m
+    [36m| [0m [34m_[0m[34m^[0m
+[36m89[0m  [36m| [0m[34m|[0m public func ArkCheckbox([0m
+    [36m| [0m[34m|[0m ...[0m
+[36m105[0m [36m| [0m[34m|[0m }[0m
+    [36m| [0m[34m|[0m[34m_[0m[34m^[0m
+    [36m| [0m
+
+[33mwarning[0m: unused variable:'__memo_param_value_style'
+    [36m| [0m
+    [36m| [0m/* 211.6 */    let __memo_param_value_style = __memo_param_style.getValue()[0m
+    [36m| [0m                   [33m^^^^^^^^^^^^^^^^^^^^^^^^ unused variable[0m
+    [36m| [0m
+    [36m#[0m [0mnote[0m: this warning can be suppressed by setting the compiler option `-Woff unused`
+[34mnote[0m: the code after the macro is expanded as follows
+    [36m| [0m
+    [36m| [0m  /* 211.1 */public func ArkTest(style: Option < OnTestStyleCallback >, content_: Option < OnTestContentCallback >): Unit {[0m
+    [36m| [0m [34m_[0m[34m^[0m
+    [36m| [0m[34m|[0m /* 211.2 */    let __memo_key = getCallsiteKey()[0m
+    [36m| [0m[34m|[0m /* 211.3 */    let __memo_scope = getMemoScope < Unit >(__memo_key, 2)[0m
+    [36m| [0m[34m|[0m /* 211.4 */    let __memo_param_style = getParameter(__memo_scope, 0, style, "style")[0m
+    [36m| [0m[34m|[0m /* 211.5 */    let __memo_param_content_ = getParameter(__memo_scope, 1, content_, "content_")[0m
+    [36m| [0m[34m|[0m /* 211.6 */    let __memo_param_value_style = __memo_param_style.getValue()[0m
+    [36m| [0m[34m|[0m /* 211.7 */    let __memo_param_value_content_ = __memo_param_content_.getValue()[0m
+    [36m| [0m[34m|[0m /* 211.8 */    if(__memo_scope.isUnchanged()) {[0m
+    [36m| [0m[34m|[0m /* 211.9 */        return __memo_scope.getCached()[0m
+    [36m| [0m[34m|[0m /* 211.10 */    }[0m
+    [36m| [0m[34m|[0m /* 211.11 */    let receiver = remember < ArkTestComponent >({ => let __memo_param_value_style = __memo_param_style.getValue()[0m
+    [36m| [0m[34m|[0m /* 211.12 */        [0m
+    [36m| [0m[34m|[0m /* 211.13 */        let __memo_param_value_content_ = __memo_param_content_.getValue()[0m
+    [36m| [0m[34m|[0m /* 211.14 */        [0m
+    [36m| [0m[34m|[0m /* 211.15 */    ArkTestComponent() })[0m
+    [36m| [0m[34m|[0m /* 211.16 */    NodeAttach < ArkTestPeer >({ => let __memo_param_value_style = __memo_param_style.getValue()[0m
+    [36m| [0m[34m|[0m /* 211.17 */        [0m
+    [36m| [0m[34m|[0m /* 211.18 */        let __memo_param_value_content_ = __memo_param_content_.getValue()[0m
+    [36m| [0m[34m|[0m /* 211.19 */        [0m
+    [36m| [0m[34m|[0m /* 211.20 */    ArkTestPeer.create(receiver, flags: 0) }, { => let __memo_param_value_style = __memo_param_style.getValue()[0m
+    [36m| [0m[34m|[0m /* 211.21 */        [0m
+    [36m| [0m[34m|[0m /* 211.22 */        let __memo_param_value_content_ = __memo_param_content_.getValue()[0m
+    [36m| [0m[34m|[0m /* 211.23 */        [0m
+    [36m| [0m[34m|[0m /* 211.24 */        __memo_param_value_style?(receiver)[0m
+    [36m| [0m[34m|[0m /* 211.25 */        __memo_param_value_content_?()[0m
+    [36m| [0m[34m|[0m /* 211.26 */    receiver.applyAttributesFinish() })[0m
+    [36m| [0m[34m|[0m /* 211.27 */    return __memo_scope.recache(MEMO_UNIT)[0m
+    [36m| [0m[34m|[0m /* 211.28 */}[0m
+    [36m| [0m[34m|[0m /* 211.29 */[0m
+    [36m| [0m[34m|[0m[34m_[0m[34m___________^[0m
+    [36m| [0m
+[34mnote[0m: the warning occurs after the macro is expanded
+   [36m==>[0m /home/gloria/idlize/testcase/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkTest.cj:211:1:
+    [36m| [0m
+[36m211[0m [36m| [0m  @Memo[0m
+    [36m| [0m [34m_[0m[34m^[0m
+[36m212[0m [36m| [0m[34m|[0m public func ArkTest([0m
+    [36m| [0m[34m|[0m ...[0m
+[36m227[0m [36m| [0m[34m|[0m }[0m
+    [36m| [0m[34m|[0m[34m_[0m[34m^[0m
+    [36m| [0m
+
+[33mwarning[0m: unused variable:'__memo_param_value_content_'
+    [36m| [0m
+    [36m| [0m/* 211.7 */    let __memo_param_value_content_ = __memo_param_content_.getValue()[0m
+    [36m| [0m                   [33m^^^^^^^^^^^^^^^^^^^^^^^^^^^ unused variable[0m
+    [36m| [0m
+    [36m#[0m [0mnote[0m: this warning can be suppressed by setting the compiler option `-Woff unused`
+[34mnote[0m: the warning occurs after the macro is expanded
+   [36m==>[0m /home/gloria/idlize/testcase/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkTest.cj:211:1:
+    [36m| [0m
+[36m211[0m [36m| [0m  @Memo[0m
+    [36m| [0m [34m_[0m[34m^[0m
+[36m212[0m [36m| [0m[34m|[0m public func ArkTest([0m
+    [36m| [0m[34m|[0m ...[0m
+[36m227[0m [36m| [0m[34m|[0m }[0m
+    [36m| [0m[34m|[0m[34m_[0m[34m^[0m
+    [36m| [0m
+
+[33mwarning[0m: unused variable:'__memo_param_value_style'
+    [36m| [0m
+    [36m| [0m/* 211.11 */    let receiver = remember < ArkTestComponent >({ => let __memo_param_value_style = __memo_param_style.getValue()[0m
+    [36m| [0m                                                                      [33m^^^^^^^^^^^^^^^^^^^^^^^^ unused variable[0m
+    [36m| [0m
+    [36m#[0m [0mnote[0m: this warning can be suppressed by setting the compiler option `-Woff unused`
+[34mnote[0m: the warning occurs after the macro is expanded
+   [36m==>[0m /home/gloria/idlize/testcase/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkTest.cj:211:1:
+    [36m| [0m
+[36m211[0m [36m| [0m  @Memo[0m
+    [36m| [0m [34m_[0m[34m^[0m
+[36m212[0m [36m| [0m[34m|[0m public func ArkTest([0m
+    [36m| [0m[34m|[0m ...[0m
+[36m227[0m [36m| [0m[34m|[0m }[0m
+    [36m| [0m[34m|[0m[34m_[0m[34m^[0m
+    [36m| [0m
+
+[33mwarning[0m: unused variable:'__memo_param_value_content_'
+    [36m| [0m
+    [36m| [0m/* 211.13 */        let __memo_param_value_content_ = __memo_param_content_.getValue()[0m
+    [36m| [0m                        [33m^^^^^^^^^^^^^^^^^^^^^^^^^^^ unused variable[0m
+    [36m| [0m
+    [36m#[0m [0mnote[0m: this warning can be suppressed by setting the compiler option `-Woff unused`
+[34mnote[0m: the warning occurs after the macro is expanded
+   [36m==>[0m /home/gloria/idlize/testcase/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkTest.cj:211:1:
+    [36m| [0m
+[36m211[0m [36m| [0m  @Memo[0m
+    [36m| [0m [34m_[0m[34m^[0m
+[36m212[0m [36m| [0m[34m|[0m public func ArkTest([0m
+    [36m| [0m[34m|[0m ...[0m
+[36m227[0m [36m| [0m[34m|[0m }[0m
+    [36m| [0m[34m|[0m[34m_[0m[34m^[0m
+    [36m| [0m
+
+[33mwarning[0m: unused variable:'__memo_param_value_style'
+    [36m| [0m
+    [36m| [0m/* 211.16 */    NodeAttach < ArkTestPeer >({ => let __memo_param_value_style = __memo_param_style.getValue()[0m
+    [36m| [0m                                                    [33m^^^^^^^^^^^^^^^^^^^^^^^^ unused variable[0m
+    [36m| [0m
+    [36m#[0m [0mnote[0m: this warning can be suppressed by setting the compiler option `-Woff unused`
+[34mnote[0m: the warning occurs after the macro is expanded
+   [36m==>[0m /home/gloria/idlize/testcase/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkTest.cj:211:1:
+    [36m| [0m
+[36m211[0m [36m| [0m  @Memo[0m
+    [36m| [0m [34m_[0m[34m^[0m
+[36m212[0m [36m| [0m[34m|[0m public func ArkTest([0m
+    [36m| [0m[34m|[0m ...[0m
+[36m227[0m [36m| [0m[34m|[0m }[0m
+    [36m| [0m[34m|[0m[34m_[0m[34m^[0m
+    [36m| [0m
+
+[33mwarning[0m: unused variable:'__memo_param_value_content_'
+    [36m| [0m
+    [36m| [0m/* 211.18 */        let __memo_param_value_content_ = __memo_param_content_.getValue()[0m
+    [36m| [0m                        [33m^^^^^^^^^^^^^^^^^^^^^^^^^^^ unused variable[0m
+    [36m| [0m
+    [36m#[0m [0mnote[0m: this warning can be suppressed by setting the compiler option `-Woff unused`
+[34mnote[0m: the warning occurs after the macro is expanded
+   [36m==>[0m /home/gloria/idlize/testcase/arkgen/out/cangjie/generated/sig/arkoala-cj/cjv2/src/components/ArkTest.cj:211:1:
+    [36m| [0m
+[36m211[0m [36m| [0m  @Memo[0m
+    [36m| [0m [34m_[0m[34m^[0m
+[36m212[0m [36m| [0m[34m|[0m public func ArkTest([0m
+    [36m| [0m[34m|[0m ...[0m
+[36m227[0m [36m| [0m[34m|[0m }[0m
+    [36m| [0m[34m|[0m[34m_[0m[34m^[0m
+    [36m| [0m
+
+29 warnings generated, 29 warnings printed.
